@@ -531,7 +531,30 @@ def validate_collection(raw):
 def report_rows(raw):
     data = validate_collection(raw)
     native = data['native']
-    show = lambda x: '未知' if x is None else str(x)
+    def show(value):
+        if value is None:
+            return '未知'
+        if type(value) is bool:
+            return '是' if value else '否'
+        if isinstance(value, list):
+            return '、'.join(value) if value else '未知'
+        return str(value)
+    labels = {'system_version':'系统版本', 'timezone':'时区', 'auto_time_enabled':'自动校时',
+              'auto_timezone_enabled':'自动时区', 'time_service_running':'时间服务运行',
+              'system_locale':'系统区域格式', 'ui_locale':'系统界面语言', 'languages':'语言列表',
+              'http_proxy_enabled':'HTTP／手动代理开关', 'https_proxy_enabled':'HTTPS代理开关',
+              'socks_proxy_enabled':'SOCKS代理开关', 'pac_present':'PAC配置存在',
+              'dns_v4_count':'IPv4 DNS条目数', 'dns_v6_count':'IPv6 DNS条目数',
+              'ipv4_interface_count':'IPv4地址／接口条目', 'ipv6_interface_count':'IPv6地址／接口条目',
+              'tunnel_interface_count':'隧道接口数', 'proxy_count':'节点数', 'group_count':'策略组数',
+              'rule_count':'规则数', 'unknown_references':'待核对引用数', 'duplicate_names':'重复名称数',
+              'cyclic_groups':'涉及循环的组数', 'rules_after_catchall':'兜底后规则数',
+              'unsupported_rule_count':'未支持的规则数', 'scripts_present':'脚本配置存在',
+              'rewrite_present':'内容改写配置存在', 'mitm_present':'MITM配置存在',
+              'tls_verification_disabled':'发现关闭TLS验证', 'dns_enabled':'配置DNS启用',
+              'dns_ipv6':'配置DNS解析IPv6', 'tun_enabled':'配置TUN启用', 'mode':'配置路由模式',
+              'kind':'配置类别', 'parse_status':'解析层级', 'app_locale':'应用语言',
+              'doh_mode':'安全DNS模式', 'webrtc_policy':'WebRTC策略'}
     rows = []
     for name, keys, caveat in (
         ('系统／时间', ('system_version', 'timezone', 'auto_time_enabled', 'auto_timezone_enabled', 'time_service_running'), '本机设置；未验证时钟同步精度。'),
@@ -540,17 +563,18 @@ def report_rows(raw):
         ('系统 DNS', ('dns_v4_count', 'dns_v6_count'), '仅服务器地址条目计数；没有发起 DNS 查询。'),
         ('接口地址族', ('ipv4_interface_count', 'ipv6_interface_count', 'tunnel_interface_count'), '包含虚拟／回环接口；不是出口或 TUN 接管证明。')):
         observed = any(native[k] not in (None, []) for k in keys)
-        rows.append((name, '已读取局部状态' if observed else '未取得状态', '; '.join(k + '=' + show(native[k]) for k in keys), caveat))
-    rows.append(('认证／代理变量', '当前进程存在状态', '; '.join(k + '=' + v for k, v in data['environment'].items()), '只说明采集器环境，不代表已运行 Desktop／CLI；不输出变量值。'))
+        rows.append((name, '已读取局部状态' if observed else '未取得状态', '；'.join(labels[k] + '：' + show(native[k]) for k in keys), caveat))
+    presence = {'absent':'不存在', 'empty':'空值', 'present':'已设置', 'unknown':'未知'}
+    rows.append(('认证／代理变量', '当前进程存在状态', '；'.join(k + '：' + presence[v] for k, v in data['environment'].items()), '只说明采集器环境，不代表已运行 Desktop／CLI；不输出变量值。'))
     rows.append(('Claude 命令', '只读发现', show(data['claude_command_found']), '仅 PATH 中发现入口；没有执行 Claude、登录或模型请求。'))
     if data['config'] is not None:
         cfg = data['config']
         problem = any((cfg.get(k) or 0) > 0 for k in ('duplicate_names', 'cyclic_groups', 'rules_after_catchall'))
-        rows.append(('指定配置文件', '发现静态问题' if problem else '已做静态检查', '; '.join(k + '=' + show(v) for k, v in sorted(cfg.items())), '解析不代表核心兼容或已加载；引用可能来自外部节点／扩展，需现场核实。'))
+        rows.append(('指定配置文件', '发现静态问题' if problem else '已做静态检查', '；'.join(labels[k] + '：' + show(v) for k, v in sorted(cfg.items())), '解析不代表核心兼容或已加载；引用可能来自外部节点／扩展，需现场核实。'))
     else:
         rows.append(('指定配置文件', '未验证', '未提供或无法解析', '查看 collection.json 中固定错误码；不得推断当前活动配置。'))
     if data['browser'] is not None:
-        rows.append(('指定浏览器偏好文件', '静态文件', '; '.join(k + '=' + show(v) for k, v in data['browser'].items()), '非运行中 Profile／组织策略证明；未读取 Cookie／账号数据。'))
+        rows.append(('指定浏览器偏好文件', '静态文件', '；'.join(labels[k] + '：' + show(v) for k, v in data['browser'].items()), '非运行中 Profile／组织策略证明；未读取 Cookie／账号数据。'))
     else:
         rows.append(('浏览器偏好', '未验证', '未提供或无法解析', '在客户实际浏览器检查菜单语言、网页语言与有效政策。'))
     for title in ('DNS TYPE64／65 与 DNS64', '公网 IPv4／IPv6 出口', 'WebRTC／STUN／UDP', '规则实际命中与客户端功能', '断线／重启／更新后保护'):
@@ -569,6 +593,7 @@ def render_report(raw, output):
         md += '| ' + ' | '.join(str(v).replace('|', '\\|').replace('\n', ' ') for v in row) + ' |\n'
     table = ''.join('<tr>' + ''.join('<td>' + html.escape(str(v)) + '</td>' for v in row) + '</tr>' for row in rows)
     page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>Claude 环境检查报告</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:1200px;margin:40px auto;padding:0 24px;color:#162334;background:#fafafa}h1{font-size:28px}table{border-collapse:collapse;width:100%;background:white}td,th{text-align:left;vertical-align:top;padding:14px;border:1px solid #dce1e8;overflow-wrap:anywhere}th{background:#edf2f8}p{color:#465569}@media print{body{margin:0;font-size:11px}tr{break-inside:avoid}}</style><h1>Claude 环境检查报告</h1><p>' + html.escape(summary) + '</p><p>' + html.escape(caveat) + '</p><table><thead><tr><th>检查项</th><th>结果层级</th><th>观察</th><th>边界／下一步</th></tr></thead><tbody>' + table + '</tbody></table></html>'
+    page = page.replace('</style>', 'table{table-layout:fixed}th:nth-child(1){width:14%}th:nth-child(2){width:14%}th:nth-child(3){width:43%}th:nth-child(4){width:29%}@media(max-width:700px){body{padding:0 10px;font-size:13px}td,th{padding:8px}}</style>')
     new_dir(output)
     write_new(Path(output) / 'report.md', md.encode('utf-8'))
     write_new(Path(output) / 'report.html', page.encode('utf-8'))

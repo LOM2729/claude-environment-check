@@ -18,7 +18,7 @@ import subprocess
 import sys
 import tempfile
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 MAX_FILE = 2 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -531,7 +531,7 @@ def validate_collection(raw):
     return result
 
 
-def report_rows(raw):
+def collection_rows(raw):
     data = validate_collection(raw)
     native = data['native']
     def show(value):
@@ -585,18 +585,156 @@ def report_rows(raw):
     return data, rows
 
 
-def render_report(raw, output):
-    data, rows = report_rows(raw)
-    summary = f"目标别名：{data['target_alias']} · 执行平台：{data['platform']} · 采集时间：{data['collected_at']} · 来源声明：{data['evidence']}"
+REPORT_TASKS = (
+    ('system_time', '时间与时区', '尚未核对时间准确性及客户需要的时区。', '核对现状并问客户是否需要调整；需要修改时说明目标、影响和恢复办法，确认后修改并复测。'),
+    ('system_language', '系统语言与地区', '尚未确认当前语言和地区格式是否符合客户需要。', '展示当前设置，询问是否保留；若要调整，按客户选定目标修改后检查显示和格式。'),
+    ('system_proxy', '代理与接管', '只读取了代理开关，尚未验证实际接管范围。', '确认客户需要的分流范围；调整系统代理或 TUN 前逐项询问，随后验证目标程序路径。'),
+    ('system_dns', '系统与代理 DNS', '只读取了 DNS 设置，实际解析路径尚未验证。', '核对系统、代理和浏览器解析责任；需要调整哪一层先问客户，获准后复测。'),
+    ('ip_families', 'IPv4／IPv6', '接口信息不能证明实际出口和 IPv6 行为。', '在获准范围分别验证地址族与代理各段，确需调整 IPv6 时先说明范围并询问。'),
+    ('auth_environment', '认证与代理来源', '变量存在状态不能证明 Claude 实际采用了哪种认证和代理。', '核对实际启动入口与认证来源；只改已确认有问题且客户批准的设置，随后复测。'),
+    ('claude_command', 'Claude Code 使用', '找到命令入口不等于安装、认证和实际使用已验证。', '按客户实际需要核对 Code；安装或调整前询问，获准后验证真实任务。'),
+    ('config', '配置导入与生效', '尚未验证配置已导入、载入并按预期生效。', '先审阅静态提示，逐项询问是否应用候选；确认后保存／导入，读回并验证实际规则命中。'),
+    ('browser', '浏览器设置', '尚未核对实际浏览器档案中的语言和有效策略。', '在客户实际浏览器检查；语言、代理或策略调整分别问客户，再读回并复测。'),
+    ('dns_records', 'DNS TYPE64／65 与 DNS64', '尚未执行适用的查询与功能检查。', '先确认本次是否需要检测；获准后验证实际行为，过滤设置要单独说明影响并询问。'),
+    ('public_egress', '公网出口', '尚未取得本次目标程序的出口结果。', '告知检测站点及数据范围，客户同意后检测并与约定路径比较。'),
+    ('webrtc', 'WebRTC／STUN／UDP', '尚未完成实际浏览器的相关检测。', '获准后在实际档案中检测；需要限制相关功能时询问客户，并复测通话／共享需求。'),
+    ('client_function', '客户端实际使用', '尚未验证客户需要的网页、Desktop 或 Code 功能。', '逐个验证实际使用的客户端和必要功能；无关客户端由客户确认后不计入。'),
+    ('lifecycle', '自启、更新与故障恢复', '尚未完成本次需要的持久化和恢复检查。', '先问客户需要哪些场景；断网／重启实验另行确认并准备独立恢复方法，完成后检查网络恢复。'),
+)
+
+
+def safe_review_text(value):
+    require(isinstance(value, str) and 0 < len(value.strip()) <= 600, 'REVIEW_NOTE_REQUIRED')
+    value = value.strip()
+    require(not any(ord(c) < 32 and c not in '\n\t' for c in value), 'INVALID_REVIEW_NOTE')
+    # A convenience guard, not a general data-loss-prevention guarantee. Review notes locally.
+    patterns = (r'https?://', r'(?i)(?:sk-|ghp_|github_pat_|Bearer\s)\S+',
+                r'(?i)(?:password|token|secret|uuid)\s*[:=]', r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}',
+                r'\b(?:\d{1,3}\.){3}\d{1,3}\b', r'(?:/[Uu]sers/|/home/|[A-Za-z]:\\)',
+                r'(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b')
+    require(not any(re.search(pattern, value) for pattern in patterns), 'REVIEW_NOTE_NEEDS_REDACTION')
+    for candidate in re.findall(r'[A-Fa-f0-9:]{3,}(?:%[A-Za-z0-9]+)?', value):
+        if candidate.count(':') < 2:
+            continue
+        try:
+            address = ipaddress.ip_address(candidate.split('%')[0])
+        except ValueError:
+            continue
+        require(address.version != 6, 'REVIEW_NOTE_NEEDS_REDACTION')
+    return value
+
+
+def review_template(raw, collection_digest):
+    data = validate_collection(raw)
+    require(re.fullmatch(r'[0-9a-f]{64}', collection_digest or ''), 'COLLECTION_DIGEST_REQUIRED')
+    return {'schema': 'claude-setup-review/1', 'target_alias': data['target_alias'],
+            'collection_sha256': collection_digest, 'items': [
+                {'id': key, 'applicable': True, 'scope_confirmed': False,
+                 'status': 'incomplete', 'change': 'none', 'decision': 'pending',
+                 'verified': False, 'verified_at': '', 'evidence': '',
+                 'reason': reason, 'next_step': action}
+                for key, _, reason, action in REPORT_TASKS]}
+
+
+def validate_review(review, data, collection_digest):
+    require(isinstance(review, dict) and review.get('schema') == 'claude-setup-review/1', 'REVIEW_SCHEMA_REQUIRED')
+    require(collection_digest and review.get('collection_sha256') == collection_digest, 'REVIEW_COLLECTION_MISMATCH')
+    require(review.get('target_alias') == data['target_alias'], 'REVIEW_TARGET_MISMATCH')
+    items = review.get('items')
+    require(isinstance(items, list) and len(items) <= len(REPORT_TASKS), 'INVALID_REVIEW_ITEMS')
+    known = {row[0] for row in REPORT_TASKS}
+    result = {}
+    for item in items:
+        require(isinstance(item, dict), 'INVALID_REVIEW_ITEM')
+        key = item.get('id')
+        require(isinstance(key, str) and key in known and key not in result, 'INVALID_OR_DUPLICATE_TASK')
+        require(type(item.get('applicable')) is bool, 'REVIEW_APPLICABILITY_REQUIRED')
+        if not item['applicable']:
+            require(item.get('scope_confirmed') is True, 'SCOPE_CONFIRMATION_REQUIRED')
+            require(item.get('change', 'none') != 'applied', 'CHANGED_TASK_CANNOT_BE_EXCLUDED')
+            result[key] = {'applicable': False, 'reason': safe_review_text(item.get('reason'))}
+            continue
+        state, change, decision = item.get('status'), item.get('change'), item.get('decision')
+        require(state in ('completed', 'incomplete'), 'BINARY_STATUS_REQUIRED')
+        require(change in ('none', 'proposed', 'applied'), 'INVALID_CHANGE_STATE')
+        require(decision in ('pending', 'approved', 'declined', 'not_required'), 'INVALID_CUSTOMER_DECISION')
+        require(type(item.get('verified')) is bool, 'VERIFICATION_STATE_REQUIRED')
+        require(change != 'applied' or decision == 'approved', 'APPLIED_CHANGE_APPROVAL_REQUIRED')
+        # An imported decision records history; it never authorizes this tool to act.
+        if state == 'completed':
+            require(item['verified'] and change != 'proposed', 'COMPLETION_EVIDENCE_REQUIRED')
+            require(decision in ('approved', 'not_required'), 'CUSTOMER_DECISION_UNRESOLVED')
+            evidence = safe_review_text(item.get('evidence'))
+            stamp = item.get('verified_at')
+            require(isinstance(stamp, str) and len(stamp) <= 40, 'VERIFICATION_TIME_REQUIRED')
+            try:
+                verified = dt.datetime.fromisoformat(stamp)
+                require(verified.tzinfo is not None and dt.datetime.fromisoformat(data['collected_at']) <= verified <= dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=5), 'INVALID_VERIFICATION_TIME')
+            except ValueError:
+                raise SetupError('INVALID_VERIFICATION_TIME') from None
+            result[key] = {'applicable': True, 'status': '已完成', 'reason': evidence,
+                           'next_step': '本项已完成；目标、配置或使用方式变化后复核。', 'verified_at': stamp}
+        else:
+            decision_note = {'declined': '客户选择暂不修改。', 'pending': '客户决定尚未记录。',
+                             'approved': '客户已同意所列具体修改。', 'not_required': '本项无需修改。'}[decision]
+            result[key] = {'applicable': True, 'status': '未完成',
+                           'reason': decision_note + safe_review_text(item.get('reason')),
+                           'next_step': safe_review_text(item.get('next_step'))}
+    return result
+
+
+def report_rows(raw, review=None, collection_digest=None):
+    data, observations = collection_rows(raw)
+    entries = validate_review(review, data, collection_digest) if review is not None else {}
+    rows, excluded = [], []
+    for index, (key, title, reason, action) in enumerate(REPORT_TASKS):
+        entry = entries.get(key)
+        if entry and not entry['applicable']:
+            excluded.append({'title': title, 'reason': entry['reason']})
+            continue
+        row = {'id': key, 'title': title, 'status': '未完成', 'reason': reason,
+               'next_step': action, 'observation': observations[index][2]}
+        if entry:
+            row.update({k: entry[k] for k in ('status', 'reason', 'next_step')})
+        elif key == 'config' and data['config']:
+            issues = data['config']
+            if any((issues.get(k) or 0) > 0 for k in ('duplicate_names', 'cyclic_groups', 'rules_after_catchall', 'unknown_references')):
+                row['reason'] = '配置存在重复名称、循环、规则顺序或待核对引用提示，尚未处理并复测。'
+        rows.append(row)
+    rows.sort(key=lambda row: row['status'] == '已完成')
+    data['excluded'] = excluded
+    return data, rows
+
+
+def render_report(raw, output, review=None, collection_digest=None):
+    data, rows = report_rows(raw, review, collection_digest)
+    source_label = {'local_metadata_and_optional_static_files': '本机采集及可选静态文件',
+                    'synthetic_fixture': '合成示例', 'unverified_import': '导入资料，来源需核对'}[data['evidence']]
+    stamp = dt.datetime.fromisoformat(data['collected_at']).astimezone().isoformat(timespec='seconds')
+    summary = f"目标别名：{data['target_alias']} · 执行平台：{data['platform']} · 采集时间：{stamp} · 来源：{source_label}"
     if data['evidence'] == 'synthetic_fixture':
         summary = '合成示例（非设备实测） · ' + summary
-    caveat = '这是本地元数据与指定文件的静态报告，不是环境总通过、无泄露或账号安全认证。导入报告的来源和目标须由操作者核对。'
-    md = '# Claude 环境检查报告\n\n' + summary + '\n\n' + caveat + '\n\n| 检查项 | 结果层级 | 观察 | 边界／下一步 |\n| --- | --- | --- | --- |\n'
+    completed = sum(row['status'] == '已完成' for row in rows)
+    progress = f'已完成 {completed} 项／共 {len(rows)} 项，未完成 {len(rows) - completed} 项'
+    caveat = '已完成表示该项按本次范围完成检查和必要处理，并有操作者填写的验证记录；不代表账号安全保证。单纯采集设置不会自动标为已完成。修改前应逐项询问客户。'
+    md = '# Claude 环境检查报告\n\n' + progress + '\n\n' + summary + '\n\n' + caveat + '\n\n| 检查项 | 状态 | 结果／未完成原因 | 下一步 |\n| --- | --- | --- | --- |\n'
+    def md_text(value):
+        # Preserve plain-text notes; never turn imported Markdown into executable/linked markup.
+        value = html.escape(str(value)).replace('\n', ' ').replace('\t', ' ')
+        return re.sub(r'([\\`*_{}\[\]()#+.!|>~-])', r'\\\1', value)
     for row in rows:
-        md += '| ' + ' | '.join(str(v).replace('|', '\\|').replace('\n', ' ') for v in row) + ' |\n'
-    table = ''.join('<tr>' + ''.join('<td>' + html.escape(str(v)) + '</td>' for v in row) + '</tr>' for row in rows)
-    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>Claude 环境检查报告</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:1200px;margin:40px auto;padding:0 24px;color:#162334;background:#fafafa}h1{font-size:28px}table{border-collapse:collapse;width:100%;background:white}td,th{text-align:left;vertical-align:top;padding:14px;border:1px solid #dce1e8;overflow-wrap:anywhere}th{background:#edf2f8}p{color:#465569}@media print{body{margin:0;font-size:11px}tr{break-inside:avoid}}</style><h1>Claude 环境检查报告</h1><p>' + html.escape(summary) + '</p><p>' + html.escape(caveat) + '</p><table><thead><tr><th>检查项</th><th>结果层级</th><th>观察</th><th>边界／下一步</th></tr></thead><tbody>' + table + '</tbody></table></html>'
-    page = page.replace('</style>', 'table{table-layout:fixed}th:nth-child(1){width:14%}th:nth-child(2){width:14%}th:nth-child(3){width:43%}th:nth-child(4){width:29%}@media(max-width:700px){body{padding:0 10px;font-size:13px}td,th{padding:8px}}</style>')
+        md += '| ' + ' | '.join(md_text(row[k]) for k in ('title', 'status', 'reason', 'next_step')) + ' |\n'
+    excluded = ''
+    if data['excluded']:
+        md += '\n不计入本次清单（已确认范围）：\n\n'
+        for item in data['excluded']:
+            md += '- ' + md_text(item['title'] + '：' + item['reason']) + '\n'
+        excluded = '<p>不计入本次清单（已确认范围）：</p><ul>' + ''.join('<li>' + html.escape(x['title'] + '：' + x['reason']) + '</li>' for x in data['excluded']) + '</ul>'
+    md += '\n## 原始采集信息\n\n'
+    md += '\n'.join('- ' + md_text(row['title'] + '：' + row['observation']) for row in rows) + '\n'
+    table = ''.join('<tr><td>' + html.escape(row['title']) + '</td><td class="' + ('done' if row['status'] == '已完成' else 'todo') + '">' + row['status'] + '</td><td>' + html.escape(row['reason']) + '</td><td>' + html.escape(row['next_step']) + '</td></tr>' for row in rows)
+    details = '<details><summary>查看原始采集信息</summary><ul>' + ''.join('<li>' + html.escape(row['title'] + '：' + row['observation']) + '</li>' for row in rows) + '</ul></details>'
+    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>Claude 环境检查报告</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:1200px;margin:40px auto;padding:0 24px;color:#162334;background:#fafafa}h1{font-size:28px}.progress{font-size:22px;font-weight:650;padding:16px;background:#edf2f8;border-radius:8px}table{border-collapse:collapse;table-layout:fixed;width:100%;background:white}td,th{text-align:left;vertical-align:top;padding:14px;border:1px solid #dce1e8;overflow-wrap:anywhere}th{background:#edf2f8}th:nth-child(1){width:17%}th:nth-child(2){width:10%}th:nth-child(3){width:32%}th:nth-child(4){width:41%}.done{color:#176444;font-weight:650}.todo{color:#9a4e12;font-weight:650}p,details{color:#465569}details{margin-top:24px}summary{cursor:pointer}@media(max-width:700px){body{padding:0 10px;font-size:13px}td,th{padding:8px}}@media print{body{margin:0;font-size:11px}tr{break-inside:avoid}}</style><h1>Claude 环境检查报告</h1><p class="progress">' + html.escape(progress) + '</p><p>' + html.escape(summary) + '</p><p>' + html.escape(caveat) + '</p><table><thead><tr><th>检查项</th><th>状态</th><th>结果／未完成原因</th><th>下一步</th></tr></thead><tbody>' + table + '</tbody></table>' + excluded + details + '</html>'
     new_dir(output)
     write_new(Path(output) / 'report.md', md.encode('utf-8'))
     write_new(Path(output) / 'report.html', page.encode('utf-8'))
@@ -684,6 +822,10 @@ def main(argv=None):
     r = sub.add_parser('report', help='Render an existing collection to offline HTML and Markdown')
     r.add_argument('--input', required=True)
     r.add_argument('--out', required=True)
+    r.add_argument('--review', help='Operator verification records bound to this collection; not action authorization')
+    rt = sub.add_parser('review-template', help='Create an incomplete-by-default customer review checklist')
+    rt.add_argument('--input', required=True)
+    rt.add_argument('--output', required=True)
     p = sub.add_parser('plan', help='Prepare private original/candidate snapshots and diff; never apply')
     p.add_argument('--current', required=True)
     p.add_argument('--candidate', required=True)
@@ -701,8 +843,14 @@ def main(argv=None):
             write_new(args.output, encode(data))
             result = {'status': 'collection_written', 'network_requests': 0, 'system_changes_performed': False}
         elif args.command == 'report':
-            render_report(load_json(read_bytes(args.input)), args.out)
+            source = read_bytes(args.input)
+            review = load_json(read_bytes(args.review)) if args.review else None
+            render_report(load_json(source), args.out, review, sha(source))
             result = {'status': 'report_written', 'environment_verified': False}
+        elif args.command == 'review-template':
+            source = read_bytes(args.input)
+            write_new(args.output, encode(review_template(load_json(source), sha(source))))
+            result = {'status': 'review_template_written', 'system_changes_performed': False}
         elif args.command == 'plan':
             result = prepare_plan(args.current, args.candidate, args.format, args.out)
         else:

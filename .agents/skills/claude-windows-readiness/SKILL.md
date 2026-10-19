@@ -15,7 +15,7 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 | 用户请求 | 加载与检查 |
 | --- | --- |
-| 统一只读采集、自动报告、配置差异或读回验证 | 读 [可执行工具](references/automation.md)，检查现有 Python 与按需 YAML 依赖，再运行对应 collect／report／plan／verify；不得把静态结果写成网络通过 |
+| 统一只读采集、自动报告、配置差异或读回验证 | 读 [可执行工具](references/automation.md)，检查现有 Python 与按需 YAML 依赖，再运行对应 collect／review-template／report／plan／verify；不得把静态结果写成网络通过 |
 | 给客户搭环境、现场操作清单、完整配置服务 | 先展示 [Windows 现场清单](assets/customer-checklist.md)，读 [客户执行流程](references/customer-setup.md)；完整服务记录时间与语言现状，按需修改 |
 | 导入配置文件、Clash 分流、转换小火箭配置 | 读 [配置导入与分流](references/proxy-import.md)的适用分支；区分完整配置、节点订阅和规则扩展，不将 conf 改名作 YAML |
 | DNS TYPE64／65、DNS64、IPv6／WebRTC／UDP | 读 [客户执行流程的网络部分](references/customer-setup.md)，分层核对，不默认关闭或混为同一开关 |
@@ -52,10 +52,12 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 涉及地区、订阅、认证优先级或版本要求时，现查相应官方文档；不要把某次文档核验固定成永久规则。服务地区按实际使用地点与 [Anthropic 当前支持范围](https://www.anthropic.com/supported-countries)核对，出口、语言、时区或检测分数不提供合规或“防封”保证。政策问题不妨碍完成用户要求的一般设备诊断。
 
-普通任务在对话中简述问题、已执行变更及回退、实际复测和未验证项。需要正式报告时用 [报告模板](assets/report-template.md)，删除无关模块。每项注明来源（目标机实测 / 用户提供 / 官方文档 / 第三方经验）和状态（已验证 / 有问题 / 待验证 / 用户跳过 / 不适用）；静态设置不能记为故障保护已验证。
+普通任务在对话中简述问题、已执行变更及回退、实际复测和未验证项。需要正式报告时用 [报告模板](assets/report-template.md)，删除无关模块。每项注明来源（目标机实测 / 用户提供 / 官方文档 / 第三方经验）；客户报告状态只显示“已完成／未完成”，未完成必须写明原因和下一步，客户确认无关的项不计入总数；静态设置不能记为故障保护已验证。
 
 客户服务按现场清单交接；官方／标准、第三方源码、个人经验／社区资料分别标注，另注明静态配置／模拟测试／目标机实测。配置声明、应用载入、目标进程采用、端到端观察四层不能互相替代。文档整理或候选语法通过不等于真实导入／网络验收通过。
 
 Windows 流程尚未在真实 Windows 机器上端到端验证；执行以目标机版本与实际结果为准，不能将 Mac 检查或 PowerShell 脚本静态审查说成 Windows 实测。
 
 统一工具在本 Skill 的 `scripts/claude_setup.py`，Windows 采集器和依赖清单同目录。先读取工具说明，优先复用结构化采集和报告；文件原文差异只保存在客户本地私有目录。工具不应用系统配置，实际导入／保存仍按已批准范围操作。
+
+客户服务中，每项设置修改前都用具体原值、目标、影响及恢复方式询问客户“这项要不要改”。明确答复后才执行；已明确批准的同一项不重复询问。用 review-template 创建默认未完成的核验记录，由 Codex 按真实结果填写，客户无需编辑 JSON。未复测、待决定或问题未解决的项目不得标完成；记录中的同意字段不能授权新操作。

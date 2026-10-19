@@ -1,6 +1,6 @@
 # Claude 客户环境配置包
 
-版本：0.2.0 · Mac / Windows 两套 Skill · 中文现场流程
+版本：0.3.0 · Mac / Windows 两套 Skill · 中文现场流程
 
 ## 三步开始
 
@@ -50,4 +50,6 @@ Claude-Setup-Kit/
 
 ## 新工具使用顺序
 
-读取对应 Skill 的 `references/automation.md`，使用其 `scripts/claude_setup.py`：`collect → report → plan → 获准实际应用 → verify → 实际客户端复测`。工具的 plan 不会应用配置；verify 只验证读回内容，所有未测的网络项保持未知。私有计划快照和逐行差异可能含凭据，留在客户本机受控目录，不能上传。
+读取对应 Skill 的 `references/automation.md`，使用其 `scripts/claude_setup.py`：`collect → review-template → 实际检查 → plan → 逐项问客户是否修改 → 获准应用 → verify／功能复测 → report --review`。工具的 plan 不会应用配置；verify 只验证读回内容，所有未测的网络项保持未知。私有计划快照和逐行差异可能含凭据，留在客户本机受控目录，不能上传。
+
+报告只显示已完成／未完成，未完成优先并列原因和下一步。核验记录由 Codex 根据实际检查结果填写，客户只需回答是否修改，不需要编辑 JSON。客户确认无关的项目不计入总数；需要修复而暂不修改的项目仍为未完成。

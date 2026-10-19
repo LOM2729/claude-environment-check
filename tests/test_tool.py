@@ -292,7 +292,7 @@ class CollectionTests(Workspace):
         out=self.root/'reports';tool.render_report(data,out)
         page=(out/'report.html').read_text(encoding='utf-8');md=(out/'report.md').read_text(encoding='utf-8')
         self.assertNotIn(SECRET,page+md);self.assertNotIn('<script',page)
-        self.assertNotIn('src="http',page);self.assertIn('未执行',page)
+        self.assertNotIn('src="http',page);self.assertIn('未完成',page)
         self.assertIn('default-src',page);self.assertIn('不代表',md)
 
     def test_unknown_report_schema_and_target_rejected(self):
@@ -318,6 +318,139 @@ class CollectionTests(Workspace):
         self.assertIsNotNone(result['timezone'])
         self.assertIsNotNone(result['system_version'])
         self.assertEqual(set(result),set(tool.project_native({})))
+
+
+class CompletionReportTests(Workspace):
+    def sample(self):
+        with patch.object(tool.platform,'system',return_value='Linux'):
+            raw=tool.collect(target='sample-client')
+        raw['evidence']='synthetic_fixture'
+        raw['collected_at']=(tool.dt.datetime.now(tool.dt.timezone.utc)-tool.dt.timedelta(minutes=1)).isoformat()
+        digest=tool.sha(tool.encode(raw))
+        return raw,digest,tool.review_template(raw,digest)
+
+    def finish(self,item,change='none',decision='not_required'):
+        item.update(status='completed',change=change,decision=decision,verified=True,
+                    verified_at=tool.now(),evidence='已与客户确认目标并完成本项检查和复测。')
+
+    def test_collection_does_not_automatically_complete_tasks(self):
+        raw,digest,review=self.sample()
+        raw['native']=tool.project_native(CollectionTests.fake_native(self))
+        _,rows=tool.report_rows(raw)
+        self.assertEqual(len(rows),len(tool.REPORT_TASKS))
+        self.assertEqual({x['status'] for x in rows},{'未完成'})
+        self.assertTrue(all(x['reason'] and x['next_step'] for x in rows))
+
+    def test_completed_count_and_unfinished_first(self):
+        raw,digest,review=self.sample();self.finish(review['items'][0])
+        _,rows=tool.report_rows(raw,review,digest)
+        self.assertEqual(rows[-1]['id'],'system_time')
+        self.assertEqual(sum(r['status']=='已完成' for r in rows),1)
+        self.assertEqual({r['status'] for r in rows},{'已完成','未完成'})
+        out=self.root/'report';tool.render_report(raw,out,review,digest)
+        md=(out/'report.md').read_text(encoding='utf-8')
+        self.assertIn('已完成 1 项／共 14 项，未完成 13 项',md)
+        self.assertIn('| 检查项 | 状态 | 结果／未完成原因 | 下一步 |',md)
+
+    def test_unverified_completed_is_rejected(self):
+        raw,digest,review=self.sample();self.finish(review['items'][0]);review['items'][0]['verified']=False
+        with self.assertRaisesRegex(tool.SetupError,'COMPLETION_EVIDENCE_REQUIRED'):tool.report_rows(raw,review,digest)
+
+    def test_pending_or_declined_cannot_complete(self):
+        for decision in ['pending','declined']:
+            raw,digest,review=self.sample();self.finish(review['items'][0],decision=decision)
+            with self.subTest(decision=decision),self.assertRaisesRegex(tool.SetupError,'CUSTOMER_DECISION_UNRESOLVED'):tool.report_rows(raw,review,digest)
+
+    def test_applied_change_needs_recorded_approval(self):
+        raw,digest,review=self.sample();self.finish(review['items'][0],change='applied')
+        with self.assertRaisesRegex(tool.SetupError,'APPROVAL_REQUIRED'):tool.report_rows(raw,review,digest)
+        review['items'][0]['decision']='approved'
+        _,rows=tool.report_rows(raw,review,digest)
+        self.assertEqual(rows[-1]['status'],'已完成')
+
+    def test_incomplete_applied_change_also_needs_approval(self):
+        for decision in ['declined','pending','not_required']:
+            raw,digest,review=self.sample();review['items'][0].update(change='applied',decision=decision)
+            with self.subTest(decision=decision),self.assertRaisesRegex(tool.SetupError,'APPROVAL_REQUIRED'):tool.report_rows(raw,review,digest)
+
+    def test_declined_decision_is_visible_even_when_template_reason_retained(self):
+        raw,digest,review=self.sample();review['items'][0]['decision']='declined'
+        _,rows=tool.report_rows(raw,review,digest)
+        self.assertIn('客户选择暂不修改',rows[0]['reason'])
+
+    def test_applied_change_cannot_be_hidden_as_out_of_scope(self):
+        raw,digest,review=self.sample();review['items'][0].update(applicable=False,scope_confirmed=True,change='applied',decision='approved')
+        with self.assertRaisesRegex(tool.SetupError,'CHANGED_TASK_CANNOT_BE_EXCLUDED'):tool.report_rows(raw,review,digest)
+
+    def test_proposed_change_cannot_complete(self):
+        raw,digest,review=self.sample();self.finish(review['items'][0],change='proposed',decision='approved')
+        with self.assertRaisesRegex(tool.SetupError,'COMPLETION_EVIDENCE_REQUIRED'):tool.report_rows(raw,review,digest)
+
+    def test_not_applicable_requires_confirmed_scope_and_is_not_a_third_status(self):
+        raw,digest,review=self.sample();item=review['items'][-1]
+        item.update(applicable=False,reason='客户确认本次不包含故障演练。')
+        with self.assertRaisesRegex(tool.SetupError,'SCOPE_CONFIRMATION_REQUIRED'):tool.report_rows(raw,review,digest)
+        item['scope_confirmed']=True
+        data,rows=tool.report_rows(raw,review,digest)
+        self.assertEqual(len(rows),13);self.assertEqual(len(data['excluded']),1)
+        self.assertEqual({x['status'] for x in rows},{'未完成'})
+
+    def test_all_excluded_does_not_invent_success_rate(self):
+        raw,digest,review=self.sample()
+        for item in review['items']:item.update(applicable=False,scope_confirmed=True,reason='客户确认本次仅阅读说明，不执行检查。')
+        out=self.root/'empty';tool.render_report(raw,out,review,digest)
+        md=(out/'report.md').read_text(encoding='utf-8')
+        self.assertIn('已完成 0 项／共 0 项，未完成 0 项',md);self.assertNotIn('100%',md)
+
+    def test_missing_review_items_stay_incomplete(self):
+        raw,digest,review=self.sample();review['items']=[]
+        _,rows=tool.report_rows(raw,review,digest)
+        self.assertEqual(len(rows),14);self.assertTrue(all(x['status']=='未完成' for x in rows))
+
+    def test_stale_collection_or_wrong_target_rejected(self):
+        raw,digest,review=self.sample()
+        with self.assertRaisesRegex(tool.SetupError,'COLLECTION_MISMATCH'):tool.report_rows(raw,review,'0'*64)
+        review['target_alias']='different'
+        with self.assertRaisesRegex(tool.SetupError,'TARGET_MISMATCH'):tool.report_rows(raw,review,digest)
+
+    def test_duplicate_ids_and_third_status_rejected(self):
+        raw,digest,review=self.sample();review['items'][1]=review['items'][0].copy()
+        with self.assertRaisesRegex(tool.SetupError,'DUPLICATE_TASK'):tool.report_rows(raw,review,digest)
+        raw,digest,review=self.sample();review['items'][0]['status']='skipped'
+        with self.assertRaisesRegex(tool.SetupError,'BINARY_STATUS_REQUIRED'):tool.report_rows(raw,review,digest)
+
+    def test_reason_and_next_step_are_mandatory(self):
+        for field in ['reason','next_step']:
+            raw,digest,review=self.sample();review['items'][0][field]=''
+            with self.subTest(field=field),self.assertRaisesRegex(tool.SetupError,'NOTE_REQUIRED'):tool.report_rows(raw,review,digest)
+
+    def test_completion_requires_evidence_and_current_time(self):
+        raw,digest,review=self.sample();self.finish(review['items'][0]);review['items'][0]['evidence']=''
+        with self.assertRaisesRegex(tool.SetupError,'NOTE_REQUIRED'):tool.report_rows(raw,review,digest)
+        self.finish(review['items'][0]);review['items'][0]['verified_at']='2020-01-01T00:00:00+00:00'
+        with self.assertRaisesRegex(tool.SetupError,'VERIFICATION_TIME'):tool.report_rows(raw,review,digest)
+
+    def test_private_notes_rejected_and_html_escaped(self):
+        raw,digest,review=self.sample();review['items'][0]['reason']='password=do-not-include'
+        with self.assertRaisesRegex(tool.SetupError,'NEEDS_REDACTION'):tool.report_rows(raw,review,digest)
+        review['items'][0]['reason']='出口为 2001:db8::1'
+        with self.assertRaisesRegex(tool.SetupError,'NEEDS_REDACTION'):tool.report_rows(raw,review,digest)
+        review['items'][0]['reason']='<script>alert(1)</script> 尚未修改'
+        out=self.root/'escaped';tool.render_report(raw,out,review,digest)
+        page=(out/'report.html').read_text(encoding='utf-8')
+        self.assertNotIn('<script>',page);self.assertIn('&lt;script&gt;',page)
+
+    def test_cli_template_and_review_report(self):
+        raw,_,_=self.sample();source=self.file('collection.json',tool.encode(raw));reviewfile=self.root/'review.json'
+        with contextlib.redirect_stdout(io.StringIO()):
+            code=tool.main(['review-template','--input',str(source),'--output',str(reviewfile)])
+        self.assertEqual(code,0)
+        review=json.loads(reviewfile.read_text(encoding='utf-8'));self.finish(review['items'][1])
+        reviewfile.write_bytes(tool.encode(review))
+        with contextlib.redirect_stdout(io.StringIO()):
+            code=tool.main(['report','--input',str(source),'--review',str(reviewfile),'--out',str(self.root/'rendered')])
+        self.assertEqual(code,0)
+        self.assertIn('已完成 1 项',(self.root/'rendered/report.md').read_text(encoding='utf-8'))
 
 
 if __name__=='__main__':unittest.main()

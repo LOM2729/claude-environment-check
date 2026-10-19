@@ -27,7 +27,7 @@ RULE_TYPES = {'DOMAIN', 'DOMAIN-SUFFIX', 'DOMAIN-KEYWORD', 'IP-CIDR', 'IP-CIDR6'
               'IP-ASN', 'GEOIP', 'GEOSITE', 'RULE-SET', 'PROCESS-NAME', 'PROCESS-PATH',
               'DST-PORT', 'SRC-PORT', 'NETWORK', 'AND', 'OR', 'NOT', 'MATCH', 'FINAL'}
 BUILTINS = {'DIRECT', 'REJECT', 'REJECT-DROP', 'PASS', 'COMPATIBLE', 'GLOBAL'}
-CONFIG_KEYS = {'kind', 'proxy_count', 'group_count', 'rule_count', 'unknown_references',
+CONFIG_KEYS = {'kind', 'proxy_count', 'group_count', 'rule_count', 'external_rule_source_count', 'unknown_references',
                'duplicate_names', 'cyclic_groups', 'rules_after_catchall',
                'unsupported_rule_count', 'scripts_present', 'rewrite_present', 'mitm_present', 'tls_verification_disabled',
                'dns_enabled', 'dns_ipv6', 'tun_enabled', 'mode', 'parse_status'}
@@ -433,7 +433,7 @@ def config_summary(data, fmt):
         return memo[name]
     for name in edges:
         cyclic += int(visit(name, set()))
-    after = unsupported = 0
+    after = unsupported = external_sources = 0
     catchall = False
     for line in rules:
         require(isinstance(line, str), 'RULE_STRING_REQUIRED')
@@ -447,10 +447,13 @@ def config_summary(data, fmt):
         action = parts[-2] if parts[-1].lower() == 'no-resolve' else parts[-1]
         unknown += action not in known
         if parts[0].upper() == 'RULE-SET':
-            unknown += parts[1] not in rule_provider_names
+            if fmt == 'shadowrocket':
+                external_sources += 1
+            else:
+                unknown += parts[1] not in rule_provider_names
         catchall = catchall or parts[0].upper() in ('MATCH', 'FINAL')
     return {'kind': kind, 'parse_status': 'parsed_not_core_validated', 'proxy_count': len(proxies),
-            'group_count': len(raw_groups), 'rule_count': len(rules), 'unknown_references': unknown,
+            'group_count': len(raw_groups), 'rule_count': len(rules), 'external_rule_source_count': external_sources, 'unknown_references': unknown,
             'duplicate_names': len(names) - len(set(names)), 'cyclic_groups': cyclic,
             'rules_after_catchall': after, 'unsupported_rule_count': unsupported,
             'scripts_present': scripts, 'rewrite_present': rewrites, 'mitm_present': mitm, 'tls_verification_disabled': tls_disabled,
@@ -547,7 +550,7 @@ def report_rows(raw):
               'dns_v4_count':'IPv4 DNS条目数', 'dns_v6_count':'IPv6 DNS条目数',
               'ipv4_interface_count':'IPv4地址／接口条目', 'ipv6_interface_count':'IPv6地址／接口条目',
               'tunnel_interface_count':'隧道接口数', 'proxy_count':'节点数', 'group_count':'策略组数',
-              'rule_count':'规则数', 'unknown_references':'待核对引用数', 'duplicate_names':'重复名称数',
+              'rule_count':'规则数', 'external_rule_source_count':'未读取的外部规则来源数', 'unknown_references':'待核对引用数', 'duplicate_names':'重复名称数',
               'cyclic_groups':'涉及循环的组数', 'rules_after_catchall':'兜底后规则数',
               'unsupported_rule_count':'未支持的规则数', 'scripts_present':'脚本配置存在',
               'rewrite_present':'内容改写配置存在', 'mitm_present':'MITM配置存在',

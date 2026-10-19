@@ -58,7 +58,7 @@ def validate():
             assert (ROOT / 'src' / name).read_bytes() == (skill / 'scripts' / name).read_bytes(), 'out-of-sync tools'
         assert (ROOT / 'requirements.txt').read_bytes() == (skill / 'scripts/requirements.txt').read_bytes()
         import yaml
-        header = (skill / 'SKILL.md').read_text().split('---', 2)[1]
+        header = (skill / 'SKILL.md').read_text(encoding='utf-8').split('---', 2)[1]
         meta = yaml.safe_load(header)
         assert meta['name'] == f'claude-{system}-readiness' and isinstance(meta['description'], str)
     return allowed
@@ -67,7 +67,7 @@ def validate():
 def build():
     synchronize()
     allowed = validate()
-    version = (ROOT / 'VERSION').read_text().strip()
+    version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
     dist = ROOT / 'dist'
     dist.mkdir(exist_ok=True)
     archive = dist / 'Claude-Setup-Kit.zip'

@@ -138,6 +138,19 @@ class ConfigTests(Workspace):
         self.assertEqual(result['unknown_references'],0)
         self.assertEqual(result['group_count'],1)
 
+    def test_shadowrocket_external_rule_is_not_clash_provider(self):
+        data = b'[Rule]\nRULE-SET,https://example.test/rules.list,DIRECT\nFINAL,DIRECT\n'
+        result = tool.config_summary(data,'shadowrocket')
+        self.assertEqual(result['unknown_references'],0)
+        self.assertEqual(result['external_rule_source_count'],1)
+
+    def test_unicode_names_in_configuration(self):
+        obj = {'proxies':[{'name':'客户节点','type':'http'}],'proxy-groups':[{'name':'Claude专用','proxies':['客户节点']}],'rules':['MATCH,Claude专用']}
+        data = json.dumps(obj,ensure_ascii=False).encode('utf-8')
+        result=tool.config_summary(data,'json')
+        self.assertEqual(result['unknown_references'],0)
+        self.assertNotIn('客户节点',json.dumps(result,ensure_ascii=False))
+
     def test_extension_is_labeled(self):
         result = tool.config_summary(b'prepend: ["DOMAIN,claude.ai,DIRECT"]\nappend: []\ndelete: []\n','yaml')
         self.assertEqual(result['kind'],'rules_extension')
@@ -197,7 +210,7 @@ class PlanTests(Workspace):
 
     def test_formatting_changes_require_review(self):
         current,candidate,out,_=self.plan()
-        current.write_text(json.dumps(json.loads(candidate.read_text())))
+        current.write_text(json.dumps(json.loads(candidate.read_text(encoding='utf-8'))))
         self.assertEqual(tool.verify_readback(out,current)['status'],'formatting_or_comments_changed_review_required')
 
     def test_shadowrocket_readback(self):
@@ -277,7 +290,7 @@ class CollectionTests(Workspace):
         with patch.object(tool.platform,'system',return_value='Windows'),patch.object(tool,'windows_native',return_value=tool.project_native(self.fake_native())):data=tool.collect()
         data['password']=SECRET;data['native']['extra']=SECRET
         out=self.root/'reports';tool.render_report(data,out)
-        page=(out/'report.html').read_text();md=(out/'report.md').read_text()
+        page=(out/'report.html').read_text(encoding='utf-8');md=(out/'report.md').read_text(encoding='utf-8')
         self.assertNotIn(SECRET,page+md);self.assertNotIn('<script',page)
         self.assertNotIn('src="http',page);self.assertIn('未执行',page)
         self.assertIn('default-src',page);self.assertIn('不代表',md)
@@ -290,7 +303,7 @@ class CollectionTests(Workspace):
         with patch.object(tool.platform,'system',return_value='Linux'): data=tool.collect()
         data['evidence']='synthetic_fixture'
         out=self.root/'example';tool.render_report(data,out)
-        self.assertIn('合成示例（非设备实测）',(out/'report.md').read_text())
+        self.assertIn('合成示例（非设备实测）',(out/'report.md').read_text(encoding='utf-8'))
 
     def test_cli_errors_do_not_echo_private_input(self):
         p=self.file('private.json','{'+SECRET)

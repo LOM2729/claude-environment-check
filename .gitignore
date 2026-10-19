@@ -1,0 +1,11 @@
+dist/
+.private/
+outputs/
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+客户配置/*
+!客户配置/放置说明.txt
+交付记录/*
+!交付记录/记录说明.txt

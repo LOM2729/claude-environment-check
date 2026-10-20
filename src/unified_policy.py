@@ -55,6 +55,10 @@ def direct_decisions(c, original, fmt, review=None):
     for rule in original.get(rulekey, []):
         if ai.target(rule).upper() != 'DIRECT':
             continue
+        if rule in ('RULE-SET,KIT-CN-VIDEO,DIRECT', 'RULE-SET,KIT-CN-DOMAINS,DIRECT'):
+            import domestic_policy
+            if domestic_policy.managed_rule(original, rule):
+                continue
         parts = [x.strip() for x in rule.split(',')]
         domestic = len(parts) > 2 and parts[0].upper() in ('GEOIP', 'GEOSITE') and parts[1].lower() == 'cn'
         local = False

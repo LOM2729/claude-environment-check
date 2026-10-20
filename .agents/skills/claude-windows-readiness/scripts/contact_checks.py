@@ -60,6 +60,13 @@ def scan(c, config, fmt='auto'):
             for provider in providers.values():
                 if not isinstance(provider, dict):
                     add('外部资源格式未知', unknown=True); continue
+                if (section == 'rule-providers' and provider.get('type') == 'inline'
+                        and provider.get('behavior') == 'domain'
+                        and set(provider) == {'type', 'behavior', 'payload'}
+                        and isinstance(provider.get('payload'), list)
+                        and all(isinstance(s, str) and re.fullmatch(r'(?:\+\.)?[a-z0-9_-]+(?:\.[a-z0-9_-]+)*', s) for s in provider['payload'])):
+                    # Domain patterns are data; this bounded inline provider cannot download or run code.
+                    continue
                 if provider.get('url'): add('订阅或规则资源下载', provider['url'])
                 # Remote/cached content is a separate input and may contain new hosts/options.
                 add('未读取的 provider 内容需物化并审阅', unknown=True)

@@ -1,0 +1,44 @@
+{
+  "revision": "d13b14cc2288dd4c61adcc77a90dc2f82ac5316f",
+  "source": "https://github.com/MetaCubeX/meta-rules-dat",
+  "license": "GPL-3.0",
+  "video_scope": [
+    "bilibili",
+    "douyin",
+    "iqiyi",
+    "youku"
+  ],
+  "video_selection": "Selected first-party service/CDN entries; excludes broad shared suffixes, overseas variants, games and comics. Not exhaustive.",
+  "files": {
+    "domestic_cn.list": {
+      "sha256": "674705eeb0050036f8855586993bc6fe81fe6e1be56d77cea4b6289c14580c84",
+      "entries": 110446
+    },
+    "domestic_video.list": {
+      "sha256": "238eac03d7222e678ca42f547cb08cb9532c56d00775c7354fa598b57e1ae7df",
+      "entries": 26
+    }
+  },
+  "upstream_files": {
+    "cn": {
+      "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d13b14cc2288dd4c61adcc77a90dc2f82ac5316f/geo/geosite/cn.list",
+      "sha256": "674705eeb0050036f8855586993bc6fe81fe6e1be56d77cea4b6289c14580c84"
+    },
+    "bilibili": {
+      "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d13b14cc2288dd4c61adcc77a90dc2f82ac5316f/geo/geosite/bilibili.list",
+      "sha256": "d1d76d33c08b2bfaea6b1f661c87eeb2064f6ebd7c5dbe8e1f2bb8ab5b4acc98"
+    },
+    "douyin": {
+      "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d13b14cc2288dd4c61adcc77a90dc2f82ac5316f/geo/geosite/douyin.list",
+      "sha256": "b3cf1b6906d1f45454599955e681d4980d7434411f1d976d37550eefb6c9066d"
+    },
+    "iqiyi": {
+      "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d13b14cc2288dd4c61adcc77a90dc2f82ac5316f/geo/geosite/iqiyi.list",
+      "sha256": "35e8445d1ef99470d25c6ab535b7d101dc87b0a4c905a48daf6ba116528e4c3f"
+    },
+    "youku": {
+      "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d13b14cc2288dd4c61adcc77a90dc2f82ac5316f/geo/geosite/youku.list",
+      "sha256": "78232642b3df18f6c51ab07828c84824a179b74ee9c6d4022e9823f29b03459f"
+    }
+  }
+}

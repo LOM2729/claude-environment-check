@@ -41,3 +41,5 @@ IPv6 分为选定系统接口、代理核心、DNS 和节点外层，不能用�
 没有常驻后台监控、系统 Kill Switch 或账号防封保证。官方资料、源码参考与个人经验分开，见 [来源说明](.agents/skills/claude-mac-readiness/references/evidence-sources.md)。
 
 需要重启代理客户端/核心/服务或机器时，由客户手动操作；可能中断当前 Codex/远控通道的网络动作或影响不明的重载也交给客户。先保存进度和离线恢复说明，等待客户恢复连接后重新核验，不能自行断开通道；集中批准不替代人工交接。
+
+自动配置默认先核对全局 UDP 限制所在层，再采用国内视频例外：AI 保护最先、国内视频直连、其余 UDP 拒绝、普通国内域名直连、国外统一代理。Mihomo 使用 domestic-v4；具体按对应 Skill 的 references/domestic-video-udp.md，不全局放开 UDP。

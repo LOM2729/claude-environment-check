@@ -134,8 +134,10 @@ def save_report(c, output, kind, rows, extra=None, private=None, create=True):
 def create_baseline(c, config, fmt, original, node, group, executable, browser, output, policy='ai-only', direct_review=None):
     fmt = c.config_format(config, fmt)
     current, before = c.read_bytes(config), c.read_bytes(original)
-    if policy == 'unified-v4':
+    if policy in ('domestic-v4', 'unified-v4'):
+        import domestic_policy
         import unified_policy
+        unified_policy = domestic_policy if policy == 'domestic-v4' else unified_policy
         audit = unified_policy.audit(c, before, current, fmt, node, group, direct_review)
     else:
         audit = ai_routing.audit(c, before, current, fmt, node, group)
@@ -188,8 +190,10 @@ def recheck(c, baseline, config, executable, browser=None):
                      '核对运行中配置及订阅更新持久化。' if same else '用原基线与当前文件生成私有差异；确认新增修改后建立新基线。'))
     try:
         c.require(now is not None, 'CURRENT_CONFIG_UNAVAILABLE')
-        if saved.get('policy', 'ai-only') == 'unified-v4':
+        if saved.get('policy', 'ai-only') in ('domestic-v4', 'unified-v4'):
+            import domestic_policy
             import unified_policy
+            unified_policy = domestic_policy if saved['policy'] == 'domestic-v4' else unified_policy
             audit = unified_policy.audit(c, original, now, saved['format'], saved['node'], saved['group'], saved.get('direct_review'))
         else:
             audit = ai_routing.audit(c, original, now, saved['format'], saved['node'], saved['group'])

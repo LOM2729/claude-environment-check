@@ -13,6 +13,8 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 需要重启代理客户端/核心/服务或机器时，由客户手动操作；可能中断当前 Codex/远控通道的网络动作或影响不明的重载也交给客户。先保存进度和离线恢复说明，等待客户恢复连接后重新核验，不能自行断开通道；集中批准不替代人工交接。 见 [五步流程](references/five-step-setup.md#客户手动重启与恢复)。
 
+自动配置现默认读取 [国内视频 UDP 与国内域名](references/domestic-video-udp.md)，Mihomo 使用 domestic-v4；先 udp-check 和系统/应用层核对，AI 优先、视频直连、其余 UDP 拒绝、普通国内域名直连。小火箭新策略需另适配验收。
+
 ## 选择范围
 
 从请求与上下文确定目标设备、Windows 版本、客户端、代理和现象，只询问影响结果且无法读取的缺失信息。Claude Code 必须区分 Windows 原生与实际使用的 WSL 发行版；两边的 PATH、认证、代理和 DNS 不能互相证明。

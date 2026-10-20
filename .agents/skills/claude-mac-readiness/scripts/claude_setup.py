@@ -19,8 +19,8 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.7.1'
-MAX_FILE = 2 * 1024 * 1024
+VERSION = '0.8.0'
+MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
             'ALL_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy')
@@ -269,7 +269,7 @@ def reject_nonfinite(value, depth=0, budget=None):
     """Keep parse complexity bounded and canonicalization deterministic."""
     budget = [0] if budget is None else budget
     budget[0] += 1
-    require(depth <= 40 and budget[0] <= 50000, 'CONFIG_TOO_COMPLEX')
+    require(depth <= 40 and budget[0] <= 250000, 'CONFIG_TOO_COMPLEX')
     if isinstance(value, dict):
         for key, child in value.items():
             require(isinstance(key, str), 'STRING_KEYS_REQUIRED')
@@ -852,7 +852,7 @@ def main(argv=None):
         a.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
         a.add_argument('--node', required=True, help='Existing concrete proxy name, not a selector or DIRECT')
         a.add_argument('--group', default='AI-ONLY')
-        a.add_argument('--policy', choices=('unified-v4', 'ai-only'), default='unified-v4')
+        a.add_argument('--policy', choices=('domestic-v4', 'unified-v4', 'ai-only'), default='domestic-v4')
         a.add_argument('--direct-review')
         if name == 'ai-route':
             a.add_argument('--out', required=True)
@@ -890,7 +890,7 @@ def main(argv=None):
             lc.add_argument('--ai-original', required=True)
             lc.add_argument('--node', required=True)
             lc.add_argument('--group', default='AI-ONLY')
-            lc.add_argument('--policy', choices=('unified-v4', 'ai-only'), default='unified-v4')
+            lc.add_argument('--policy', choices=('domestic-v4', 'unified-v4', 'ai-only'), default='domestic-v4')
             lc.add_argument('--direct-review')
             lc.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
         else:
@@ -919,6 +919,10 @@ def main(argv=None):
     iv = sub.add_parser('ipv6-check', help='Read back IPv6 on exact selected outbound interfaces')
     iv.add_argument('--interface', action='append', required=True)
     iv.add_argument('--out', required=True)
+    uc = sub.add_parser('udp-check', help='Offline UDP restriction inventory; host verification remains required')
+    uc.add_argument('--config', required=True)
+    uc.add_argument('--format', default='auto', choices=('auto', 'json', 'yaml', 'shadowrocket'))
+    uc.add_argument('--out', required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == 'direct-review':
@@ -927,12 +931,15 @@ def main(argv=None):
             value = unified_policy.direct_template(context, args.config, args.format)
             write_new(args.output, encode(value))
             result = {'status': 'private_direct_review_written', 'pending_rules': len(value['entries'])}
-        elif args.command in ('contact-scan', 'action-check', 'ipv6-check'):
+        elif args.command in ('contact-scan', 'action-check', 'ipv6-check', 'udp-check'):
             import contact_checks
             import ipv6_scope
             import readiness_lifecycle as lifecycle
             context = SimpleNamespace(**globals())
-            if args.command == 'contact-scan':
+            if args.command == 'udp-check':
+                import domestic_policy
+                rows, private = domestic_policy.udp_check(context, args.config, args.format)
+            elif args.command == 'contact-scan':
                 rows, private = contact_checks.scan(context, args.config, args.format)
             elif args.command == 'action-check':
                 rows, private = contact_checks.gate(context, args.action, args.config, args.format, args.dns_ready, args.proxy, args.browser_preferences)
@@ -973,8 +980,9 @@ def main(argv=None):
             import ai_routing
             context = SimpleNamespace(**globals())
             import unified_policy
-            routing = unified_policy if args.policy == 'unified-v4' else ai_routing
-            route_options = {'direct_review': load_json(read_bytes(args.direct_review)) if args.direct_review else None} if args.policy == 'unified-v4' else {}
+            import domestic_policy
+            routing = {'domestic-v4': domestic_policy, 'unified-v4': unified_policy, 'ai-only': ai_routing}[args.policy]
+            route_options = {'direct_review': load_json(read_bytes(args.direct_review)) if args.direct_review else None} if args.policy in ('domestic-v4', 'unified-v4') else {}
             if args.command == 'ai-route':
                 result = routing.prepare(context, args.config, args.format, args.node, args.out, args.group, **route_options)
             else:
@@ -1002,7 +1010,7 @@ def main(argv=None):
             if args.output:
                 write_new(args.output, encode(result))
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-        if args.command in ('network-check', 'recheck', 'preflight', 'contact-scan', 'action-check', 'ipv6-check') and not result['required_checks_completed']:
+        if args.command in ('network-check', 'recheck', 'preflight', 'contact-scan', 'action-check', 'ipv6-check', 'udp-check') and not result['required_checks_completed']:
             return 2
         if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
             return 2

@@ -43,7 +43,7 @@ def main():
         binary.chmod(0o700)
         subprocess.run([str(binary), '-v'], check=True, timeout=10)
         result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests',
-                                 '-p', 'test_mihomo_loopback.py', '-v'],
+                                 '-p', 'test*loopback.py', '-v'],
                                 cwd=Path(__file__).resolve().parents[1],
                                 env=dict(os.environ, MIHOMO_BINARY=str(binary)), timeout=90)
         return result.returncode

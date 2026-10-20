@@ -73,9 +73,6 @@ class DomesticPolicy(unittest.TestCase):
             rows,_=d.udp_check(c,candidate,'json')
             self.assertTrue(any(row['status']=='未完成' for row in rows))
 
-    def test_shadowrocket_requires_separate_adaptation(self):
-        with self.assertRaisesRegex(c.SetupError,'REQUIRES_MIHOMO'):
-            d.build_semantics(c,{},'shadowrocket','Node',ai.GROUP)
 
     def test_explicit_domestic_proxy_decision_cannot_be_overridden(self):
         obj=copy.deepcopy(BASE);rule='DOMAIN,baidu.com,DIRECT';obj['rules'].insert(-1,rule)

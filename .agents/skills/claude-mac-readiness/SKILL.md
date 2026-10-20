@@ -13,7 +13,7 @@ description: Prepare and troubleshoot Claude environments on macOS, including up
 
 需要重启代理客户端/核心/服务或机器时，由客户手动操作；可能中断当前 Codex/远控通道的网络动作或影响不明的重载也交给客户。先保存进度和离线恢复说明，等待客户恢复连接后重新核验，不能自行断开通道；集中批准不替代人工交接。 见 [五步流程](references/five-step-setup.md#客户手动重启与恢复)。
 
-自动配置现默认读取 [国内视频 UDP 与国内域名](references/domestic-video-udp.md)，Mihomo 使用 domestic-v4；先 udp-check 和系统/应用层核对，AI 优先、视频直连、其余 UDP 拒绝、普通国内域名直连。小火箭新策略需另适配验收。
+自动配置现默认读取 [国内视频 UDP 与国内域名](references/domestic-video-udp.md)，Mihomo 使用 domestic-v4；先 udp-check 和系统/应用层核对，AI 优先、视频直连、其余 UDP 拒绝、普通国内域名直连。小火箭使用同一 domestic-v4 策略生成原生 .conf，按 [小火箭适配](references/shadowrocket-domestic.md) 由 Codex 完成导入和读回。
 
 ## 选择范围
 

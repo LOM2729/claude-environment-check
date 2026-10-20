@@ -1,6 +1,6 @@
 # 国内视频 UDP 例外与国内域名
 
-自动配置默认 `domestic-v4`，适用于 Mac/Windows 的 Mihomo 内核客户端；旧 `unified-v4` 和 `ai-only` 保留兼容。小火箭不能直接导入 Mihomo inline provider：新策略生成器拒绝该格式，需另行适配与真机验证，不能降级成全 UDP 直连或报告已完成。
+自动配置默认 `domestic-v4`，适用于 Mac/Windows 的 Mihomo 内核客户端；旧 `unified-v4` 和 `ai-only` 保留兼容。小火箭使用同一策略的原生 .conf 适配，由 Codex 自动展开规则、导入与读回，详见 [小火箭适配](shadowrocket-domestic.md)。Windows 可以生成文件，实际应用验收须在目标 Apple 设备进行。
 
 ## 先检查 UDP 禁用位置
 
@@ -30,7 +30,7 @@
 
 采用 [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat) 固定提交 `d13b14cc2288dd4c61adcc77a90dc2f82ac5316f` 的 `cn.list` 国内域名快照，110445 条。视频白名单从同版本 bilibili/douyin/iqiyi/youku 列表筛选服务和 CDN 域名，排除游戏、漫画、海外变体和宽泛共享 CDN 后缀；当前覆盖哔哩哔哩、抖音、爱奇艺、优酷的选定域名，非完整播放保证。腾讯视频等其他平台先补准确来源和验证，不默认包含。
 
-数据来源/上游和本包 SHA256 记录在 Skill 的 `scripts/domestic_sources.json`，再分发数据许可证为 `scripts/DOMESTIC-DATA-LICENSE.txt`（GPL-3.0）；原工具许可证不因此改写。快照本地随包分发，配置采用 Mihomo inline domain provider，没有新增运行时规则下载。来源维护不等于本包实时更新：更新名单需重新取证、差异审核、跑顺序/代理失败测试并发布新包，不原地刷新未知名单。
+数据来源/上游和本包 SHA256 记录在 Skill 的 `scripts/domestic_sources.json`，再分发数据许可证为 `scripts/DOMESTIC-DATA-LICENSE.txt`（GPL-3.0）；原工具许可证不因此改写。快照本地随包分发，Mihomo 配置采用 inline domain provider，小火箭展开为原生 DOMAIN/DOMAIN-SUFFIX；两者均无新增运行时规则下载。来源维护不等于本包实时更新：更新名单需重新取证、差异审核、跑顺序/代理失败测试并发布新包，不原地刷新未知名单。
 
 规则机制依据：[Mihomo 路由规则](https://wiki.metacubex.one/config/rules/)、[inline rule provider](https://wiki.metacubex.one/config/rule-providers/)。平台域名分类来自第三方数据；实际播放和路径结论只能来自客户机实测。
 

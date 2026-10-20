@@ -39,6 +39,9 @@ def managed_rule(obj, rule):
 
 
 def build_semantics(c, original, fmt, node, group, direct_review=None):
+    if fmt == 'shadowrocket':
+        import shadow_domestic
+        return shadow_domestic.build(c, original, node, group, direct_review)
     c.require(fmt in ('json', 'yaml'), 'DOMESTIC_REQUIRES_MIHOMO_JSON_OR_YAML')
     unknown, decisions = unified.direct_decisions(c, original, fmt, direct_review)
     c.require(not unknown or bool(decisions), 'UNIFIED_DIRECT_REVIEW_REQUIRED')
@@ -104,12 +107,16 @@ def prepare(c, current, fmt, node, output, group=ai.GROUP, direct_review=None):
     baseline = c.read_bytes(current)
     fmt = c.config_format(current, fmt)
     expected = build_semantics(c, c.parse_config(baseline, fmt), fmt, node, group, direct_review)
-    candidate = c.encode(expected) if fmt == 'json' else unified.render_yaml(c, c.decode(baseline), expected).encode()
+    if fmt == 'json':
+        candidate = c.encode(expected)
+    else:
+        render = unified.render_shadow if fmt == 'shadowrocket' else unified.render_yaml
+        candidate = render(c, c.decode(baseline), expected).encode()
     c.require(len(candidate) <= c.MAX_FILE, 'INPUT_TOO_LARGE')
     review = audit(c, baseline, candidate, fmt, node, group, direct_review)
     c.new_dir(output)
     folder = Path(output)
-    path = folder / ('candidate.' + fmt)
+    path = folder / ('candidate.' + ('conf' if fmt == 'shadowrocket' else fmt))
     c.write_new(path, candidate)
     if candidate != baseline:
         c.prepare_plan(current, path, fmt, folder / 'plan')

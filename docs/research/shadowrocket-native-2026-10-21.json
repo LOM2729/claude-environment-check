@@ -1,0 +1,13 @@
+{
+  "client_version": "2.2.92",
+  "build": "3445",
+  "native_import": true,
+  "native_compile_success": true,
+  "native_export_semantically_matches": true,
+  "rules": 110554,
+  "candidate_sha256": "7ed739bbd3a47d2e33785cf3def42de7afafb9f0e541cf8a7b05eb6faac7b3f3",
+  "export_sha256": "2d731bb0d4f927d5102f9f48405e515bd5148a6e8b9fca13c14791470f4b72b9",
+  "active_profile_changed": false,
+  "runtime_udp_tcp_verified": false,
+  "synthetic_loopback_node_only": true
+}

@@ -52,7 +52,13 @@ def replace_target(rule, target):
 def direct_decisions(c, original, fmt, review=None):
     rulekey = 'rule' if fmt == 'shadowrocket' else 'rules'
     unknown = []
-    for rule in original.get(rulekey, []):
+    managed = None
+    if fmt == 'shadowrocket':
+        import shadow_domestic
+        managed = shadow_domestic.managed_span(c, original)
+    for index, rule in enumerate(original.get(rulekey, [])):
+        if managed and managed[0] <= index < managed[1]:
+            continue
         if ai.target(rule).upper() != 'DIRECT':
             continue
         if rule in ('RULE-SET,KIT-CN-VIDEO,DIRECT', 'RULE-SET,KIT-CN-DOMAINS,DIRECT'):

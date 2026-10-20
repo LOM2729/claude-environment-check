@@ -1,6 +1,6 @@
 # 五步自动配置：客户只做选择，Codex 负责执行
 
-**v0.8 顺序补充优先适用：** 自动模式采用 [国内视频 UDP 与国内域名](domestic-video-udp.md) 的 domestic-v4。先检查全局 UDP 限制层级；AI 保护优先，视频直连在其余 UDP 拒绝前，普通国内域名在拒绝后。旧 unified-v4 示例仅兼容旧策略；本轮 ai-route / ai-audit / baseline 明确使用 --policy domestic-v4。小火箭不可直接套用此 Mihomo 配置。
+**v0.8 顺序补充优先适用：** 自动模式采用 [国内视频 UDP 与国内域名](domestic-video-udp.md) 的 domestic-v4。先检查全局 UDP 限制层级；AI 保护优先，视频直连在其余 UDP 拒绝前，普通国内域名在拒绝后。旧 unified-v4 示例仅兼容旧策略；本轮 ai-route / ai-audit / baseline 明确使用 --policy domestic-v4。小火箭由同一策略生成原生 .conf，按 [小火箭适配](shadowrocket-domestic.md) 导入与读回，不套用 Mihomo 文件格式。
 
 本文件是自动配置的顺序入口，优先于旧参考中的章节排列。默认目标：**国内及已确认的本地例外直连；普通国外与 Claude/OpenAI 共用一个指定节点；关闭选定联网接口及代理层的 IPv6；系统显示语言不改。** 具体策略见 [统一出口与 IPv4](unified-ipv4.md)。报告只用已完成/未完成。
 

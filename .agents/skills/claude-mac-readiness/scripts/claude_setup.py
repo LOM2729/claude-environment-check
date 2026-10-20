@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.6.1'
+VERSION = '0.7.0'
 MAX_FILE = 2 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -852,6 +852,8 @@ def main(argv=None):
         a.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
         a.add_argument('--node', required=True, help='Existing concrete proxy name, not a selector or DIRECT')
         a.add_argument('--group', default='AI-ONLY')
+        a.add_argument('--policy', choices=('unified-v4', 'ai-only'), default='unified-v4')
+        a.add_argument('--direct-review')
         if name == 'ai-route':
             a.add_argument('--out', required=True)
         else:
@@ -871,6 +873,7 @@ def main(argv=None):
     dr = sub.add_parser('dns-ready', help='Record already performed DNS/path checks; no network')
     dr.add_argument('--config', required=True)
     dr.add_argument('--proxy', required=True)
+    dr.add_argument('--ipv6-interface', action='append', required=True)
     dr.add_argument('--browser-preferences')
     dr.add_argument('--output', required=True)
     dr.add_argument('--readback-verified', action='store_true')
@@ -887,6 +890,8 @@ def main(argv=None):
             lc.add_argument('--ai-original', required=True)
             lc.add_argument('--node', required=True)
             lc.add_argument('--group', default='AI-ONLY')
+            lc.add_argument('--policy', choices=('unified-v4', 'ai-only'), default='unified-v4')
+            lc.add_argument('--direct-review')
             lc.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
         else:
             lc.add_argument('--baseline', required=True)
@@ -895,16 +900,53 @@ def main(argv=None):
             lc.add_argument('--dns-ready')
             lc.add_argument('--allow-network', action='store_true')
             lc.add_argument('--launch', action='store_true', help='Request launch only if fresh required checks pass')
+    drt = sub.add_parser('direct-review', help='Prepare private classification of non-obvious DIRECT rules')
+    drt.add_argument('--config', required=True)
+    drt.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
+    drt.add_argument('--output', required=True)
+    cs = sub.add_parser('contact-scan', help='Offline implicit-request scan before proxy activation')
+    cs.add_argument('--config', required=True)
+    cs.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
+    cs.add_argument('--out', required=True)
+    ag = sub.add_parser('action-check', help='Fresh prerequisite check; never performs the UI action')
+    ag.add_argument('--action', choices=('proxy-load', 'browser-start', 'browser-restart', 'client-install', 'client-update', 'client-start', 'client-login', 'cli-diagnostic', 'service-page'), required=True)
+    ag.add_argument('--config', required=True)
+    ag.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
+    ag.add_argument('--dns-ready')
+    ag.add_argument('--proxy')
+    ag.add_argument('--browser-preferences')
+    ag.add_argument('--out', required=True)
+    iv = sub.add_parser('ipv6-check', help='Read back IPv6 on exact selected outbound interfaces')
+    iv.add_argument('--interface', action='append', required=True)
+    iv.add_argument('--out', required=True)
     args = parser.parse_args(argv)
     try:
-        if args.command in ('network-plan', 'network-check', 'dns-ready', 'baseline', 'recheck', 'preflight'):
+        if args.command == 'direct-review':
+            import unified_policy
+            context = SimpleNamespace(**globals())
+            value = unified_policy.direct_template(context, args.config, args.format)
+            write_new(args.output, encode(value))
+            result = {'status': 'private_direct_review_written', 'pending_rules': len(value['entries'])}
+        elif args.command in ('contact-scan', 'action-check', 'ipv6-check'):
+            import contact_checks
+            import ipv6_scope
+            import readiness_lifecycle as lifecycle
+            context = SimpleNamespace(**globals())
+            if args.command == 'contact-scan':
+                rows, private = contact_checks.scan(context, args.config, args.format)
+            elif args.command == 'action-check':
+                rows, private = contact_checks.gate(context, args.action, args.config, args.format, args.dns_ready, args.proxy, args.browser_preferences)
+            else:
+                rows, private = ipv6_scope.check(context, args.interface)
+            result = lifecycle.save_report(context, args.out, args.command, rows, private=private)
+        elif args.command in ('network-plan', 'network-check', 'dns-ready', 'baseline', 'recheck', 'preflight'):
             import network_checks
             import readiness_lifecycle as lifecycle
             context = SimpleNamespace(**globals())
             if args.command == 'dns-ready':
                 import dns_readiness
                 result = dns_readiness.record(context, args.config, args.browser_preferences, args.output,
-                    args.readback_verified, args.dns_path_verified, args.proxy_path_verified, args.evidence, args.proxy)
+                    args.readback_verified, args.dns_path_verified, args.proxy_path_verified, args.evidence, args.proxy, args.ipv6_interface)
             elif args.command == 'network-plan':
                 value = network_checks.validate_plan(context, network_checks.template(args.proxy, args.phase))
                 write_new(args.output, encode(value))
@@ -918,7 +960,7 @@ def main(argv=None):
                     {'plan_sha256': sha(encode(value))}, private, create=False)
             elif args.command == 'baseline':
                 result = lifecycle.create_baseline(context, args.config, args.format, args.ai_original,
-                    args.node, args.group, args.executable, args.browser_preferences, args.out)
+                    args.node, args.group, args.executable, args.browser_preferences, args.out, args.policy, load_json(read_bytes(args.direct_review)) if args.direct_review else None)
             elif args.command == 'recheck':
                 rows, saved = lifecycle.recheck(context, args.baseline, args.config, args.executable, args.browser_preferences)
                 result = lifecycle.save_report(context, args.out, 'recheck', rows)
@@ -930,11 +972,14 @@ def main(argv=None):
         elif args.command in ('ai-route', 'ai-audit'):
             import ai_routing
             context = SimpleNamespace(**globals())
+            import unified_policy
+            routing = unified_policy if args.policy == 'unified-v4' else ai_routing
+            route_options = {'direct_review': load_json(read_bytes(args.direct_review)) if args.direct_review else None} if args.policy == 'unified-v4' else {}
             if args.command == 'ai-route':
-                result = ai_routing.prepare(context, args.config, args.format, args.node, args.out, args.group)
+                result = routing.prepare(context, args.config, args.format, args.node, args.out, args.group, **route_options)
             else:
                 fmt = config_format(args.config, args.format)
-                result = ai_routing.audit(context, read_bytes(args.baseline), read_bytes(args.config), fmt, args.node, args.group)
+                result = routing.audit(context, read_bytes(args.baseline), read_bytes(args.config), fmt, args.node, args.group, **route_options)
                 if args.output:
                     write_new(args.output, encode(result))
         elif args.command == 'collect':
@@ -957,7 +1002,7 @@ def main(argv=None):
             if args.output:
                 write_new(args.output, encode(result))
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-        if args.command in ('network-check', 'recheck', 'preflight') and not result['required_checks_completed']:
+        if args.command in ('network-check', 'recheck', 'preflight', 'contact-scan', 'action-check', 'ipv6-check') and not result['required_checks_completed']:
             return 2
         if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
             return 2

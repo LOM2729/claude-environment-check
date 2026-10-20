@@ -9,6 +9,8 @@ description: Prepare and troubleshoot Claude environments on macOS, including up
 
 新建或修复环境时，先完成 DNS/代理配置、读回及非 AI 目标的路径核验，再进行 Claude/OpenAI 服务访问或相关 DNS 查询；按 [阶段流程](references/lifecycle-checks.md) 操作。时区、语言等独立本机项目可并行，系统语言保持；旧参考中的服务请求顺序服从这项依赖。
 
+自动配置先读 [五步执行顺序](references/five-step-setup.md)，默认 [统一出口与关闭 IPv6](references/unified-ipv4.md)。安装、登录、浏览器启动/重启/恢复标签、CLI诊断均后置；仅文件/PATH/安装元数据等确定离线检查可前置。
+
 ## 选择范围
 
 从请求与上下文确定目标设备、客户端、代理和现象，只询问影响结果且无法读取的缺失信息。远程服务先标明助手运行在哪台机器；服务提供者本机的命令、浏览器或网络结果不能证明客户设备状态。客户无需安装 Skill，证据来自其授权远控、目标机终端或主动提供的结果；远控不可靠时改为引导客户执行。修改需目标设备所有者对该项的授权。
@@ -17,7 +19,7 @@ description: Prepare and troubleshoot Claude environments on macOS, including up
 | --- | --- |
 | 自动配置、一键配置、除系统语言外帮我配好 | 优先读 [自动配置模式](references/automatic-configuration.md)：系统语言保持不变，先准备具体方案，一次确认后连续执行与复测；不再每项重复询问 |
 | 更新后复查、主动网络验证、检查并启动客户端 | 读 [生命周期检查](references/lifecycle-checks.md)，保存本机基线、审阅探测范围、运行本轮检查；未完成的必需项阻止启动，超时不算零泄漏 |
-| Claude/OpenAI 专属节点、AI 分流、失败不回落直连 | 读 [AI 专属规则](references/ai-dedicated-routing.md)，生成候选和审计；自动模式默认纳入方案，其他流量保持原分流 |
+| Claude/OpenAI 专属节点、AI 分流、失败不回落直连 | 读 [统一出口规则](references/unified-ipv4.md)，生成候选和审计；自动模式默认统一普通国外与 AI 到同一具体节点，关闭 IPv6，先审阅直连例外 |
 | 统一只读采集、自动报告、配置差异或读回验证 | 读 [可执行工具](references/automation.md)，检查现有 Python 与按需 YAML 依赖，再运行对应 collect／review-template／report／plan／verify／ai-route／ai-audit；不得把静态结果写成网络通过 |
 | 给客户搭环境、现场操作清单、完整配置服务 | 先展示 [Mac 现场清单](assets/customer-checklist.md)，读 [客户执行流程](references/customer-setup.md)；完整服务记录时间与语言现状，按需修改 |
 | 导入配置文件、Clash／小火箭分流 | 读 [配置导入与分流](references/proxy-import.md)，区分完整配置、节点订阅和规则扩展；先准备候选与备份，再应用已批准项 |

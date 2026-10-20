@@ -131,16 +131,20 @@ def save_report(c, output, kind, rows, extra=None, private=None, create=True):
             'launch_requested': bool(result.get('launch_requested')), 'runtime_adoption_verified': False}
 
 
-def create_baseline(c, config, fmt, original, node, group, executable, browser, output):
+def create_baseline(c, config, fmt, original, node, group, executable, browser, output, policy='ai-only', direct_review=None):
     fmt = c.config_format(config, fmt)
     current, before = c.read_bytes(config), c.read_bytes(original)
-    audit = ai_routing.audit(c, before, current, fmt, node, group)
+    if policy == 'unified-v4':
+        import unified_policy
+        audit = unified_policy.audit(c, before, current, fmt, node, group, direct_review)
+    else:
+        audit = ai_routing.audit(c, before, current, fmt, node, group)
     c.require(audit['status'] == 'static_policy_matches', 'BASELINE_AI_POLICY_MISMATCH')
     client = client_identity(c, executable)
     native = native_state(c)
     browser_hash = browser_identity(c, browser) if browser else None
     record = {'schema': 'claude-readiness-baseline/1', 'created_at': c.now(), 'machine_id': machine_id(c),
-              'format': fmt, 'config_sha256': c.sha(current), 'ai_original_sha256': c.sha(before),
+              'format': fmt, 'policy': policy, 'direct_review': direct_review, 'config_sha256': c.sha(current), 'ai_original_sha256': c.sha(before),
               'node': node, 'group': group, 'client': client, 'native': native,
               'browser_path': str(Path(browser).absolute()) if browser else None, 'browser_sha256': browser_hash}
     c.new_dir(output)
@@ -184,7 +188,11 @@ def recheck(c, baseline, config, executable, browser=None):
                      '核对运行中配置及订阅更新持久化。' if same else '用原基线与当前文件生成私有差异；确认新增修改后建立新基线。'))
     try:
         c.require(now is not None, 'CURRENT_CONFIG_UNAVAILABLE')
-        audit = ai_routing.audit(c, original, now, saved['format'], saved['node'], saved['group'])
+        if saved.get('policy', 'ai-only') == 'unified-v4':
+            import unified_policy
+            audit = unified_policy.audit(c, original, now, saved['format'], saved['node'], saved['group'], saved.get('direct_review'))
+        else:
+            audit = ai_routing.audit(c, original, now, saved['format'], saved['node'], saved['group'])
         valid = audit['status'] == 'static_policy_matches'
     except c.SetupError:
         valid = False
@@ -255,6 +263,11 @@ def startup(c, baseline, config, executable, browser, plan, allow_network, launc
     if launch and passed:
         # Recheck local inputs after network probes; no imported path or argv is executed.
         fresh, _ = recheck(c, baseline, config, executable, browser)
+        import dns_readiness
+        endpoint = next((x.get('proxy') for x in required if x['type'] in ('https', 'egress')), None)
+        still_ready, ready_code = dns_readiness.check(c, readiness, config, browser, endpoint)
+        if not still_ready:
+            fresh.append(item('launch_readiness', '启动瞬间 DNS/代理核验', False, '启动前核验记录失效、过期或代理入口变化，已阻止启动。', '重新核对网络条件和本轮记录，再执行启动检查。'))
         if not all(r['status'] == '已完成' for r in fresh if r['required']):
             rows.append(item('prelaunch_drift', '启动瞬间复查', False, '检测期间本机状态变化，已阻止启动。', '核对变化后重新运行。'))
         else:

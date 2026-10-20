@@ -1,5 +1,7 @@
 # Windows 检查参考
 
+自动配置顺序以 [五步流程](five-step-setup.md) 为准。网络及选定接口 IPv6 未核验前，不打开/安装/登录 AI，不运行未证明离线的 CLI 诊断，不重启浏览器恢复标签。代理校验/导入/启用/重载前先检查测速、health-check、资源下载及附加请求。纯本机时间/语言字段检查可并行。
+
 只选与用户请求相关的项目。下列 PowerShell 命令用于本机只读检查；若输出含用户名、内网地址、代理端口或完整外网 IP，对外报告前遮盖。不要把原始终端日志上传到第三方检测站。
 
 ## 客户端与自启
@@ -16,7 +18,7 @@
     Get-WinUserLanguageList
 
   在目标机读取，只将必要摘要带入聊天；路径中的用户名也应遮盖。若命令不存在，先核实 Windows 版本和是否在 PowerShell/WSL 中，不猜测安装目录。
-- `claude doctor` 是终端只读诊断，会话内 `/doctor` 可能应用修复，不混用。检查登录前先核实本机 `claude auth --help` 是否支持 `claude auth status`，不为缺少命令自动升级或重新登录。doctor 和认证 JSON 可能含路径、邮箱和组织资料：采集端仅保留安装问题、登录标记、认证类型与提供商等必要字段；无法可靠脱敏时引导客户本机查看并提供摘要。状态不证明当前凭据可成功请求。见 [当前 CLI 文档](https://code.claude.com/docs/en/cli-reference)。
+- `claude doctor` 是终端诊断；不能据此认定离线，必须在网络核验后执行，会话内 `/doctor` 可能应用修复，不混用。检查登录前先核实本机 `claude auth --help` 是否支持 `claude auth status`，不为缺少命令自动升级或重新登录。doctor 和认证 JSON 可能含路径、邮箱和组织资料：采集端仅保留安装问题、登录标记、认证类型与提供商等必要字段；无法可靠脱敏时引导客户本机查看并提供摘要。状态不证明当前凭据可成功请求。见 [当前 CLI 文档](https://code.claude.com/docs/en/cli-reference)。
 
 ## 认证与代理覆盖
 

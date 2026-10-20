@@ -13,17 +13,21 @@ NETWORK_KEYS = ('http_proxy_enabled', 'https_proxy_enabled', 'socks_proxy_enable
                 'ipv4_interface_count', 'ipv6_interface_count', 'tunnel_interface_count')
 
 
-def fingerprint(c, config, browser=None):
+def fingerprint(c, config, browser=None, interfaces=None):
     c.require(bool(config), 'DNS_READY_CURRENT_CONFIG_REQUIRED')
     state = lifecycle.native_state(c)
     c.require(state.get('dns_identity_sha256') is not None, 'DNS_READY_DNS_UNAVAILABLE')
+    import ipv6_scope
+    c.require(bool(interfaces), 'IPV6_SCOPE_REQUIRED')
+    rows, interface_state = ipv6_scope.check(c, interfaces)
+    c.require(all(row['status'] == '已完成' for row in rows), 'IPV6_SCOPE_NOT_OFF')
     browser_digest = None
     if browser:
         data = c.load_json(c.read_bytes(browser))
         c.require(isinstance(data, dict), 'BROWSER_PREFERENCES_OBJECT_REQUIRED')
         browser_digest = c.sha(c.encode({key: data.get(key) for key in ('dns_over_https', 'webrtc', 'proxy')}))
     return c.sha(c.encode({'machine': lifecycle.machine_id(c), 'config': c.sha(c.read_bytes(config)),
-                          'dns': state['dns_identity_sha256'], 'browser_network': browser_digest,
+                          'dns': state['dns_identity_sha256'], 'browser_network': browser_digest, 'ipv6_scope': interface_state,
                           'network_settings': {key: state['values'].get(key) for key in NETWORK_KEYS}}))
 
 
@@ -36,12 +40,12 @@ def proxy_identity(c, value):
     return [parsed.scheme, parsed.hostname, parsed.port]
 
 
-def record(c, config, browser, output, readback, dns_path, proxy_path, evidence, proxy=None):
+def record(c, config, browser, output, readback, dns_path, proxy_path, evidence, proxy=None, interfaces=None):
     c.require(readback and dns_path and proxy_path, 'DNS_READY_VERIFICATIONS_REQUIRED')
     endpoint = proxy_identity(c, proxy)
     note = c.safe_review_text(evidence)
-    data = {'schema': 'claude-dns-readiness/1', 'verified_at': c.now(),
-            'fingerprint': fingerprint(c, config, browser), 'evidence': note, 'proxy': endpoint,
+    data = {'schema': 'claude-dns-readiness/2', 'verified_at': c.now(),
+            'fingerprint': fingerprint(c, config, browser, interfaces), 'evidence': note, 'proxy': endpoint, 'ipv6_interfaces': interfaces,
             'readback_verified': True, 'dns_path_verified': True, 'proxy_path_verified': True,
             'evidence_kind': 'operator_record_not_automatic_path_proof', 'network_authorization': False}
     c.write_new(output, c.encode(data))
@@ -53,7 +57,7 @@ def check(c, receipt, config, browser=None, proxy=None):
         return False, 'DNS_READY_RECORD_REQUIRED'
     try:
         data = c.load_json(c.read_bytes(receipt))
-        c.require(isinstance(data, dict) and data.get('schema') == 'claude-dns-readiness/1', 'DNS_READY_RECORD_INVALID')
+        c.require(isinstance(data, dict) and data.get('schema') == 'claude-dns-readiness/2', 'DNS_READY_RECORD_INVALID')
         c.require(all(data.get(k) is True for k in ('readback_verified', 'dns_path_verified', 'proxy_path_verified')), 'DNS_READY_RECORD_INVALID')
         c.require(isinstance(data.get('proxy'), list) and len(data['proxy']) == 3, 'DNS_READY_RECORD_INVALID')
         c.require(data['proxy'][0] == 'http' and data['proxy'][1] in ('127.0.0.1', '::1')
@@ -65,7 +69,7 @@ def check(c, receipt, config, browser=None, proxy=None):
         c.require(verified.tzinfo is not None, 'DNS_READY_RECORD_INVALID')
         age = (dt.datetime.fromisoformat(c.now()) - verified).total_seconds()
         c.require(-30 <= age <= MAX_AGE_SECONDS, 'DNS_READY_RECORD_EXPIRED')
-        c.require(data.get('fingerprint') == fingerprint(c, config, browser), 'DNS_READY_NETWORK_CHANGED')
+        c.require(data.get('fingerprint') == fingerprint(c, config, browser, data.get('ipv6_interfaces')), 'DNS_READY_NETWORK_CHANGED')
         return True, 'DNS_READY_CURRENT'
     except c.SetupError as error:
         return False, str(error)

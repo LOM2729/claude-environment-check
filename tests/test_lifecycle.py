@@ -1,5 +1,6 @@
 """Synthetic state + loopback tests; never collect customer settings or launch apps."""
 import contextlib
+import datetime as dt
 import copy
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,6 +25,8 @@ import claude_setup as c
 import ai_routing as ai
 import network_checks as net
 import readiness_lifecycle as life
+import dns_readiness
+import ipv6_scope
 
 NATIVE = {'platform': 'Synthetic', 'values': {'timezone': 'Asia/Singapore', 'languages': ['zh-Hans'], 'https_proxy_enabled': True}, 'dns_identity_sha256': 'a' * 64}
 BASE = {'mode': 'rule', 'proxies': [{'name': 'Chosen', 'type': 'http', 'server': '192.0.2.1', 'port': 8080}], 'rules': ['DOMAIN,example.cn,DIRECT', 'MATCH,Chosen']}
@@ -237,11 +240,14 @@ class Lifecycle(unittest.TestCase):
         magic = b'MZxx' if platform.system() == 'Windows' else b'\xcf\xfa\xed\xfe'
         self.executable.write_bytes(magic + b'synthetic-never-execute')
         self.baseline = self.root / 'baseline'
+        self.ipv6 = patch.object(ipv6_scope, 'check', return_value=([{'status':'已完成'}], [{'name':'Synthetic','observed':'Off'}])); self.ipv6.start()
         self.native = patch.object(life, 'native_state', return_value=copy.deepcopy(NATIVE)); self.native.start()
         life.create_baseline(c, self.current, 'json', self.original, 'Chosen', 'AI-ONLY', self.executable, None, self.baseline)
+        self.receipt = self.root / 'ready.json'
+        dns_readiness.record(c, self.current, None, self.receipt, True, True, True, '已读回并核对本轮解析器与代理路径。', 'http://127.0.0.1:7890', ['Synthetic'])
 
     def tearDown(self):
-        self.native.stop(); self.temp.cleanup()
+        self.native.stop(); self.ipv6.stop(); self.temp.cleanup()
 
     def checks(self):
         return life.recheck(c, self.baseline, self.current, self.executable)[0]
@@ -400,13 +406,13 @@ class Lifecycle(unittest.TestCase):
             self.current.write_bytes(self.current.read_bytes() + b' ')
             return self.successful_network(context, plan, allow)
         with patch.object(life.platform, 'system', return_value='Darwin'), patch.object(life, 'machine_id', return_value=c.load_json((self.baseline / 'baseline.json').read_bytes())['machine_id']), patch.object(life, 'client_identity', return_value=c.load_json((self.baseline / 'baseline.json').read_bytes())['client']), patch.object(net, 'run_checks', side_effect=change) as network, patch.object(life.subprocess, 'Popen') as spawn:
-            result = life.startup(c, self.baseline, self.current, self.executable, None, self.plan(), True, True, self.root / 'out')
+            result = life.startup(c, self.baseline, self.current, self.executable, None, self.plan(), True, True, self.root / 'out', readiness=self.receipt)
             self.assertFalse(result['launch_requested']); spawn.assert_not_called(); network.assert_called_once()
 
     @unittest.skipUnless(platform.system() in ('Windows', 'Darwin'), 'Native launch selection is tested on Mac and Windows CI')
     def test_successful_launch_uses_explicit_cli_path_no_shell_and_no_false_runtime_pass(self):
         with patch.object(net, 'run_checks', side_effect=self.successful_network), patch.object(life.subprocess, 'Popen') as spawn:
-            result = life.startup(c, self.baseline, self.current, self.executable, None, self.plan(), True, True, self.root / 'out')
+            result = life.startup(c, self.baseline, self.current, self.executable, None, self.plan(), True, True, self.root / 'out', readiness=self.receipt)
             self.assertTrue(result['launch_requested'])
             self.assertEqual(spawn.call_args.args[0], [str(self.executable)])
             self.assertIs(spawn.call_args.kwargs['shell'], False)
@@ -429,11 +435,26 @@ class Lifecycle(unittest.TestCase):
         plan = self.root / 'plan.json'; plan.write_bytes(c.encode(self.plan()))
         stdout, stderr = io.StringIO(), io.StringIO()
         with patch.object(net, 'run_checks', side_effect=self.successful_network), patch.object(life.subprocess, 'Popen') as spawn, patch.object(life, 'save_report', side_effect=c.SetupError('OUTPUT_EXISTS_OR_UNAVAILABLE')), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-            code = c.main(['preflight', '--baseline', str(self.baseline), '--config', str(self.current), '--executable', str(self.executable), '--network-plan', str(plan), '--allow-network', '--launch', '--out', str(self.root / 'write-error')])
+            code = c.main(['preflight', '--baseline', str(self.baseline), '--config', str(self.current), '--executable', str(self.executable), '--network-plan', str(plan), '--allow-network', '--launch', '--dns-ready', str(self.receipt), '--out', str(self.root / 'write-error')])
         self.assertEqual(code, 1); spawn.assert_called_once()
         error = json.loads(stderr.getvalue())
         self.assertEqual(error['launch_outcome'], 'unknown_check_client_before_retry')
         self.assertNotIn('system_changes_performed', error)
+
+    @unittest.skipUnless(sys.platform in ('darwin', 'win32'), 'Native launch path on Mac/Windows CI')
+    def test_receipt_expires_during_last_probe_and_never_launches(self):
+        instant = dt.datetime.now(dt.timezone.utc)
+        record = c.load_json(self.receipt.read_bytes()); record['verified_at'] = (instant - dt.timedelta(seconds=1798)).isoformat()
+        self.receipt.write_bytes(c.encode(record))
+        clock = [instant]
+        def network(context, plan, allow, **kwargs):
+            clock[0] += dt.timedelta(seconds=5)
+            return self.successful_network(context, plan, allow)
+        with patch.object(c, 'now', side_effect=lambda: clock[0].isoformat()), patch.object(life.network_checks, 'run_checks', side_effect=network), patch.object(life.subprocess, 'Popen') as spawn:
+            result = life.startup(c, self.baseline, self.current, self.executable, None, self.plan(), True, True, self.root/'expired-final', self.receipt)
+            self.assertFalse(result['launch_requested']); spawn.assert_not_called()
+            self.assertFalse(result['required_checks_completed'])
+
 
     def test_cli_network_without_opt_in_is_fixed_error_and_no_calls(self):
         plan = self.root / 'plan.json'; plan.write_bytes(c.encode(self.plan()))

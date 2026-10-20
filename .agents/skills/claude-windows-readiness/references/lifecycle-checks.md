@@ -1,10 +1,12 @@
 # 更新后复查、主动网络验证与启动前检查
 
+自动配置先按 [五步顺序](five-step-setup.md) 与 [统一 IPv4 策略](unified-ipv4.md) 执行。
+
 这三个流程复用已批准的配置和本机基线。客户报告始终只有**已完成 / 未完成**，未完成写原因和下一步；不把探测超时、进程存在、文件匹配或启动请求成功当作完整验收。
 
 ## 如何接入客户服务
 
-- 完成当前设备配置、实际载入和功能验收后，保存私有基线。系统语言继续保持；基线是比较材料，不是恢复旧设置的授权。
+- 网络配置已读回后可保存首次启动所需的私有基线；客户端功能仍未验证，业务验收后再完成交付记录。系统语言继续保持；基线是比较材料，不是恢复旧设置的授权。
 - 本包流程执行订阅刷新、客户端或核心更新后，Codex 读取/导出**当前活动配置**并运行 `recheck`。软件在外部自行更新时，下次服务或启动前再复查。本版没有安装常驻守护进程或后台计划任务。
 - 主动探测先准备具体计划，向客户说明准确站点、路径、发送内容和可能暴露的出口，再按当前有效授权运行。已批准的同一范围不重问；新增站点、直连探测、STUN、地址族或断网实验不能隐含加入。
 - 用户要“检查并启动 Claude/ChatGPT/Codex”时，运行本轮 `preflight`。必需项有未完成就停止启动；全部满足后才可按明确请求加 `--launch`。没有启动请求时只检查。
@@ -63,12 +65,12 @@ python <Skill>/scripts/claude_setup.py network-check --plan <计划.json> --allo
 完成本次读回及真实路径核验后，由 Codex 记录已取得的证据；以下标记是**记录已经做过的检查**，不能为了通过而直接填写。仅看到 DNS 设置存在、Fake-IP 或一次解析成功均不够。非 AI 测试须能验证所需解析器及路由；不同域名策略不能互相冒充。证据不足时保持未完成，继续独立本机项目。
 
 ```text
-python <Skill>/scripts/claude_setup.py dns-ready --config <本次活动配置读回> --proxy http://127.0.0.1:<已核验端口> --readback-verified --dns-path-verified --proxy-path-verified --evidence <已取得的脱敏路径证据> --output <新的核验记录.json>
+python <Skill>/scripts/claude_setup.py dns-ready --config <本次活动配置读回> --proxy http://127.0.0.1:<已核验端口> --ipv6-interface <已关闭的实际服务/适配器> --readback-verified --dns-path-verified --proxy-path-verified --evidence <已取得的脱敏路径证据> --output <新的核验记录.json>
 python <Skill>/scripts/claude_setup.py network-plan --phase service --proxy http://127.0.0.1:<实际端口> --output <服务计划.json>
 python <Skill>/scripts/claude_setup.py network-check --plan <服务计划.json> --dns-ready <核验记录.json> --config <同一活动配置读回> --allow-network --out <新服务报告目录>
 ```
 
-如检查浏览器网络偏好，记录和使用时均传 `--browser-preferences <实际偏好JSON>`。记录有效期 30 分钟，绑定本机、已核验的本机代理入口、当前代理配置、可读系统 DNS 身份、网络相关状态及所选浏览器网络字段；DNS/代理变化、切换代理端口、缺失或过期都会停止服务请求；服务计划不能混用未核验的入口或改走直连。时区、系统语言、浏览器语言变化不使网络记录失效，可以独立推进。preflight 仍如实报告这类漂移为未完成，但不把它列为网络/启动的阻断项；实际时钟错误导致 TLS 失败时仍由网络检查拦截。
+如检查浏览器网络偏好，记录和使用时均传 `--browser-preferences <实际偏好JSON>`。v2 记录要求即时读回明确的 IPv6 接口均已关闭；多个接口重复 --ipv6-interface，v1 记录需重新核验。记录有效期 30 分钟，绑定本机、已核验的本机代理入口、当前代理配置、可读系统 DNS 身份、网络相关状态及所选浏览器网络字段；DNS/代理变化、切换代理端口、缺失或过期都会停止服务请求；服务计划不能混用未核验的入口或改走直连。时区、系统语言、浏览器语言变化不使网络记录失效，可以独立推进。preflight 仍如实报告这类漂移为未完成，但不把它列为网络/启动的阻断项；实际时钟错误导致 TLS 失败时仍由网络检查拦截。
 
 `service` 默认包含 Claude/OpenAI 的 HTTPS 验证及相关 DNS 查询。工具在每项服务请求前复核记录；不满足时尚未发送的项目全部记未完成。旧版无 phase 的计划按 service 处理，不能绕过前置检查。bootstrap 计划混入已知 AI 域名（包括 DNS/STUN 主机）时整份计划在任何探测前拒绝。目录仅覆盖已核对域名；不能把伪装别名或新域名塞进诊断阶段。
 

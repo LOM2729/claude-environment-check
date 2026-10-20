@@ -12,6 +12,7 @@ import claude_setup as c
 import network_checks as net
 import readiness_lifecycle as life
 import dns_readiness as ready
+import ipv6_scope
 
 STATE = {'values': {'timezone': 'Asia/Singapore', 'languages': ['zh-Hans'], 'https_proxy_enabled': True}, 'dns_identity_sha256': 'a' * 64}
 
@@ -22,14 +23,15 @@ class DNSOrder(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.config = self.root / 'active.json'; self.config.write_text('{}', encoding='utf-8')
         self.receipt = self.root / 'ready.json'
+        self.ipv6 = patch.object(ipv6_scope, 'check', return_value=([{'status':'已完成'}], [{'name':'Synthetic','observed':'Off'}])); self.ipv6.start()
         self.native = patch.object(life, 'native_state', return_value=copy.deepcopy(STATE)); self.native.start()
         self.service = net.template('http://127.0.0.1:7890', 'service')
 
     def tearDown(self):
-        self.native.stop(); self.temp.cleanup()
+        self.native.stop(); self.ipv6.stop(); self.temp.cleanup()
 
     def record(self):
-        return ready.record(c, self.config, None, self.receipt, True, True, True, '已读回配置，并在本机连接记录中核对测试解析器和代理路径。', proxy='http://127.0.0.1:7890')
+        return ready.record(c, self.config, None, self.receipt, True, True, True, '已读回配置，并在本机连接记录中核对测试解析器和代理路径。', proxy='http://127.0.0.1:7890', interfaces=['Synthetic'])
 
     def test_default_template_has_no_ai_queries(self):
         plan = net.template('http://127.0.0.1:7890')
@@ -134,7 +136,7 @@ class DNSOrder(unittest.TestCase):
     def test_browser_network_change_blocks_but_language_change_does_not(self):
         browser = self.root / 'Preferences'
         browser.write_text(json.dumps({'intl': {'accept_languages': 'zh'}, 'dns_over_https': {'mode': 'secure'}}), encoding='utf-8')
-        ready.record(c, self.config, browser, self.receipt, True, True, True, '已完成本机配置读回、解析器路径及代理路径核对。', proxy='http://127.0.0.1:7890')
+        ready.record(c, self.config, browser, self.receipt, True, True, True, '已完成本机配置读回、解析器路径及代理路径核对。', proxy='http://127.0.0.1:7890', interfaces=['Synthetic'])
         browser.write_text(json.dumps({'intl': {'accept_languages': 'en'}, 'dns_over_https': {'mode': 'secure'}}), encoding='utf-8')
         self.assertTrue(ready.check(c, self.receipt, self.config, browser)[0])
         browser.write_text(json.dumps({'dns_over_https': {'mode': 'off'}}), encoding='utf-8')

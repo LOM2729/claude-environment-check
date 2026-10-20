@@ -103,3 +103,7 @@
 ## 生命周期工具
 
 新增 baseline / recheck / network-plan / network-check / preflight，详见 [参数、网络许可与验收边界](lifecycle-checks.md)。只有 network-check 和 preflight 在显式 --allow-network 后执行主动请求；只有 preflight --launch 在新鲜必需检查通过后请求启动。原 collect/plan/verify 仍不联网或应用设置。
+
+## v0.7 默认入口
+
+按 [五步流程](five-step-setup.md) 和 [统一 IPv4 策略](unified-ipv4.md) 操作。ai-route/ai-audit/baseline 默认 unified-v4；direct-review 分类直连例外；contact-scan/action-check 检查隐含请求和服务动作；ipv6-check 读回精确接口，dns-ready v2 要求关闭状态。应用动作仍由客户机 Codex 按批准范围执行。

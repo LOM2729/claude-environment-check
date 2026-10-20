@@ -19,6 +19,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import ai_routing as ai
+import unified_policy as unified
 import claude_setup as c
 
 
@@ -88,13 +89,14 @@ class MihomoLoopback(unittest.TestCase):
                     'mode': 'rule', 'log-level': 'info', 'ipv6': False,
                     'dns': {'enable': False}, 'tun': {'enable': False},
                     'hosts': {'api.openai.com': '127.0.0.1', 'api.anthropic.com': '127.0.0.1',
-                              'ordinary.test': '127.0.0.1'},
+                              'ordinary.test': '127.0.0.1', 'ordinary-foreign.test': '127.0.0.1'},
                     'proxies': [{'name': 'Chosen', 'type': 'http', 'server': '127.0.0.1',
                                  'port': proxy.server_port}],
                     'proxy-groups': [{'name': 'Foreign', 'type': 'select', 'proxies': ['Chosen']}],
                     'rules': ['DOMAIN,ordinary.test,DIRECT', 'MATCH,Foreign'],
                 }
-                candidate, _ = ai.semantic_candidate(c, base, 'json', 'Chosen', ai.GROUP, ai.catalog(c))
+                review = {'schema':'claude-direct-review/1', 'config_semantic_sha256':c.sha(c.encode(base)), 'entries':[{'rule':'DOMAIN,ordinary.test,DIRECT','decision':'keep','reason':'Synthetic loopback direct control.'}]}
+                candidate = unified.build_semantics(c, base, 'json', 'Chosen', ai.GROUP, review)
                 config = folder / 'test.json'
                 config.write_bytes(c.encode(candidate))
                 check = subprocess.run([binary, '-t', '-d', directory, '-f', str(config)],
@@ -124,13 +126,13 @@ class MihomoLoopback(unittest.TestCase):
                         finally:
                             connection.close()
 
-                    for host in ('api.openai.com', 'api.anthropic.com'):
+                    for host in ('api.openai.com', 'api.anthropic.com', 'ordinary-foreign.test'):
                         self.assertEqual(request(host), 200)
-                    self.assertEqual(proxy.hits, 2)
-                    self.assertEqual(target.hits, 2)
-                    self.assertEqual(request('ordinary.test'), 200)
-                    self.assertEqual(proxy.hits, 2)
+                    self.assertEqual(proxy.hits, 3)
                     self.assertEqual(target.hits, 3)
+                    self.assertEqual(request('ordinary.test'), 200)
+                    self.assertEqual(proxy.hits, 3)
+                    self.assertEqual(target.hits, 4)
 
                     # SOCKS5 UDP association; direct control proves the UDP test actually works.
                     with socket.create_connection(('127.0.0.1', port), timeout=3) as control:
@@ -158,11 +160,11 @@ class MihomoLoopback(unittest.TestCase):
 
                     proxy.shutdown()
                     proxy.server_close()
-                    for host in ('api.openai.com', 'api.anthropic.com'):
+                    for host in ('api.openai.com', 'api.anthropic.com', 'ordinary-foreign.test'):
                         self.assertNotEqual(request(host), 200)
-                    self.assertEqual(target.hits, 3, 'AI failure reached direct target')
+                    self.assertEqual(target.hits, 4, 'Proxy failure reached direct target')
                     self.assertEqual(request('ordinary.test'), 200)
-                    self.assertEqual(target.hits, 4)
+                    self.assertEqual(target.hits, 5)
                     proc.terminate()
                     proc.wait(timeout=5)
                     proc = None

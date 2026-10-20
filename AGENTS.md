@@ -13,8 +13,10 @@
 
 - 自动配置是 Codex 工作流模式，不是新的通用 apply 程序。沿用客户现有分流及 TCP／UDP 约束，未知目标不猜；参考文件中逐项询问的频率不能覆盖已选择的批量模式。系统授权、身份认证和新增高影响动作仍按实际要求处理。
 
-- 自动模式默认加载对应 Skill 的 references/ai-dedicated-routing.md，将已知 Claude/OpenAI 域名固定到客户明确指定的具体节点，失败不回落 DIRECT，保留其他国内直连/国外代理。先用 ai-route 准备候选及差异，批准后通过当前客户端持久化入口导入，再 verify 与 ai-audit，并做目标机验证。DNS 路径、应用绕过和核心退出不能由域名规则证明安全。
+- 自动模式默认加载对应 Skill 的 references/unified-ipv4.md，将已知 Claude/OpenAI 域名固定到客户明确指定的具体节点，失败不回落 DIRECT，保留其他国内直连/国外代理。先用 ai-route 准备候选及差异，批准后通过当前客户端持久化入口导入，再 verify 与 ai-audit，并做目标机验证。DNS 路径、应用绕过和核心退出不能由域名规则证明安全。
 
 - 更新后复查、主动探测和启动前检查按对应 references/lifecycle-checks.md 执行。活动配置必须本次读回，基线不提供回滚授权，旧成功报告不代替本轮检查。network-check/preflight 的准确网络范围由当前有效授权覆盖后才加 --allow-network；只有明确启动请求才加 --launch。实际客户端采用仍需单独验收。
 
 - DNS/代理配置和路径核验是本次 AI 服务访问（含 DNS 查询）的前置条件。network-plan 默认 bootstrap；service 和旧计划须有当前 dns-ready 记录。记录由 Codex 按真实核验填写，不是自动证明或新增授权。时区/语言等独立本机任务可并行，不争用同一配置及重载。
+
+- v0.7 自动配置以 five-step-setup.md 为顺序入口，默认 unified-v4。DIRECT 例外由 Codex 读取并纳入方案；客户不编辑 JSON。浏览器重启/恢复标签、安装器、登录、CLI诊断均后置；代理加载前扫描隐含请求。旧参考的排序不能越过当前门槛。

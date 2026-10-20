@@ -1,4 +1,6 @@
-# Claude / OpenAI 专属代理
+# Claude / OpenAI 专属代理（兼容模式）
+
+v0.7 自动配置使用 [统一出口与 IPv4](unified-ipv4.md) 和 [五步顺序](five-step-setup.md)。以下仅供明确选择 ai-only 的兼容任务；不覆盖新的默认目标。
 
 自动配置模式默认将**已核对目录内的 Claude、OpenAI 域名固定到客户指定的一个代理节点**，代理失败时不改走 DIRECT。其余配置沿用现有国内直连、国外代理的规则、顺序、DNS 和传输限制。系统语言保持不变。
 
@@ -18,7 +20,7 @@
 先读 [工具条件](automation.md)，复用当前 Python。以下命令中的配置路径、节点名称和输出目录由 Codex 根据客户机实际情况填写；不能照抄占位值。本文件所在 Skill 的 `scripts/claude_setup.py` 同时适用于 Mac 与 Windows：
 
 ```text
-python <Skill>/scripts/claude_setup.py ai-route --config <当前完整配置> --node <已核对的具体节点名> --out <新的本地私有目录>
+python <Skill>/scripts/claude_setup.py ai-route --policy ai-only --config <当前完整配置> --node <已核对的具体节点名> --out <新的本地私有目录>
 ```
 
 可指定 `--format yaml|json|shadowrocket`、`--group <新组名>`。默认按文件扩展名识别。含空格的路径和名称按当前 shell 正确引用；不要把配置内容拼入 shell。
@@ -44,13 +46,13 @@ python <Skill>/scripts/claude_setup.py ai-route --config <当前完整配置> --
 5. 导出实际生效配置，在本地运行 `verify --plan <候选目录>/plan --target <读回文件> --exported-readback`。再运行：
 
 ```text
-python <Skill>/scripts/claude_setup.py ai-audit --baseline <候选目录>/plan/original.bin --config <读回文件> --format <实际格式> --node <同一节点名>
+python <Skill>/scripts/claude_setup.py ai-audit --policy ai-only --baseline <候选目录>/plan/original.bin --config <读回文件> --format <实际格式> --node <同一节点名>
 ```
 
 若生成时指定了 `--group`，审计时必须传入同一 `--group`。`ai-audit` 只有与“原基线 + 本次专属规则”语义完全一致才通过；额外 DNS/其他配置变化也会被检出。批量方案含其他修改时，先分步保存基线并核验每步，或另审完整差异，不能直接忽略不匹配。`verify` 的格式/注释变化仍需复核；退出码 2 表示不匹配，1 表示输入或操作错误。
 
-6. 在已批准的影响范围内重建相关连接/会话，避免旧 TCP 连接或 UDP NAT 会话沿用先前规则。新规则不保证追溯接管既有连接，同一目标 IP/端口的复用流量也需关注域名可见性。分别验证 Claude 与 ChatGPT/Codex 实际使用的登录、请求、文件/图片、长连接等功能，查看核心连接日志中的命中规则和出口组。同时复测国内直连与普通国外代理；日志按需脱敏，不上传原文。
-7. DNS 路径单独核验：系统、代理核心、浏览器 DoH、节点域名解析各层分开，检查需要的代理解析是否仍直连。域名路由规则本身不保证 DNS 查询走专属代理；IPv6、IP 字面量、DNS TYPE64/65、WebRTC/STUN 也不能因此自动打勾。
+6. DNS 路径单独核验：系统、代理核心、浏览器 DoH、节点域名解析各层分开，检查需要的代理解析是否仍直连。域名路由规则本身不保证 DNS 查询走专属代理；IPv6、IP 字面量、DNS TYPE64/65、WebRTC/STUN 也不能因此自动打勾。 取得本轮核验记录后才进入下一步。
+7. 先按五步流程做动作前检查，再在已批准的影响范围内重建相关连接/会话，避免旧 TCP 连接或 UDP NAT 会话沿用先前规则。新规则不保证追溯接管既有连接，同一目标 IP/端口的复用流量也需关注域名可见性。分别验证 Claude 与 ChatGPT/Codex 实际使用的登录、请求、文件/图片、长连接等功能，查看核心连接日志中的命中规则和出口组。同时复测国内直连与普通国外代理；日志按需脱敏，不上传原文。
 8. 客户允许具体故障演练且有恢复路径时，才暂时让指定节点不可用，确认 AI 请求失败，并结合核心日志/目标机流量证据检查未直连、未换节点，恢复后复测。只看到连接错误不等于无泄露。
 
 这组规则在核心有效接管时约束匹配的流量；代理应用退出、TUN 关闭、应用绕过系统代理或域名不可见时，不能充当系统断网保护。系统防火墙/断网保护属于单独方案，不自动加入。本版本未在真实客户机上完成故障验收。

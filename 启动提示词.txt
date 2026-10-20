@@ -1,3 +1,5 @@
+模式提示：如果我已明确要求“自动配置／一键配置，系统语言不改”，请改读同目录“自动配置启动提示词.txt”及对应 Skill 的 automatic-configuration.md，采用具体方案一次确认后连续执行的流程，不再按下文每项询问。未选择自动模式时按下文执行。
+
 这是客户电脑上的 Claude 环境配置任务。请先读取当前文件夹的 START-HERE.md，确认实际系统、执行位置和可用工具，再从 .agents/skills 中选择对应的 Mac 或 Windows Skill，读取其 SKILL.md、assets/customer-checklist.md 和 references/automation.md。检查现有 Python；缺少运行时或 YAML 依赖时先说明具体准备步骤。使用 collect 做统一只读采集，用 review-template 创建核验清单；最后按实际结果填写核验记录，用 report --review 生成离线报告。
 
 先按清单只读检查本机，复用已有信息；检查时区、自动校时、系统及浏览器语言、现有 Clash／小火箭配置、DNS／DoH／TYPE64与65、IPv4／IPv6、WebRTC／UDP、分流，以及网页、Desktop、Claude Code 的实际使用路径。Windows 原生与 WSL 分别核对。提供的配置文件在“客户配置”目录；目录为空就检查现有配置，不假定已经有可用节点。

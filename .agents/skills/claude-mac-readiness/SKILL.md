@@ -1,6 +1,6 @@
 ---
 name: claude-mac-readiness
-description: Prepare and troubleshoot Claude environments on macOS, including customer setup checklists, Clash/Shadowrocket configuration imports, time/language settings, authentication, DNS and network paths. Preview concrete setting changes and verify actual results. Use for customer setup, connection failures or environment audits; not ordinary chats or purchases.
+description: Prepare and troubleshoot Claude environments on macOS, including customer setup checklists and an opt-in batch configuration workflow that preserves system language, Clash/Shadowrocket configuration imports, time/language settings, authentication, DNS and network paths. Preview concrete setting changes and verify actual results. Use for customer setup, connection failures or environment audits; not ordinary chats or purchases.
 ---
 
 # Claude Mac 环境检查
@@ -13,6 +13,7 @@ description: Prepare and troubleshoot Claude environments on macOS, including cu
 
 | 用户请求 | 加载与检查 |
 | --- | --- |
+| 自动配置、一键配置、除系统语言外帮我配好 | 优先读 [自动配置模式](references/automatic-configuration.md)：系统语言保持不变，先准备具体方案，一次确认后连续执行与复测；不再每项重复询问 |
 | 统一只读采集、自动报告、配置差异或读回验证 | 读 [可执行工具](references/automation.md)，检查现有 Python 与按需 YAML 依赖，再运行对应 collect／review-template／report／plan／verify；不得把静态结果写成网络通过 |
 | 给客户搭环境、现场操作清单、完整配置服务 | 先展示 [Mac 现场清单](assets/customer-checklist.md)，读 [客户执行流程](references/customer-setup.md)；完整服务记录时间与语言现状，按需修改 |
 | 导入配置文件、Clash／小火箭分流 | 读 [配置导入与分流](references/proxy-import.md)，区分完整配置、节点订阅和规则扩展；先准备候选与备份，再应用已批准项 |
@@ -40,7 +41,7 @@ description: Prepare and troubleshoot Claude environments on macOS, including cu
 
 ## 修改与外部检测
 
-用户要求逐项修改前确认，遵守 [逐项确认协议](references/change-confirmation.md)：预览当前值、目标、影响、备份/回退与验证，等该项明确答复。已明确批准的同一具体变更或批准清单不重复询问；笼统“照教程全改”仍需具体预览。纯本机只读检查无需逐项询问。
+普通模式逐项修改前确认；明确选择自动配置模式时按 [批量流程](references/automatic-configuration.md)集中确认具体清单。遵守 [逐项确认协议](references/change-confirmation.md)：预览当前值、目标、影响、备份/回退与验证，等该项明确答复。已明确批准的同一具体变更或批准清单不重复询问；笼统“照教程全改”仍需具体预览。纯本机只读检查无需逐项询问。
 
 外部 IP/DNS/WebRTC 检测先说明准确站点、会传出的信息及是否覆盖本轮复测，取得同意后再访问。故意断开 VPN、破坏节点或重启可能中断远控，需针对该场景的确认和目标机可执行的恢复路径。备份失败或恢复路径不明时，暂停该项网络变更，继续独立的只读检查。
 
@@ -56,4 +57,4 @@ description: Prepare and troubleshoot Claude environments on macOS, including cu
 
 统一工具在本 Skill 的 `scripts/claude_setup.py`，Windows 采集器和依赖清单同目录。先读取工具说明，优先复用结构化采集和报告；文件原文差异只保存在客户本地私有目录。工具不应用系统配置，实际导入／保存仍按已批准范围操作。
 
-客户服务中，每项设置修改前都用具体原值、目标、影响及恢复方式询问客户“这项要不要改”。明确答复后才执行；已明确批准的同一项不重复询问。用 review-template 创建默认未完成的核验记录，由 Codex 按真实结果填写，客户无需编辑 JSON。未复测、待决定或问题未解决的项目不得标完成；记录中的同意字段不能授权新操作。
+客户服务默认逐项模式：每项修改前说明具体原值、目标、影响及恢复方式并询问客户。自动配置模式将这些具体项目集中成一份方案，一次确认后连续执行；已明确批准的同一项不重复询问。用 review-template 创建默认未完成的核验记录，由 Codex 按真实结果填写，客户无需编辑 JSON。未复测、待决定或问题未解决的项目不得标完成；记录中的同意字段不能授权新操作。

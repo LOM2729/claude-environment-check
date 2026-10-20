@@ -12,8 +12,8 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 COMMON_REFS = ('billing-checks.md', 'change-confirmation.md', 'customer-setup.md',
                'evidence-sources.md', 'execution-paths.md', 'guided-workflow.md',
-               'locale-and-language.md', 'proxy-import.md', 'score-check.md', 'automation.md')
-ROOT_FILES = ('START-HERE.md', '启动提示词.txt', 'AGENTS.md', 'README.md', 'requirements.txt',
+               'locale-and-language.md', 'proxy-import.md', 'score-check.md', 'automation.md', 'automatic-configuration.md')
+ROOT_FILES = ('START-HERE.md', '启动提示词.txt', '自动配置启动提示词.txt', 'AGENTS.md', 'README.md', 'requirements.txt',
               'VERSION', '客户配置/放置说明.txt', '交付记录/记录说明.txt')
 
 
@@ -79,7 +79,7 @@ def build():
             shutil.copyfile(ROOT / relative, target)
         info = {'name': 'Claude 环境检测', 'version': version,
                 'repository': 'https://github.com/LOM2729/claude-environment-check',
-                'capabilities': ['local_metadata_collection', 'offline_reports', 'private_config_diff', 'content_readback_verification'],
+                'capabilities': ['codex_batch_configuration_workflow', 'local_metadata_collection', 'offline_reports', 'private_config_diff', 'content_readback_verification'],
                 'system_config_apply': False, 'active_network_probes': False,
                 'customer_machine_acceptance': 'requires_target_machine_verification'}
         (kit / 'PACKAGE-INFO.json').write_text(json.dumps(info, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

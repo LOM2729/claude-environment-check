@@ -25,12 +25,18 @@ def normalize(c, original, fmt, node, group, catalog):
         rules = rules[:at] + rules[at + len(guarded):]
         rules = [r for r in rules if r != V6_RULE]
         if fmt == 'shadowrocket':
-            expected = f'{group} = select, {node}'
-            c.require(expected in base.get('proxy group', []), 'UNIFIED_EXISTING_GROUP_REVIEW_REQUIRED')
-            base['proxy group'].remove(expected)
+            existing = [line for line in base.get('proxy group', []) if line.split('=', 1)[0].strip() == group]
+            known = {line.split('=', 1)[0].strip() for line in base.get('proxy', [])}
+            fields = [x.strip() for x in existing[0].split('=', 1)[1].split(',')] if len(existing) == 1 else []
+            c.require(len(fields) == 2 and fields[0].lower() == 'select' and fields[1] in known, 'UNIFIED_EXISTING_GROUP_REVIEW_REQUIRED')
+            base['proxy group'].remove(existing[0])
         else:
             matched = [g for g in base.get('proxy-groups', []) if g.get('name') == group]
-            c.require(matched == [ai.expected_group(node, group)], 'UNIFIED_EXISTING_GROUP_REVIEW_REQUIRED')
+            prior = matched[0] if len(matched) == 1 else {}
+            members = prior.get('proxies', [])
+            known = {p['name'] for p in base.get('proxies', [])}
+            c.require(isinstance(members, list) and len(members) == 1 and members[0] in known
+                      and prior == ai.expected_group(members[0], group), 'UNIFIED_EXISTING_GROUP_REVIEW_REQUIRED')
             base['proxy-groups'] = [g for g in base['proxy-groups'] if g.get('name') != group]
         base[rulekey] = [replace_target(r, node) if ai.target(r) == group else r for r in rules]
     return base

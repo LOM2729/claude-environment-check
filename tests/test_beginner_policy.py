@@ -83,6 +83,14 @@ class UnifiedPolicy(unittest.TestCase):
         with self.assertRaisesRegex(c.SetupError, 'UNIFIED_IPV6_DNS_REVIEW_REQUIRED'):
             self.build(obj)
 
+    def test_managed_ai_group_can_migrate_to_new_explicit_node(self):
+        old, _ = ai.semantic_candidate(c, BASE, 'json', 'Customer Node', 'AI-ONLY', ai.catalog(c))
+        old['proxies'].append({'name':'New Node','type':'http','server':'192.0.2.90','port':8080})
+        result = unified.build_semantics(c, old, 'json', 'New Node', 'AI-ONLY')
+        self.assertEqual(result['proxy-groups'][-1]['proxies'], ['New Node'])
+        self.assertEqual(result['rules'][-1], 'MATCH,AI-ONLY')
+        self.assertEqual(result['proxies'][0], old['proxies'][0])
+
     def test_ipv6_literal_node_requires_review(self):
         obj = copy.deepcopy(BASE); obj['proxies'][0]['server'] = '2001:db8::1'
         with self.assertRaisesRegex(c.SetupError, 'UNIFIED_IPV6_NODE_REVIEW_REQUIRED'):

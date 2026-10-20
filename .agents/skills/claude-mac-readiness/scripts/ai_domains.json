@@ -1,0 +1,23 @@
+{
+  "schema": "claude-setup-ai-domains/1",
+  "revision": "2026-10-20.1",
+  "reviewed_on": "2026-10-20",
+  "suffixes": [
+    "claude.ai", "claude.com", "anthropic.com", "claudeusercontent.com", "claudemcpcontent.com",
+    "openai.com", "chatgpt.com", "oaistatic.com", "oaiusercontent.com", "oaistatsig.com"
+  ],
+  "exact_hosts": [
+    "cdn.openaimerge.com", "cdn.workos.com", "challenges.cloudflare.com",
+    "forwarder.workos.com", "frontend-apps-multi-region.workos.com", "humb.apple.com",
+    "images.workoscdn.com", "js.intercomcdn.com", "js.stripe.com",
+    "o207216.ingest.sentry.io", "o33249.ingest.sentry.io", "rum.browser-intake-datadoghq.com",
+    "setup.workos.com", "workos.imgix.net", "http-intake.logs.us5.datadoghq.com",
+    "browser-intake-us5-datadoghq.com"
+  ],
+  "shared_suffixes_not_expanded": ["ct.sendgrid.net", "intercom.io", "intercomcdn.com"],
+  "scope": "Known first-party domains and official documented exact shared hosts. Shared hosts also affect other applications using that same hostname. Not an exhaustive or permanent list of all product, third-party provider, MCP or plugin destinations.",
+  "sources": [
+    "https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps",
+    "https://code.claude.com/docs/en/network-config"
+  ]
+}

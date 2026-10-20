@@ -16,7 +16,8 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 | 用户请求 | 加载与检查 |
 | --- | --- |
 | 自动配置、一键配置、除系统语言外帮我配好 | 优先读 [自动配置模式](references/automatic-configuration.md)：系统语言保持不变，先准备具体方案，一次确认后连续执行与复测；不再每项重复询问 |
-| 统一只读采集、自动报告、配置差异或读回验证 | 读 [可执行工具](references/automation.md)，检查现有 Python 与按需 YAML 依赖，再运行对应 collect／review-template／report／plan／verify；不得把静态结果写成网络通过 |
+| Claude/OpenAI 专属节点、AI 分流、失败不回落直连 | 读 [AI 专属规则](references/ai-dedicated-routing.md)，生成候选和审计；自动模式默认纳入方案，其他流量保持原分流 |
+| 统一只读采集、自动报告、配置差异或读回验证 | 读 [可执行工具](references/automation.md)，检查现有 Python 与按需 YAML 依赖，再运行对应 collect／review-template／report／plan／verify／ai-route／ai-audit；不得把静态结果写成网络通过 |
 | 给客户搭环境、现场操作清单、完整配置服务 | 先展示 [Windows 现场清单](assets/customer-checklist.md)，读 [客户执行流程](references/customer-setup.md)；完整服务记录时间与语言现状，按需修改 |
 | 导入配置文件、Clash 分流、转换小火箭配置 | 读 [配置导入与分流](references/proxy-import.md)的适用分支；区分完整配置、节点订阅和规则扩展，不将 conf 改名作 YAML |
 | DNS TYPE64／65、DNS64、IPv6／WebRTC／UDP | 读 [客户执行流程的网络部分](references/customer-setup.md)，分层核对，不默认关闭或混为同一开关 |

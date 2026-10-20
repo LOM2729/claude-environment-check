@@ -349,8 +349,22 @@ class CompletionReportTests(Workspace):
         self.assertEqual({r['status'] for r in rows},{'已完成','未完成'})
         out=self.root/'report';tool.render_report(raw,out,review,digest)
         md=(out/'report.md').read_text(encoding='utf-8')
-        self.assertIn('已完成 1 项／共 14 项，未完成 13 项',md)
+        self.assertIn('已完成 1 项／共 16 项，未完成 15 项',md)
         self.assertIn('| 检查项 | 状态 | 结果／未完成原因 | 下一步 |',md)
+
+    def test_ai_rows_start_incomplete_and_do_not_shift_other_observations(self):
+        raw,digest,review=self.sample()
+        _,rows=tool.report_rows(raw)
+        by_id={row['id']:row for row in rows}
+        for key in ('ai_policy','ai_failure'):
+            self.assertEqual(by_id[key]['status'],'未完成')
+            self.assertIn('AI',by_id[key]['observation'])
+        self.assertEqual(by_id['browser']['observation'],'未提供或无法解析')
+        self.assertIn('主动网络',by_id['dns_records']['observation'])
+        # Older review files leave the new checks incomplete instead of inheriting success.
+        review['items']=[item for item in review['items'] if not item['id'].startswith('ai_')]
+        _,rows=tool.report_rows(raw,review,digest)
+        self.assertTrue(all(row['status']=='未完成' for row in rows if row['id'].startswith('ai_')))
 
     def test_unverified_completed_is_rejected(self):
         raw,digest,review=self.sample();self.finish(review['items'][0]);review['items'][0]['verified']=False
@@ -392,7 +406,7 @@ class CompletionReportTests(Workspace):
         with self.assertRaisesRegex(tool.SetupError,'SCOPE_CONFIRMATION_REQUIRED'):tool.report_rows(raw,review,digest)
         item['scope_confirmed']=True
         data,rows=tool.report_rows(raw,review,digest)
-        self.assertEqual(len(rows),13);self.assertEqual(len(data['excluded']),1)
+        self.assertEqual(len(rows),len(tool.REPORT_TASKS)-1);self.assertEqual(len(data['excluded']),1)
         self.assertEqual({x['status'] for x in rows},{'未完成'})
 
     def test_all_excluded_does_not_invent_success_rate(self):
@@ -405,7 +419,7 @@ class CompletionReportTests(Workspace):
     def test_missing_review_items_stay_incomplete(self):
         raw,digest,review=self.sample();review['items']=[]
         _,rows=tool.report_rows(raw,review,digest)
-        self.assertEqual(len(rows),14);self.assertTrue(all(x['status']=='未完成' for x in rows))
+        self.assertEqual(len(rows),len(tool.REPORT_TASKS));self.assertTrue(all(x['status']=='未完成' for x in rows))
 
     def test_stale_collection_or_wrong_target_rejected(self):
         raw,digest,review=self.sample()

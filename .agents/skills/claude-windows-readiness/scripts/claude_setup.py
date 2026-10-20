@@ -17,8 +17,9 @@ import stat
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 MAX_FILE = 2 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -26,7 +27,7 @@ ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKE
 RULE_TYPES = {'DOMAIN', 'DOMAIN-SUFFIX', 'DOMAIN-KEYWORD', 'IP-CIDR', 'IP-CIDR6',
               'IP-ASN', 'GEOIP', 'GEOSITE', 'RULE-SET', 'PROCESS-NAME', 'PROCESS-PATH',
               'DST-PORT', 'SRC-PORT', 'NETWORK', 'AND', 'OR', 'NOT', 'MATCH', 'FINAL'}
-BUILTINS = {'DIRECT', 'REJECT', 'REJECT-DROP', 'PASS', 'COMPATIBLE', 'GLOBAL'}
+BUILTINS = {'DIRECT', 'REJECT', 'REJECT-DROP', 'REJECT-NO-DROP', 'PASS', 'COMPATIBLE', 'GLOBAL'}
 CONFIG_KEYS = {'kind', 'proxy_count', 'group_count', 'rule_count', 'external_rule_source_count', 'unknown_references',
                'duplicate_names', 'cyclic_groups', 'rules_after_catchall',
                'unsupported_rule_count', 'scripts_present', 'rewrite_present', 'mitm_present', 'tls_verification_disabled',
@@ -576,6 +577,8 @@ def collection_rows(raw):
         rows.append(('指定配置文件', '发现静态问题' if problem else '已做静态检查', '；'.join(labels[k] + '：' + show(v) for k, v in sorted(cfg.items())), '解析不代表核心兼容或已加载；引用可能来自外部节点／扩展，需现场核实。'))
     else:
         rows.append(('指定配置文件', '未验证', '未提供或无法解析', '查看 collection.json 中固定错误码；不得推断当前活动配置。'))
+    for title in ('Claude／OpenAI 专属代理', 'AI 代理失败不回落直连'):
+        rows.append((title, '未验证', '采集未验证 AI 实际规则命中或故障路径', '候选与静态审计不能代替客户端载入、真实请求及故障演练。'))
     if data['browser'] is not None:
         rows.append(('指定浏览器偏好文件', '静态文件', '；'.join(labels[k] + '：' + show(v) for k, v in data['browser'].items()), '非运行中 Profile／组织策略证明；未读取 Cookie／账号数据。'))
     else:
@@ -594,6 +597,8 @@ REPORT_TASKS = (
     ('auth_environment', '认证与代理来源', '变量存在状态不能证明 Claude 实际采用了哪种认证和代理。', '核对实际启动入口与认证来源；只改已确认有问题且客户批准的设置，随后复测。'),
     ('claude_command', 'Claude Code 使用', '找到命令入口不等于安装、认证和实际使用已验证。', '按客户实际需要核对 Code；安装或调整前询问，获准后验证真实任务。'),
     ('config', '配置导入与生效', '尚未验证配置已导入、载入并按预期生效。', '先审阅静态提示，逐项询问是否应用候选；确认后保存／导入，读回并验证实际规则命中。'),
+    ('ai_policy', 'Claude／OpenAI 专属代理', '尚未核对指定节点、专属规则载入和实际命中；静态候选不代表生效。', '按专属代理流程准备候选，按所选模式确认后导入、读回并验证两家实际使用的功能及原有国内外分流。'),
+    ('ai_failure', 'AI 代理失败不回落直连', '尚未在目标机验证指定代理失效后的流量路径。', '先确认具体故障演练及恢复办法；获准后结合规则日志和流量证据验证没有直连或换节点，恢复并复测。'),
     ('browser', '浏览器设置', '尚未核对实际浏览器档案中的语言和有效策略。', '在客户实际浏览器检查；语言、代理或策略调整分别问客户，再读回并复测。'),
     ('dns_records', 'DNS TYPE64／65 与 DNS64', '尚未执行适用的查询与功能检查。', '先确认本次是否需要检测；获准后验证实际行为，过滤设置要单独说明影响并询问。'),
     ('public_egress', '公网出口', '尚未取得本次目标程序的出口结果。', '告知检测站点及数据范围，客户同意后检测并与约定路径比较。'),
@@ -836,9 +841,30 @@ def main(argv=None):
     v.add_argument('--target', required=True)
     v.add_argument('--exported-readback', action='store_true')
     v.add_argument('--output')
+    for name in ('ai-route', 'ai-audit'):
+        a = sub.add_parser(name, help='Prepare or audit private AI-only routing; never apply')
+        a.add_argument('--config', required=True)
+        a.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
+        a.add_argument('--node', required=True, help='Existing concrete proxy name, not a selector or DIRECT')
+        a.add_argument('--group', default='AI-ONLY')
+        if name == 'ai-route':
+            a.add_argument('--out', required=True)
+        else:
+            a.add_argument('--baseline', required=True)
+            a.add_argument('--output')
     args = parser.parse_args(argv)
     try:
-        if args.command == 'collect':
+        if args.command in ('ai-route', 'ai-audit'):
+            import ai_routing
+            context = SimpleNamespace(**globals())
+            if args.command == 'ai-route':
+                result = ai_routing.prepare(context, args.config, args.format, args.node, args.out, args.group)
+            else:
+                fmt = config_format(args.config, args.format)
+                result = ai_routing.audit(context, read_bytes(args.baseline), read_bytes(args.config), fmt, args.node, args.group)
+                if args.output:
+                    write_new(args.output, encode(result))
+        elif args.command == 'collect':
             data = collect(args.config, args.format, args.browser_preferences, args.target_alias)
             write_new(args.output, encode(data))
             result = {'status': 'collection_written', 'network_requests': 0, 'system_changes_performed': False}
@@ -858,6 +884,8 @@ def main(argv=None):
             if args.output:
                 write_new(args.output, encode(result))
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
+            return 2
         return 2 if args.command == 'verify' and result['status'] != 'candidate_bytes_match' else 0
     except SetupError as exc:
         print(json.dumps({'error': str(exc), 'system_changes_performed': False}), file=sys.stderr)

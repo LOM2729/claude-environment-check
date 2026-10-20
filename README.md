@@ -16,12 +16,13 @@
 
 同一版本下载文件与校验文件用于发现损坏／版本错配，不构成独立签名认证。客户机没有 Python 时先说明所需安装；不自动改系统 Python 或代理设置。
 
-## 三项工具能力
+## 工具能力
 
 | 命令 | 实际完成 | 不代表什么 |
 | --- | --- | --- |
 | `collect` | 读取本机系统／代理／DNS／接口元数据；可选投影指定配置及浏览器偏好 | 不主动联网，不证明公网出口或实际客户端路径 |
 | `review-template` / `report` | Codex 按实际结果填写核验记录，生成只含已完成／未完成的 Markdown 和离线 HTML 报告 | 采集设置不自动完成；未完成写原因和下一步 |
+| `ai-route` / `ai-audit` | 生成 Claude/OpenAI 单节点专属候选、UDP 拒绝保护与私有差异；审计读回策略 | 不自动导入；DNS、客户端接管与失败效果需目标机验证 |
 | `plan` / `verify` | 准备原文／候选快照、私有差异；重新读取指定目标并比较 | 不自动应用、重载或回滚；内容匹配不代表运行生效 |
 
 详细命令与限制见 [工具说明](.agents/skills/claude-mac-readiness/references/automation.md)。
@@ -32,9 +33,11 @@
 请按 https://github.com/LOM2729/claude-environment-check 下载并校验最新版，使用自动配置模式，系统语言不改，先给我完整方案，一次确认后连续配置和复测。
 ```
 
-该模式由 Codex 根据客户机现状执行：系统语言锁定保留；DNS、TUN、分流、IPv6、WebRTC、客户端和自启按实际需要处理。现有订阅、节点、国内外分流和 TCP／UDP 限制继续作为基线；没有明确目标的时区和浏览器语言保留。
+该模式由 Codex 根据客户机现状执行：系统语言锁定保留；DNS、TUN、分流、IPv6、WebRTC、客户端和自启按实际需要处理。默认将已核对的 Claude/OpenAI 域名绑定客户指定节点，失败不回落直连；其他流量保留国内直连、国外代理。现有订阅、节点和 TCP／UDP 限制继续作为基线；没有明确目标的时区和浏览器语言保留。
 
 正常流程只确认一次具体方案，随后连续执行。系统授权、登录、额外断网测试或新增范围仍需要配合。现有命令行工具负责采集、报告和差异／读回；实际应用依赖客户机工具，并非一个独立的通用一键安装器。详见 [自动配置流程](.agents/skills/claude-mac-readiness/references/automatic-configuration.md)。
+
+详见 [AI 专属代理规则、命令与验收边界](.agents/skills/claude-mac-readiness/references/ai-dedicated-routing.md)。域名表按官方资料维护，共享服务用准确主机名；不保证覆盖未来新增域名。Clash/Mihomo 与小火箭分别生成语法，导入前核验目标版本，订阅更新后再次确认有效配置。
 
 ## 客户看到的报告
 

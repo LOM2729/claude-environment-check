@@ -41,3 +41,7 @@
 可执行辅助：[统一采集、报告与读回工具](../references/automation.md)。先 collect 和 review-template；完成实际核对后由 Codex 填写核验记录，再用 report --review 生成二状态报告；有候选时 plan，获准应用后 verify。缺少工具／权限时保留未知并继续独立可做项。
 
 自动配置模式见 [批量执行流程](../references/automatic-configuration.md)，其一次确认规则优先于本清单中的逐项询问频率；每个项目仍分别核验并记录。
+
+## 自动配置中的 AI 专属验收
+
+按 [专属规则流程](../references/ai-dedicated-routing.md) 逐项记录：候选与指定节点、核心载入、Claude/OpenAI 实际请求、原有国内外分流、DNS/IPv6、获准的失败不直连演练。仅有候选或静态通过时，未实测项填未完成，并写原因和下一步。

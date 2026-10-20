@@ -408,6 +408,17 @@ class Lifecycle(unittest.TestCase):
         self.assertLessEqual({x['status'] for x in data['rows']}, {'已完成', '未完成'})
         self.assertIn('PRIVATE_TEST_VALUE', (out / 'evidence.private.json').read_text(encoding='utf-8'))
 
+    @unittest.skipUnless(platform.system() in ('Windows', 'Darwin'), 'Launch error handling on native CI')
+    def test_report_write_failure_after_launch_does_not_claim_no_side_effect(self):
+        plan = self.root / 'plan.json'; plan.write_bytes(c.encode(self.plan()))
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(net, 'run_checks', side_effect=self.successful_network), patch.object(life.subprocess, 'Popen') as spawn, patch.object(life, 'save_report', side_effect=c.SetupError('OUTPUT_EXISTS_OR_UNAVAILABLE')), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = c.main(['preflight', '--baseline', str(self.baseline), '--config', str(self.current), '--executable', str(self.executable), '--network-plan', str(plan), '--allow-network', '--launch', '--out', str(self.root / 'write-error')])
+        self.assertEqual(code, 1); spawn.assert_called_once()
+        error = json.loads(stderr.getvalue())
+        self.assertEqual(error['launch_outcome'], 'unknown_check_client_before_retry')
+        self.assertNotIn('system_changes_performed', error)
+
     def test_cli_network_without_opt_in_is_fixed_error_and_no_calls(self):
         plan = self.root / 'plan.json'; plan.write_bytes(c.encode(self.plan()))
         stdout, stderr = io.StringIO(), io.StringIO()

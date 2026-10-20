@@ -944,11 +944,13 @@ def main(argv=None):
         if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
             return 2
         return 2 if args.command == 'verify' and result['status'] != 'candidate_bytes_match' else 0
-    except SetupError as exc:
-        print(json.dumps({'error': str(exc), 'system_changes_performed': False}), file=sys.stderr)
-        return 1
-    except (OSError, ValueError, TypeError, KeyError, RecursionError):
-        print(json.dumps({'error': 'OPERATION_FAILED', 'system_changes_performed': False}), file=sys.stderr)
+    except (SetupError, OSError, ValueError, TypeError, KeyError, RecursionError) as exc:
+        error = {'error': str(exc) if isinstance(exc, SetupError) else 'OPERATION_FAILED', 'system_settings_changed': False}
+        if args.command == 'preflight' and args.launch:
+            error['launch_outcome'] = 'unknown_check_client_before_retry'
+        else:
+            error['system_changes_performed'] = False
+        print(json.dumps(error), file=sys.stderr)
         return 1
 
 

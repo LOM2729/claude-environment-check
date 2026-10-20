@@ -349,7 +349,7 @@ class CompletionReportTests(Workspace):
         self.assertEqual({r['status'] for r in rows},{'已完成','未完成'})
         out=self.root/'report';tool.render_report(raw,out,review,digest)
         md=(out/'report.md').read_text(encoding='utf-8')
-        self.assertIn('已完成 1 项／共 16 项，未完成 15 项',md)
+        self.assertIn('已完成 1 项／共 19 项，未完成 18 项',md)
         self.assertIn('| 检查项 | 状态 | 结果／未完成原因 | 下一步 |',md)
 
     def test_ai_rows_start_incomplete_and_do_not_shift_other_observations(self):

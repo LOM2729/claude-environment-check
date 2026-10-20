@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local metadata, static config review and content verification; never applies config."""
+"""Customer readiness: local review, opt-in probes and guarded launch; no settings writes."""
 import argparse
 import datetime as dt
 import difflib
@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.5.0'
+VERSION = '0.6.0'
 MAX_FILE = 2 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -585,6 +585,8 @@ def collection_rows(raw):
         rows.append(('浏览器偏好', '未验证', '未提供或无法解析', '在客户实际浏览器检查菜单语言、网页语言与有效政策。'))
     for title in ('DNS TYPE64／65 与 DNS64', '公网 IPv4／IPv6 出口', 'WebRTC／STUN／UDP', '规则实际命中与客户端功能', '断线／重启／更新后保护'):
         rows.append((title, '未执行', '本工具未做主动网络或故障测试', '按现场清单取得相应批准后单独验证。'))
+    for title in ('更新后复查', '主动网络验证', '启动前检查'):
+        rows.append((title, '未验证', '尚未执行本轮对应检查', '按生命周期流程读取当前基线、运行获准探测并检查本次结果。'))
     return data, rows
 
 
@@ -605,6 +607,9 @@ REPORT_TASKS = (
     ('webrtc', 'WebRTC／STUN／UDP', '尚未完成实际浏览器的相关检测。', '获准后在实际档案中检测；需要限制相关功能时询问客户，并复测通话／共享需求。'),
     ('client_function', '客户端实际使用', '尚未验证客户需要的网页、Desktop 或 Code 功能。', '逐个验证实际使用的客户端和必要功能；无关客户端由客户确认后不计入。'),
     ('lifecycle', '自启、更新与故障恢复', '尚未完成本次需要的持久化和恢复检查。', '先问客户需要哪些场景；断网／重启实验另行确认并准备独立恢复方法，完成后检查网络恢复。'),
+    ('update_recheck', '更新后复查', '尚未比较更新后的实际配置、客户端和系统设置。', '读取已确认基线运行 recheck，审阅变化；不自动覆盖客户后续修改。'),
+    ('active_network', '主动网络验证', '尚未完成本轮明确范围内的主动探测。', '先展示探测目标与数据流，获准后运行 network-check；超时或无响应保持未完成。'),
+    ('startup_check', '启动前检查', '尚未运行本次启动所需的新鲜检查。', '运行 preflight；必需项未完成则不启动，启动请求成功后另验实际客户端。'),
 )
 
 
@@ -852,9 +857,59 @@ def main(argv=None):
         else:
             a.add_argument('--baseline', required=True)
             a.add_argument('--output')
+    np = sub.add_parser('network-plan', help='Create a reviewable probe plan; no network')
+    np.add_argument('--proxy', required=True)
+    np.add_argument('--output', required=True)
+    nc = sub.add_parser('network-check', help='Run only explicitly approved, bounded probes')
+    nc.add_argument('--plan', required=True)
+    nc.add_argument('--allow-network', action='store_true')
+    nc.add_argument('--out', required=True)
+    for command in ('baseline', 'recheck', 'preflight'):
+        lc = sub.add_parser(command, help='Private baseline, drift report or fresh startup checks')
+        lc.add_argument('--config', required=True)
+        lc.add_argument('--executable', required=True)
+        lc.add_argument('--browser-preferences')
+        lc.add_argument('--out', required=True)
+        if command == 'baseline':
+            lc.add_argument('--ai-original', required=True)
+            lc.add_argument('--node', required=True)
+            lc.add_argument('--group', default='AI-ONLY')
+            lc.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
+        else:
+            lc.add_argument('--baseline', required=True)
+        if command == 'preflight':
+            lc.add_argument('--network-plan', required=True)
+            lc.add_argument('--allow-network', action='store_true')
+            lc.add_argument('--launch', action='store_true', help='Request launch only if fresh required checks pass')
     args = parser.parse_args(argv)
     try:
-        if args.command in ('ai-route', 'ai-audit'):
+        if args.command in ('network-plan', 'network-check', 'baseline', 'recheck', 'preflight'):
+            import network_checks
+            import readiness_lifecycle as lifecycle
+            context = SimpleNamespace(**globals())
+            if args.command == 'network-plan':
+                value = network_checks.validate_plan(context, network_checks.template(args.proxy))
+                write_new(args.output, encode(value))
+                result = {'status': 'network_plan_written', 'network_requests': 0}
+            elif args.command == 'network-check':
+                value = network_checks.validate_plan(context, load_json(read_bytes(args.plan)))
+                require(args.allow_network, 'EXPLICIT_NETWORK_OPT_IN_REQUIRED')
+                new_dir(args.out)
+                rows, private = network_checks.run_checks(context, value, args.allow_network)
+                result = lifecycle.save_report(context, args.out, 'network', rows,
+                    {'plan_sha256': sha(encode(value))}, private, create=False)
+            elif args.command == 'baseline':
+                result = lifecycle.create_baseline(context, args.config, args.format, args.ai_original,
+                    args.node, args.group, args.executable, args.browser_preferences, args.out)
+            elif args.command == 'recheck':
+                rows, saved = lifecycle.recheck(context, args.baseline, args.config, args.executable, args.browser_preferences)
+                result = lifecycle.save_report(context, args.out, 'recheck', rows)
+            else:
+                value = network_checks.validate_plan(context, load_json(read_bytes(args.network_plan)))
+                require(args.allow_network, 'EXPLICIT_NETWORK_OPT_IN_REQUIRED')
+                result = lifecycle.startup(context, args.baseline, args.config, args.executable,
+                    args.browser_preferences, value, args.allow_network, args.launch, args.out)
+        elif args.command in ('ai-route', 'ai-audit'):
             import ai_routing
             context = SimpleNamespace(**globals())
             if args.command == 'ai-route':
@@ -884,13 +939,15 @@ def main(argv=None):
             if args.output:
                 write_new(args.output, encode(result))
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        if args.command in ('network-check', 'recheck', 'preflight') and not result['required_checks_completed']:
+            return 2
         if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
             return 2
         return 2 if args.command == 'verify' and result['status'] != 'candidate_bytes_match' else 0
     except SetupError as exc:
         print(json.dumps({'error': str(exc), 'system_changes_performed': False}), file=sys.stderr)
         return 1
-    except (OSError, ValueError, TypeError, RecursionError):
+    except (OSError, ValueError, TypeError, KeyError, RecursionError):
         print(json.dumps({'error': 'OPERATION_FAILED', 'system_changes_performed': False}), file=sys.stderr)
         return 1
 

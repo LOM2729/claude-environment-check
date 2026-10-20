@@ -99,3 +99,7 @@
 ## AI 专属代理默认策略
 
 自动配置模式按 [Claude / OpenAI 专属规则](ai-dedicated-routing.md) 先生成单节点候选（`ai-route`）与差异，再由客户机 Codex 应用已批准方案。AI 失败不改走 DIRECT，目标 UDP 显式拒绝，其他国内直连／国外代理及原配置保持。`ai-audit` 比较读回后的静态策略；DNS、客户端接管和故障效果另验。
+
+## 生命周期工具
+
+新增 baseline / recheck / network-plan / network-check / preflight，详见 [参数、网络许可与验收边界](lifecycle-checks.md)。只有 network-check 和 preflight 在显式 --allow-network 后执行主动请求；只有 preflight --launch 在新鲜必需检查通过后请求启动。原 collect/plan/verify 仍不联网或应用设置。

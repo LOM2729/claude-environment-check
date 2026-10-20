@@ -1,6 +1,6 @@
 # Claude 客户环境配置包
 
-版本：0.5.0 · Mac / Windows 两套 Skill · 中文现场流程
+版本：0.6.0 · Mac / Windows 两套 Skill · 中文现场流程
 
 ## 三步开始
 
@@ -59,3 +59,7 @@ Claude-Setup-Kit/
 明确说“自动配置，系统语言不改”即可启用：先只读检查并准备具体方案，客户一次确认后连续完成备份、配置、读回与复测。现有订阅、国内外分流和 TCP／UDP 限制作为基线；未指定的时区和浏览器语言保留。实际执行依赖客户机工具，身份／管理员认证和新增高影响操作仍需配合。该模式优先于普通启动提示词里的逐项询问频率，不新增通用 apply 脚本。
 
 自动模式默认加入 [Claude/OpenAI 专属代理](.agents/skills/claude-mac-readiness/references/ai-dedicated-routing.md)：指定节点、失败不直连、AI 目标 UDP 拒绝，其他国内直连/国外代理保留。`ai-route` 负责生成候选与差异，Codex 按批准方案实际导入；DNS、接管与故障保护仍分别验收。
+
+## 更新后与下次启动
+
+使用 [生命周期检查](.agents/skills/claude-mac-readiness/references/lifecycle-checks.md)：验收后保存本机私有基线，更新后复查；主动网络检测先明确范围；每次检查并启动时重新验证。默认不联网，显式允许后探测；启动还需 --launch。报告仅已完成/未完成，不安装后台监控，也不自动恢复客户改过的设置。

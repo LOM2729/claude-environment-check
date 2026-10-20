@@ -1,6 +1,6 @@
 ---
 name: claude-mac-readiness
-description: Prepare and troubleshoot Claude environments on macOS, including customer setup checklists and an opt-in batch configuration workflow that preserves system language, Clash/Shadowrocket configuration imports, time/language settings, authentication, DNS and network paths. Preview concrete setting changes and verify actual results. Use for customer setup, connection failures or environment audits; not ordinary chats or purchases.
+description: Prepare and troubleshoot Claude environments on macOS, including update drift review, opt-in network probes, fresh startup checks, customer checklists and a batch configuration workflow that preserves system language, Clash/Shadowrocket configuration imports, time/language settings, authentication, DNS and network paths. Preview concrete setting changes and verify actual results. Use for customer setup, connection failures or environment audits; not ordinary chats or purchases.
 ---
 
 # Claude Mac 环境检查
@@ -14,6 +14,7 @@ description: Prepare and troubleshoot Claude environments on macOS, including cu
 | 用户请求 | 加载与检查 |
 | --- | --- |
 | 自动配置、一键配置、除系统语言外帮我配好 | 优先读 [自动配置模式](references/automatic-configuration.md)：系统语言保持不变，先准备具体方案，一次确认后连续执行与复测；不再每项重复询问 |
+| 更新后复查、主动网络验证、检查并启动客户端 | 读 [生命周期检查](references/lifecycle-checks.md)，保存本机基线、审阅探测范围、运行本轮检查；未完成的必需项阻止启动，超时不算零泄漏 |
 | Claude/OpenAI 专属节点、AI 分流、失败不回落直连 | 读 [AI 专属规则](references/ai-dedicated-routing.md)，生成候选和审计；自动模式默认纳入方案，其他流量保持原分流 |
 | 统一只读采集、自动报告、配置差异或读回验证 | 读 [可执行工具](references/automation.md)，检查现有 Python 与按需 YAML 依赖，再运行对应 collect／review-template／report／plan／verify／ai-route／ai-audit；不得把静态结果写成网络通过 |
 | 给客户搭环境、现场操作清单、完整配置服务 | 先展示 [Mac 现场清单](assets/customer-checklist.md)，读 [客户执行流程](references/customer-setup.md)；完整服务记录时间与语言现状，按需修改 |

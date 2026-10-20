@@ -22,6 +22,9 @@
 | --- | --- | --- |
 | `collect` | 读取本机系统／代理／DNS／接口元数据；可选投影指定配置及浏览器偏好 | 不主动联网，不证明公网出口或实际客户端路径 |
 | `review-template` / `report` | Codex 按实际结果填写核验记录，生成只含已完成／未完成的 Markdown 和离线 HTML 报告 | 采集设置不自动完成；未完成写原因和下一步 |
+| `baseline` / `recheck` | 保存本机私有基线，复查更新后的配置、客户端及已采集设置 | 不自动恢复旧值；配置读回相同不代表运行中核心采用 |
+| `network-plan` / `network-check` | 按明确计划与许可执行 HTTPS、出口、DNS、可选 STUN 探测 | 无响应不算零泄漏；探针路径不等于浏览器/客户端路径 |
+| `preflight` | 每次重做基线和必需网络检查；可显式请求通过后启动 | 一次启动前把关，不是常驻监控或系统断网保护 |
 | `ai-route` / `ai-audit` | 生成 Claude/OpenAI 单节点专属候选、UDP 拒绝保护与私有差异；审计读回策略 | 不自动导入；DNS、客户端接管与失败效果需目标机验证 |
 | `plan` / `verify` | 准备原文／候选快照、私有差异；重新读取指定目标并比较 | 不自动应用、重载或回滚；内容匹配不代表运行生效 |
 
@@ -38,6 +41,8 @@
 正常流程只确认一次具体方案，随后连续执行。系统授权、登录、额外断网测试或新增范围仍需要配合。现有命令行工具负责采集、报告和差异／读回；实际应用依赖客户机工具，并非一个独立的通用一键安装器。详见 [自动配置流程](.agents/skills/claude-mac-readiness/references/automatic-configuration.md)。
 
 详见 [AI 专属代理规则、命令与验收边界](.agents/skills/claude-mac-readiness/references/ai-dedicated-routing.md)。域名表按官方资料维护，共享服务用准确主机名；不保证覆盖未来新增域名。Clash/Mihomo 与小火箭分别生成语法，导入前核验目标版本，订阅更新后再次确认有效配置。
+
+详见 [更新后复查、主动网络验证和启动前检查](.agents/skills/claude-mac-readiness/references/lifecycle-checks.md)。初次方案会列出准确检测站点及数据流；已有同一具体授权不重问。配置漂移先审阅，探测超时保持未完成。
 
 ## 客户看到的报告
 

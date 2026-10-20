@@ -11,6 +11,8 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 自动配置先读 [五步执行顺序](references/five-step-setup.md)，默认 [统一出口与关闭 IPv6](references/unified-ipv4.md)。安装、登录、浏览器启动/重启/恢复标签、CLI诊断均后置；仅文件/PATH/安装元数据等确定离线检查可前置。
 
+需要重启代理客户端/核心/服务或机器时，由客户手动操作；可能中断当前 Codex/远控通道的网络动作或影响不明的重载也交给客户。先保存进度和离线恢复说明，等待客户恢复连接后重新核验，不能自行断开通道；集中批准不替代人工交接。 见 [五步流程](references/five-step-setup.md#客户手动重启与恢复)。
+
 ## 选择范围
 
 从请求与上下文确定目标设备、Windows 版本、客户端、代理和现象，只询问影响结果且无法读取的缺失信息。Claude Code 必须区分 Windows 原生与实际使用的 WSL 发行版；两边的 PATH、认证、代理和 DNS 不能互相证明。

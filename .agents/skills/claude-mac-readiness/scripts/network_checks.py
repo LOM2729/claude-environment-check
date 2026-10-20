@@ -18,6 +18,7 @@ MAX_RESPONSE = 32768
 
 def validate_plan(c, value):
     c.require(isinstance(value, dict) and value.get('schema') == 'claude-network-plan/1', 'NETWORK_PLAN_INVALID')
+    c.require(value.get('phase', 'service') in ('bootstrap', 'service'), 'NETWORK_PHASE_INVALID')
     checks = value.get('checks')
     c.require(isinstance(checks, list) and 1 <= len(checks) <= 12, 'NETWORK_CHECKS_REQUIRED')
     ids = set()
@@ -64,6 +65,13 @@ def validate_plan(c, value):
         c.require(set(item) <= {'id', 'type', 'required', 'url', 'route', 'proxy', 'family', 'expected_statuses',
                                'response_format', 'host', 'port', 'expected_ip'}, 'NETWORK_UNKNOWN_FIELD')
     c.require(any(x['required'] for x in checks), 'NETWORK_REQUIRED_CHECK_MISSING')
+    if value.get('phase', 'service') == 'bootstrap':
+        import ai_routing
+        catalog = ai_routing.catalog(c)
+        for item in checks:
+            name = (urlsplit(item.get('url', '')).hostname if item['type'] in ('https', 'egress') else item['host']).lower().rstrip('.')
+            protected = name in catalog['exact_hosts'] or any(name == d or name.endswith('.' + d) for d in catalog['suffixes'])
+            c.require(not protected, 'BOOTSTRAP_AI_TARGET_FORBIDDEN')
     return value
 
 
@@ -77,8 +85,8 @@ def host(c, value):
     c.require(re.fullmatch(r'[A-Za-z0-9.-]+', value) and all(re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?', p) for p in value.split('.')), 'NETWORK_HOST_INVALID')
 
 
-def template(proxy):
-    return {'schema': 'claude-network-plan/1', 'checks': [
+def template(proxy, phase='bootstrap'):
+    plan = {'schema': 'claude-network-plan/1', 'phase': phase, 'checks': [
         {'id': 'claude_https', 'type': 'https', 'required': True, 'url': 'https://claude.ai/',
          'route': 'proxy', 'proxy': proxy, 'expected_statuses': [200]},
         {'id': 'openai_https', 'type': 'https', 'required': True, 'url': 'https://chatgpt.com/',
@@ -88,6 +96,9 @@ def template(proxy):
          'response_format': 'trace', 'expected_ip': None},
         {'id': 'system_dns', 'type': 'dns', 'required': False, 'host': 'claude.ai', 'family': 'auto'},
     ]}
+    if phase == 'bootstrap':
+        plan['checks'] = [plan['checks'][2], {'id': 'diagnostic_dns', 'type': 'dns', 'required': True, 'host': 'example.com', 'family': 'auto'}]
+    return plan
 
 
 def connect_family(address, timeout, family):
@@ -226,11 +237,28 @@ def row(item, observation):
             'outcome': outcome if outcome in {'response','resolved','stun_response','timeout','network_error','tls_error','invalid_response','invalid_stun_response','no_answer','worker_failed','response_too_large'} else 'invalid_response'}
 
 
-def run_checks(c, plan, allow_network):
+def run_checks(c, plan, allow_network, readiness=None, config=None, browser=None):
     c.require(allow_network, 'EXPLICIT_NETWORK_OPT_IN_REQUIRED')
     validate_plan(c, plan)
+    import dns_readiness
+    service = plan.get('phase', 'service') == 'service'
+    proxy_checks = [x for x in plan['checks'] if x['type'] in ('https', 'egress')]
+    proxies = {tuple(dns_readiness.proxy_identity(c, x['proxy'])) for x in proxy_checks if x.get('route') == 'proxy'}
+    scope_error = service and (any(x.get('route') != 'proxy' for x in proxy_checks) or len(proxies) > 1)
+    proxy = next((x.get('proxy') for x in proxy_checks if x.get('route') == 'proxy'), None)
     rows, private = [], []
-    for item in plan['checks']:
+    for index, item in enumerate(plan['checks']):
+        if service:
+            ready, code = (False, 'DNS_READY_PROXY_SCOPE_CHANGED') if scope_error else dns_readiness.check(c, readiness, config, browser, proxy)
+            if not ready:
+                rows.append({'id': 'dns_readiness_gate', 'title': 'DNS 与代理前置核验', 'status': '未完成', 'required': True,
+                             'reason': '尚无当前有效的 DNS/代理读回和路径核验记录，或网络设置已变化。本轮剩余服务请求未发送。',
+                             'next_step': '先配置、读回并以非 AI 目标核验 DNS/代理路径，记录真实证据后重试。', 'outcome': code})
+                for pending in plan['checks'][index:]:
+                    rows.append({'id': pending['id'], 'title': '待前置核验 · ' + pending['id'], 'status': '未完成',
+                                 'required': pending['required'], 'reason': '前置核验未满足，未发送该请求。',
+                                 'next_step': '先完成 DNS/代理核验，再执行服务阶段。', 'outcome': 'not_sent'})
+                break
         result = isolated_probe(item)
         rows.append(row(item, result))
         private.append({'id': item['id'], 'observation': result})

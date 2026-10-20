@@ -81,22 +81,22 @@ class NetworkValidation(unittest.TestCase):
     def test_no_opt_in_never_probes(self):
         with patch.object(net, 'isolated_probe') as probe:
             with self.assertRaisesRegex(c.SetupError, 'EXPLICIT_NETWORK_OPT_IN'):
-                net.run_checks(c, net.template('http://127.0.0.1:7890'), False)
+                net.run_checks(c, net.template('http://127.0.0.1:7890', phase='service'), False)
             probe.assert_not_called()
 
     def test_invalid_plans_rejected_before_probe(self):
         for url in (42, None, 'http://example.com/', 'https://name:secret@example.com/', 'https://example.com/?key=secret',
                     'https://example.com/#secret', 'https://example.com:444/', 'https://example.com/\r\nX:yes'):
-            plan = net.template('http://127.0.0.1:7890')
+            plan = net.template('http://127.0.0.1:7890', phase='service')
             plan['checks'][0]['url'] = url
             with self.assertRaises(c.SetupError):
                 net.validate_plan(c, plan)
         for proxy in (42, None, 'http://example.com:8080', 'socks5://127.0.0.1:7890', 'http://user:secret@127.0.0.1:7890'):
             with self.assertRaises(c.SetupError):
-                net.validate_plan(c, net.template(proxy))
+                net.validate_plan(c, net.template(proxy, phase='service'))
 
     def test_http_auth_and_redirect_not_function_pass(self):
-        check = net.template('http://127.0.0.1:7890')['checks'][0]
+        check = net.template('http://127.0.0.1:7890', phase='service')['checks'][0]
         for status in (301, 302, 401, 403, 405, 500):
             self.assertEqual(net.row(check, {'outcome': 'response', 'http_status': status})['status'], '未完成')
         self.assertEqual(net.row(check, {'outcome': 'response', 'http_status': 200})['status'], '已完成')
@@ -247,11 +247,11 @@ class Lifecycle(unittest.TestCase):
         return life.recheck(c, self.baseline, self.current, self.executable)[0]
 
     def plan(self):
-        plan = net.template('http://127.0.0.1:7890')
+        plan = net.template('http://127.0.0.1:7890', phase='service')
         plan['checks'][2]['expected_ip'] = '203.0.113.9'
         return plan
 
-    def successful_network(self, context, plan, allow):
+    def successful_network(self, context, plan, allow, **kwargs):
         return [net.row(x, {'outcome': 'response', 'http_status': 200, 'ip': '203.0.113.9'} if x['type'] != 'dns' else {'outcome': 'timeout'}) for x in plan['checks']], []
 
     @unittest.skipUnless(platform.system() == 'Darwin', 'Mac bundle entry on Mac CI')
@@ -370,6 +370,22 @@ class Lifecycle(unittest.TestCase):
                 result = life.startup(c, self.baseline, self.current, self.executable, None, plan, True, False, self.root / change)
                 self.assertFalse(result['required_checks_completed']); network.assert_not_called()
 
+    def test_preflight_locale_changes_do_not_block_network(self):
+        native = copy.deepcopy(NATIVE)
+        native['values']['timezone'] = 'Europe/London'; native['values']['languages'] = ['en']
+        with patch.object(life, 'native_state', return_value=native), patch.object(net, 'run_checks', side_effect=self.successful_network) as network:
+            result = life.startup(c, self.baseline, self.current, self.executable, None, self.plan(), True, False, self.root / 'parallel-local')
+            network.assert_called_once()
+            self.assertTrue(result['required_checks_completed'])
+        data = c.load_json((self.root / 'parallel-local/report.json').read_bytes())
+        row = next(x for x in data['rows'] if x['id'] == 'native_drift')
+        self.assertEqual(row['status'], '未完成'); self.assertFalse(row['required'])
+
+    def test_preflight_missing_dns_record_blocks_even_with_valid_baseline(self):
+        with patch.object(net, 'isolated_probe') as probe:
+            result = life.startup(c, self.baseline, self.current, self.executable, None, self.plan(), True, False, self.root / 'dns-block')
+            self.assertFalse(result['required_checks_completed']); probe.assert_not_called()
+
     def test_preflight_runs_fresh_network_each_time(self):
         with patch.object(net, 'run_checks', side_effect=self.successful_network) as network:
             for name in ('first', 'second'):
@@ -380,7 +396,7 @@ class Lifecycle(unittest.TestCase):
         self.assertTrue(any(r['status'] == '未完成' and not r['required'] for r in report['rows']))
 
     def test_launch_rechecks_after_network_and_blocks_concurrent_change(self):
-        def change(context, plan, allow):
+        def change(context, plan, allow, **kwargs):
             self.current.write_bytes(self.current.read_bytes() + b' ')
             return self.successful_network(context, plan, allow)
         with patch.object(life.platform, 'system', return_value='Darwin'), patch.object(life, 'machine_id', return_value=c.load_json((self.baseline / 'baseline.json').read_bytes())['machine_id']), patch.object(life, 'client_identity', return_value=c.load_json((self.baseline / 'baseline.json').read_bytes())['client']), patch.object(net, 'run_checks', side_effect=change) as network, patch.object(life.subprocess, 'Popen') as spawn:
@@ -402,7 +418,7 @@ class Lifecycle(unittest.TestCase):
         life.save_report(c, out, 'recheck', self.checks(), private=private)
         text = (out / 'report.html').read_text(encoding='utf-8')
         self.assertNotIn('PRIVATE_TEST_VALUE', text); self.assertNotIn('203.0.113.9', text)
-        self.assertIn('检查时间', text); self.assertIn('启动必需', text); self.assertIn('已完成 5 项', text)
+        self.assertIn('检查时间', text); self.assertIn('启动必需', text); self.assertIn('已完成 6 项', text)
         self.assertNotIn('<script', text); self.assertNotIn('https://', text)
         data = c.load_json((out / 'report.json').read_bytes())
         self.assertLessEqual({x['status'] for x in data['rows']}, {'已完成', '未完成'})

@@ -10,6 +10,17 @@
 - 用户要“检查并启动 Claude/ChatGPT/Codex”时，运行本轮 `preflight`。必需项有未完成就停止启动；全部满足后才可按明确请求加 `--launch`。没有启动请求时只检查。
 - 配置、基线、节点名、客户端路径、完整出口和 DNS 地址属于私有材料，仅留在客户机。转交客户只发脱敏报告；每位客户使用原始发布包。
 
+## 先配置 DNS，再验证服务
+
+新建或修复环境按两条线推进：
+
+- 网络线：本机只读检查 → 配置 DNS/DoH、代理接管与规则 → 读回当前设置 → 获准的非 AI 目标诊断及解析器/代理路径核验 → 记录本轮证据 → Claude/OpenAI 服务验证。
+- 本机独立线：时间准确性、客户指定时区、语言/地区等检查与已批准调整可同时推进，系统语言保持不改。没有明确目标的时区/语言继续保留。不同任务不要同时写同一配置或争用重启/重载。
+
+DNS 尚未完成时，不访问、解析或用浏览器/CLI 探测 Claude/OpenAI 域名。旧参考文档中的服务连通命令也应后移；不要为了拿一个“修改前结果”先请求 AI 服务。读取文件、准备候选、读系统状态不需要等待网络线。
+
+本工具约束本次新发起的诊断请求；不会自动关闭已运行程序，也不能追溯阻断其现有通信。
+
 ## 1. 保存与复查基线
 
 使用本 Skill 的 `scripts/claude_setup.py`，命令中的路径由 Codex 现场填写。Windows 使用原生 Python/PowerShell；WSL 状态不能充当 Windows 宿主证据。
@@ -37,17 +48,31 @@ python <Skill>/scripts/claude_setup.py recheck --baseline <私有基线目录> -
 python <Skill>/scripts/claude_setup.py network-plan --proxy http://127.0.0.1:<实际HTTP或mixed端口> --output <新计划.json>
 ```
 
-默认计划包括经该显式代理访问 `https://claude.ai/`、`https://chatgpt.com/` 的 HTTPS HEAD，请求 `https://www.cloudflare.com/cdn-cgi/trace` 取得探针出口，以及系统解析器查询 `claude.ai`。这些请求会向对应站点发送普通请求/查询及其可见的出口信息；不发送账号 Cookie、Token、登录凭据或客户文件。
+默认生成 `bootstrap` 计划，仅包含 `example.com` 的系统 DNS 诊断及经指定代理请求 `https://www.cloudflare.com/cdn-cgi/trace`，不含 AI 服务域名。先完成本机 DNS/代理配置及读回，再按批准范围运行这些非 AI 诊断。请求会向对应站点发送普通请求/查询及其可见的出口信息，不发送账号 Cookie、Token、登录凭据或客户文件。
 
 计划由 Codex 根据具体范围编辑并展示；不让客户手改 JSON。默认出口 `expected_ip` 为 null：第一次探测可以取得出口，但一致性仍为未完成。根据已核对的指定节点和运行中连接证据，在本地确认预期出口，再重测。出口变化不能自动改成新的预期值。
 
 **同一 HTTP 端口不等于同一出站组。** 默认的 `www.cloudflare.com` 不在 AI 专属域名目录；AI 走节点 A、普通国外走节点 B 时，这个探针可能测到 B。必须结合实际规则/连接证据确定该检测站点对应的节点，再填写它的预期地址；不能把 B 的结果当成 AI-ONLY 出口证明。需要验证 AI 节点出口时，先准备并批准能够确实走该节点的探测路径；本工具不会偷偷添加检测站点分流规则。
 
-客户批准具体计划后：
+客户批准具体非 AI 诊断计划后：
 
 ```text
 python <Skill>/scripts/claude_setup.py network-check --plan <计划.json> --allow-network --out <新报告目录>
 ```
+
+完成本次读回及真实路径核验后，由 Codex 记录已取得的证据；以下标记是**记录已经做过的检查**，不能为了通过而直接填写。仅看到 DNS 设置存在、Fake-IP 或一次解析成功均不够。非 AI 测试须能验证所需解析器及路由；不同域名策略不能互相冒充。证据不足时保持未完成，继续独立本机项目。
+
+```text
+python <Skill>/scripts/claude_setup.py dns-ready --config <本次活动配置读回> --proxy http://127.0.0.1:<已核验端口> --readback-verified --dns-path-verified --proxy-path-verified --evidence <已取得的脱敏路径证据> --output <新的核验记录.json>
+python <Skill>/scripts/claude_setup.py network-plan --phase service --proxy http://127.0.0.1:<实际端口> --output <服务计划.json>
+python <Skill>/scripts/claude_setup.py network-check --plan <服务计划.json> --dns-ready <核验记录.json> --config <同一活动配置读回> --allow-network --out <新服务报告目录>
+```
+
+如检查浏览器网络偏好，记录和使用时均传 `--browser-preferences <实际偏好JSON>`。记录有效期 30 分钟，绑定本机、已核验的本机代理入口、当前代理配置、可读系统 DNS 身份、网络相关状态及所选浏览器网络字段；DNS/代理变化、切换代理端口、缺失或过期都会停止服务请求；服务计划不能混用未核验的入口或改走直连。时区、系统语言、浏览器语言变化不使网络记录失效，可以独立推进。preflight 仍如实报告这类漂移为未完成，但不把它列为网络/启动的阻断项；实际时钟错误导致 TLS 失败时仍由网络检查拦截。
+
+`service` 默认包含 Claude/OpenAI 的 HTTPS 验证及相关 DNS 查询。工具在每项服务请求前复核记录；不满足时尚未发送的项目全部记未完成。旧版无 phase 的计划按 service 处理，不能绕过前置检查。bootstrap 计划混入已知 AI 域名（包括 DNS/STUN 主机）时整份计划在任何探测前拒绝。目录仅覆盖已核对域名；不能把伪装别名或新域名塞进诊断阶段。
+
+记录只证明操作者登记了什么及本机设置是否一致，不是工具自动证明 DNS 路径正确，更不提供联网授权；实际请求仍需当前有效的范围批准和 --allow-network。需要重新核验时不自动修改旧记录或放宽条件。
 
 每项探测在独立子进程中执行，单项总时限 9 秒、最多 12 项。不自动重试或跳转，不读取 `.curlrc`、不继承环境代理选择，也不在代理失败时回落直连。HTTPS 校验证书和主机名；需要企业 CA 时先按客户实际信任配置处理，不能关 TLS 验证。
 
@@ -60,7 +85,7 @@ python <Skill>/scripts/claude_setup.py network-check --plan <计划.json> --allo
 
 `family` 对直连 HTTPS 可选 IPv4/IPv6。显式 HTTP 代理的目标地址族由核心决定，工具不能强制或据此证明代理的 IPv6 路径，计划中只能为 auto。需要验证 IPv6 必须在批准范围里设计对应路径，不能为了检测偷偷发直连请求。
 
-每项有唯一 `id` 和布尔 `required`，用于“是否阻断启动”。客户确认不适用的检测才从计划移除；不能为了通过把失败的必需项改成非必需。可选项失败仍显示未完成。默认只有系统 DNS 解析为补充检测；系统 DNS 配置身份复查仍属于启动必需项。
+每项有唯一 `id` 和布尔 `required`，用于“是否阻断启动”。客户确认不适用的检测才从计划移除；不能为了通过把失败的必需项改成非必需。可选项失败仍显示未完成。服务计划默认只有系统 DNS 解析为补充检测；系统 DNS 配置身份复查仍属于启动必需项。
 
 **STUN 无响应一律不能证明零泄漏。** 可能是服务不可达、DNS 失败、链路丢包或 UDP 被阻断。要证明阻断，需有实际策略/流量证据和有效对照；工具不会在超时时自动记完成。原生探针也不能代替实际浏览器的 WebRTC 检查。
 
@@ -69,7 +94,7 @@ python <Skill>/scripts/claude_setup.py network-check --plan <计划.json> --allo
 ## 3. 启动前检查与可选启动
 
 ```text
-python <Skill>/scripts/claude_setup.py preflight --baseline <基线目录> --config <本次实际配置读回> --executable <客户端入口> --network-plan <已确认计划.json> --allow-network --out <新报告目录>
+python <Skill>/scripts/claude_setup.py preflight --baseline <基线目录> --config <本次实际配置读回> --executable <客户端入口> --network-plan <已确认服务计划.json> --dns-ready <本轮核验记录.json> --allow-network --out <新报告目录>
 ```
 
 该命令每次重读本机基线、配置、客户端和设置，再执行本轮必需网络检测，不接受旧报告替代。启动方案至少需要同一显式代理下的必需 AI HTTPS 检查及带已确认预期 IP 的出口检测。直接访问其他站点成功不能代替。

@@ -201,11 +201,16 @@ def recheck(c, baseline, config, executable, browser=None):
                      '继续启动前检查。' if same_client else '核对官方更新来源、兼容性和设置，再经确认建立新基线。'))
     native = native_state(c)
     known = {k for k, v in saved['native']['values'].items() if v is not None and v != []}
-    changed = [key for key in known if native['values'].get(key) != saved['native']['values'][key]]
-    stable = bool(known) and not changed
-    rows.append(item('native_drift', '已采集系统设置复查', stable,
-                     '已取得的时间、语言、代理等字段与基线一致；未知字段未被证明。' if stable else '已记录的系统字段变化，或基线没有可比较的系统字段。',
-                     '保留客户选择；未覆盖字段在现场补查。' if stable else '核实变化是否由客户主动调整；确认具体差异后再处理。'))
+    network_keys = {'http_proxy_enabled', 'https_proxy_enabled', 'socks_proxy_enabled', 'pac_present',
+                    'dns_v4_count', 'dns_v6_count', 'ipv4_interface_count', 'ipv6_interface_count', 'tunnel_interface_count'}
+    for key, title, selected, required in (
+            ('native_drift', '时间与语言等独立本机字段', known - network_keys, False),
+            ('network_drift', '网络接管相关字段复查', known & network_keys, True)):
+        changed = [name for name in selected if native['values'].get(name) != saved['native']['values'][name]]
+        stable = bool(selected) and not changed
+        rows.append(item(key, title, stable,
+                         '已取得的字段与基线一致；未知字段未被证明。' if stable else '已记录字段变化，或基线没有可比较字段。',
+                         '保留客户选择；未覆盖字段在现场补查。' if stable else '核实变化是否为客户主动调整；时间和语言可独立处理，不自动恢复。' if not required else '先核对网络变化，更新真实核验记录后再继续。', required))
     dns_same = saved['native'].get('dns_identity_sha256') is not None and saved['native']['dns_identity_sha256'] == native.get('dns_identity_sha256')
     rows.append(item('dns_drift', '系统 DNS 配置复查', dns_same,
                      '可读取的 DNS 配置身份与基线一致；不代表查询流量路径。' if dns_same else 'DNS 配置改变，或未取得可比较的 DNS 配置。',
@@ -221,7 +226,7 @@ def recheck(c, baseline, config, executable, browser=None):
     return rows, saved
 
 
-def startup(c, baseline, config, executable, browser, plan, allow_network, launch, output):
+def startup(c, baseline, config, executable, browser, plan, allow_network, launch, output, readiness=None):
     c.require(not launch or platform.system() in ('Darwin', 'Windows'), 'NATIVE_MAC_OR_WINDOWS_REQUIRED')
     # Validate output before probes or launch, and never accept an old pass report as authority.
     c.new_dir(output)
@@ -241,7 +246,7 @@ def startup(c, baseline, config, executable, browser, plan, allow_network, launc
                      '执行本轮探测。' if minimum else '完善具体探测方案，确认指定代理和预期出口；不能用直连通过替代。'))
     private = []
     if minimum and all(r['status'] == '已完成' for r in rows if r['required']):
-        active, private = network_checks.run_checks(c, plan, allow_network)
+        active, private = network_checks.run_checks(c, plan, allow_network, readiness=readiness, config=config, browser=browser)
         rows += active
     else:
         rows.append(item('network_pending', '本轮启动前网络检测', False, '本机基线或探测范围尚未满足，未发起本轮网络检测。', '先处理上面的未完成项，再重新检查。'))

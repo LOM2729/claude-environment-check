@@ -7,6 +7,8 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 定位实际问题，完成最小范围的检查、经确认的修复和复测。分别判断客户端安装、实际认证来源、当前连接、断线行为和服务地区；某一项通过不能替代其他结论。
 
+新建或修复环境时，先完成 DNS/代理配置、读回及非 AI 目标的路径核验，再进行 Claude/OpenAI 服务访问或相关 DNS 查询；按 [阶段流程](references/lifecycle-checks.md) 操作。时区、语言等独立本机项目可并行，系统语言保持；旧参考中的服务请求顺序服从这项依赖。
+
 ## 选择范围
 
 从请求与上下文确定目标设备、Windows 版本、客户端、代理和现象，只询问影响结果且无法读取的缺失信息。Claude Code 必须区分 Windows 原生与实际使用的 WSL 发行版；两边的 PATH、认证、代理和 DNS 不能互相证明。

@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.6.0'
+VERSION = '0.6.1'
 MAX_FILE = 2 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -859,11 +859,24 @@ def main(argv=None):
             a.add_argument('--output')
     np = sub.add_parser('network-plan', help='Create a reviewable probe plan; no network')
     np.add_argument('--proxy', required=True)
+    np.add_argument('--phase', choices=('bootstrap', 'service'), default='bootstrap')
     np.add_argument('--output', required=True)
     nc = sub.add_parser('network-check', help='Run only explicitly approved, bounded probes')
     nc.add_argument('--plan', required=True)
     nc.add_argument('--allow-network', action='store_true')
     nc.add_argument('--out', required=True)
+    nc.add_argument('--dns-ready')
+    nc.add_argument('--config')
+    nc.add_argument('--browser-preferences')
+    dr = sub.add_parser('dns-ready', help='Record already performed DNS/path checks; no network')
+    dr.add_argument('--config', required=True)
+    dr.add_argument('--proxy', required=True)
+    dr.add_argument('--browser-preferences')
+    dr.add_argument('--output', required=True)
+    dr.add_argument('--readback-verified', action='store_true')
+    dr.add_argument('--dns-path-verified', action='store_true')
+    dr.add_argument('--proxy-path-verified', action='store_true')
+    dr.add_argument('--evidence', required=True)
     for command in ('baseline', 'recheck', 'preflight'):
         lc = sub.add_parser(command, help='Private baseline, drift report or fresh startup checks')
         lc.add_argument('--config', required=True)
@@ -879,23 +892,28 @@ def main(argv=None):
             lc.add_argument('--baseline', required=True)
         if command == 'preflight':
             lc.add_argument('--network-plan', required=True)
+            lc.add_argument('--dns-ready')
             lc.add_argument('--allow-network', action='store_true')
             lc.add_argument('--launch', action='store_true', help='Request launch only if fresh required checks pass')
     args = parser.parse_args(argv)
     try:
-        if args.command in ('network-plan', 'network-check', 'baseline', 'recheck', 'preflight'):
+        if args.command in ('network-plan', 'network-check', 'dns-ready', 'baseline', 'recheck', 'preflight'):
             import network_checks
             import readiness_lifecycle as lifecycle
             context = SimpleNamespace(**globals())
-            if args.command == 'network-plan':
-                value = network_checks.validate_plan(context, network_checks.template(args.proxy))
+            if args.command == 'dns-ready':
+                import dns_readiness
+                result = dns_readiness.record(context, args.config, args.browser_preferences, args.output,
+                    args.readback_verified, args.dns_path_verified, args.proxy_path_verified, args.evidence, args.proxy)
+            elif args.command == 'network-plan':
+                value = network_checks.validate_plan(context, network_checks.template(args.proxy, args.phase))
                 write_new(args.output, encode(value))
                 result = {'status': 'network_plan_written', 'network_requests': 0}
             elif args.command == 'network-check':
                 value = network_checks.validate_plan(context, load_json(read_bytes(args.plan)))
                 require(args.allow_network, 'EXPLICIT_NETWORK_OPT_IN_REQUIRED')
                 new_dir(args.out)
-                rows, private = network_checks.run_checks(context, value, args.allow_network)
+                rows, private = network_checks.run_checks(context, value, args.allow_network, args.dns_ready, args.config, args.browser_preferences)
                 result = lifecycle.save_report(context, args.out, 'network', rows,
                     {'plan_sha256': sha(encode(value))}, private, create=False)
             elif args.command == 'baseline':
@@ -908,7 +926,7 @@ def main(argv=None):
                 value = network_checks.validate_plan(context, load_json(read_bytes(args.network_plan)))
                 require(args.allow_network, 'EXPLICIT_NETWORK_OPT_IN_REQUIRED')
                 result = lifecycle.startup(context, args.baseline, args.config, args.executable,
-                    args.browser_preferences, value, args.allow_network, args.launch, args.out)
+                    args.browser_preferences, value, args.allow_network, args.launch, args.out, args.dns_ready)
         elif args.command in ('ai-route', 'ai-audit'):
             import ai_routing
             context = SimpleNamespace(**globals())

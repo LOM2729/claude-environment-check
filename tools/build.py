@@ -23,7 +23,7 @@ def files():
         base = f'.agents/skills/claude-{system}-readiness/'
         extras = ('article-claims.md', 'mac-checks.md', 'related-source-review.md') if system == 'mac' else ('claim-review.md', 'windows-checks.md')
         result += [base + x for x in ('SKILL.md', 'assets/customer-checklist.md', 'assets/report-template.md',
-                                     'scripts/claude_setup.py', 'scripts/ai_routing.py', 'scripts/ai_domains.json', 'scripts/network_checks.py', 'scripts/readiness_lifecycle.py', 'scripts/collect_dns_identity.ps1', 'scripts/collect_windows.ps1', 'scripts/requirements.txt')]
+                                     'scripts/claude_setup.py', 'scripts/ai_routing.py', 'scripts/ai_domains.json', 'scripts/network_checks.py', 'scripts/dns_readiness.py', 'scripts/readiness_lifecycle.py', 'scripts/collect_dns_identity.ps1', 'scripts/collect_windows.ps1', 'scripts/requirements.txt')]
         result.append(base + ('scripts/check-env.zsh' if system == 'mac' else 'scripts/check-env.ps1'))
         result += [base + 'references/' + x for x in COMMON_REFS + extras]
     return result
@@ -32,7 +32,7 @@ def files():
 def synchronize():
     for system in ('mac', 'windows'):
         scripts = ROOT / f'.agents/skills/claude-{system}-readiness/scripts'
-        for name in ('claude_setup.py', 'ai_routing.py', 'ai_domains.json', 'network_checks.py', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
+        for name in ('claude_setup.py', 'ai_routing.py', 'ai_domains.json', 'network_checks.py', 'dns_readiness.py', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
             shutil.copyfile(ROOT / 'src' / name, scripts / name)
         shutil.copyfile(ROOT / 'requirements.txt', scripts / 'requirements.txt')
 
@@ -54,7 +54,7 @@ def validate():
                     assert dest.relative_to(ROOT).as_posix() in allowed, (relative, target, 'not bundled')
     for system in ('mac', 'windows'):
         skill = ROOT / f'.agents/skills/claude-{system}-readiness'
-        for name in ('claude_setup.py', 'ai_routing.py', 'ai_domains.json', 'network_checks.py', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
+        for name in ('claude_setup.py', 'ai_routing.py', 'ai_domains.json', 'network_checks.py', 'dns_readiness.py', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
             assert (ROOT / 'src' / name).read_bytes() == (skill / 'scripts' / name).read_bytes(), 'out-of-sync tools'
         assert (ROOT / 'requirements.txt').read_bytes() == (skill / 'scripts/requirements.txt').read_bytes()
         import yaml

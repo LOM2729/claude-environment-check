@@ -1,6 +1,6 @@
 # Claude 客户环境配置包
 
-版本：0.6.0 · Mac / Windows 两套 Skill · 中文现场流程
+版本：0.6.1 · Mac / Windows 两套 Skill · 中文现场流程
 
 ## 三步开始
 
@@ -63,3 +63,5 @@ Claude-Setup-Kit/
 ## 更新后与下次启动
 
 使用 [生命周期检查](.agents/skills/claude-mac-readiness/references/lifecycle-checks.md)：验收后保存本机私有基线，更新后复查；主动网络检测先明确范围；每次检查并启动时重新验证。默认不联网，显式允许后探测；启动还需 --launch。报告仅已完成/未完成，不安装后台监控，也不自动恢复客户改过的设置。
+
+新环境先配置、读回并核验 DNS/代理，再请求 Claude/OpenAI。默认 bootstrap 计划只测非 AI 目标；service 阶段需要本轮 dns-ready 记录。时区、语言等独立本机检查可并行。

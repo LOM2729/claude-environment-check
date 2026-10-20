@@ -16,3 +16,5 @@
 - 自动模式默认加载对应 Skill 的 references/ai-dedicated-routing.md，将已知 Claude/OpenAI 域名固定到客户明确指定的具体节点，失败不回落 DIRECT，保留其他国内直连/国外代理。先用 ai-route 准备候选及差异，批准后通过当前客户端持久化入口导入，再 verify 与 ai-audit，并做目标机验证。DNS 路径、应用绕过和核心退出不能由域名规则证明安全。
 
 - 更新后复查、主动探测和启动前检查按对应 references/lifecycle-checks.md 执行。活动配置必须本次读回，基线不提供回滚授权，旧成功报告不代替本轮检查。network-check/preflight 的准确网络范围由当前有效授权覆盖后才加 --allow-network；只有明确启动请求才加 --launch。实际客户端采用仍需单独验收。
+
+- DNS/代理配置和路径核验是本次 AI 服务访问（含 DNS 查询）的前置条件。network-plan 默认 bootstrap；service 和旧计划须有当前 dns-ready 记录。记录由 Codex 按真实核验填写，不是自动证明或新增授权。时区/语言等独立本机任务可并行，不争用同一配置及重载。

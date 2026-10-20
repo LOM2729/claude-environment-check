@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import claude_setup as c
 import domestic_policy as d
 import ai_routing as ai
+import claude_group
 import unified_policy as u
 import contact_checks
 from test_ai_routing import BASE
@@ -22,7 +23,7 @@ class DomesticPolicy(unittest.TestCase):
         original['rules'].insert(0, 'NETWORK,udp,REJECT')
         result = self.build(original)
         rules = result['rules']
-        guards = ai.guarded_rules(ai.catalog(c), 'json', 'AI-ONLY')
+        guards = claude_group.guarded_rules(ai.catalog(c), 'json', 'AI-ONLY')
         self.assertEqual(rules[:len(guards)], guards)
         self.assertLess(rules.index(d.VIDEO_RULE), rules.index(d.UDP_RULE))
         self.assertLess(rules.index(d.UDP_RULE), rules.index(d.CN_RULE))

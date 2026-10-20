@@ -3,6 +3,7 @@ import http.client
 from http.server import ThreadingHTTPServer
 import os
 from pathlib import Path
+import re
 import socket
 import struct
 import subprocess
@@ -51,7 +52,7 @@ class DomesticLoopback(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as directory:
                 folder = Path(directory)
-                hosts = ('bilibili.com', 'baidu.com', 'api.openai.com', 'unknown.test')
+                hosts = ('bilibili.com', 'baidu.com', 'api.anthropic.com', 'api.openai.com', 'unknown.test')
                 base = {
                     'mixed-port': port, 'bind-address': '127.0.0.1', 'allow-lan': False,
                     'mode': 'rule', 'log-level': 'info', 'ipv6': False,
@@ -96,10 +97,10 @@ class DomesticLoopback(unittest.TestCase):
                         self.assertEqual(request(host), 200, host)
                     self.assertEqual(proxy.hits, 0, 'Domestic TCP unexpectedly used proxy')
                     self.assertEqual(target.hits, 2)
-                    for host in ('api.openai.com', 'unknown.test'):
+                    for host in ('api.anthropic.com', 'api.openai.com', 'unknown.test'):
                         self.assertEqual(request(host), 200, host)
-                    self.assertEqual(proxy.hits, 2)
-                    self.assertEqual(target.hits, 4)
+                    self.assertEqual(proxy.hits, 3, 'Claude, OpenAI and ordinary foreign must share the chosen proxy')
+                    self.assertEqual(target.hits, 5)
 
                     with socket.create_connection(('127.0.0.1', port), timeout=3) as control:
                         control.sendall(b'\x05\x01\x00')
@@ -129,16 +130,22 @@ class DomesticLoopback(unittest.TestCase):
 
                     proxy.shutdown()
                     proxy.server_close()
-                    for host in ('api.openai.com', 'unknown.test'):
+                    for host in ('api.anthropic.com', 'api.openai.com', 'unknown.test'):
                         self.assertNotEqual(request(host), 200, host)
-                    self.assertEqual(target.hits, 4, 'Stopped proxy fell back to direct')
+                    self.assertEqual(target.hits, 5, 'Stopped proxy fell back to direct')
                     self.assertEqual(request('baidu.com'), 200)
-                    self.assertEqual(target.hits, 5, 'Domestic direct must remain available')
+                    self.assertEqual(target.hits, 6, 'Domestic direct must remain available')
                     proc.terminate()
                     proc.wait(timeout=5)
                     proc = None
                 log_text = (folder / 'core.log').read_text()
-                self.assertIn('AI-ONLY', log_text)
+                # Check the real core's selected chains, not just generated rule text.
+                # Both groups must terminate at the exact same loopback proxy node.
+                for host, group in (('api.anthropic.com', ai.GROUP + '-Claude'),
+                                    ('api.openai.com', ai.GROUP), ('unknown.test', ai.GROUP)):
+                    with self.subTest(route_host=host):
+                        self.assertRegex(log_text, re.escape(host) + r':\d+[^\n]*using ' +
+                                         re.escape(group + '[Chosen]'), log_text)
                 self.assertIn('REJECT', log_text)
         finally:
             if proc:

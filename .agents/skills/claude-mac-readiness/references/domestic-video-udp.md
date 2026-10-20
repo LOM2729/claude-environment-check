@@ -1,5 +1,7 @@
 # 国内视频 UDP 例外与国内域名
 
+**v0.10 专属组验收：** 默认 domestic-v4 为 Claude 第一方域名增加 <基础组名>-Claude（默认 AI-ONLY-Claude），与基础组绑定同一具体节点，AI保护块仍优先。生成后检查最终合并和运行连接链，按 [分组与服务路径检查](service-routing-checks.md) 验收；旧候选迁移需先审阅差异。
+
 自动配置默认 `domestic-v4`，适用于 Mac/Windows 的 Mihomo 内核客户端；旧 `unified-v4` 和 `ai-only` 保留兼容。小火箭使用同一策略的原生 .conf 适配，由 Codex 自动展开规则、导入与读回，详见 [小火箭适配](shadowrocket-domestic.md)。Windows 可以生成文件，实际应用验收须在目标 Apple 设备进行。
 
 ## 先检查 UDP 禁用位置

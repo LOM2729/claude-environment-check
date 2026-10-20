@@ -1,9 +1,9 @@
 """Shadowrocket native offline domain expansion, never changes active app state."""
-import copy
 from functools import lru_cache
 import re
 
 import ai_routing as ai
+import claude_group
 import unified_policy as unified
 
 UDP_RULE = 'AND,((PROTOCOL,UDP),(PROTOCOL,UDP)),REJECT-NO-DROP'
@@ -50,7 +50,7 @@ def build(c, original, node, group, direct_review=None):
             c.require(not any(host == h or host.endswith('.' + h) or
                               (parts[0] == 'DOMAIN-SUFFIX' and h.endswith('.' + host)) for h in hosts),
                       'DOMESTIC_PROXY_EXCEPTION_CONFLICT')
-    base = copy.deepcopy(original)
+    base = claude_group.normalize(c, original, 'shadowrocket', node, group, ai.catalog(c))
     span = managed_span(c, base)
     if span:
         start, end = span
@@ -87,4 +87,4 @@ def build(c, original, node, group, direct_review=None):
               'SHADOW_UDP_SETTING_SPELLING_REVIEW_REQUIRED')
     result['general'] = [x for x in general if not re.match(r'^\s*udp-policy-not-supported-behaviour\s*=', x, re.I)]
     result['general'].append('udp-policy-not-supported-behaviour = REJECT')
-    return result
+    return claude_group.add(c, result, 'shadowrocket', node, group, data)

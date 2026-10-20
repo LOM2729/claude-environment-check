@@ -7,6 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import ai_routing as ai
+import claude_group
 import unified_policy as unified
 
 POLICY = 'domestic-v4'
@@ -55,7 +56,7 @@ def build_semantics(c, original, fmt, node, group, direct_review=None):
             c.require(not any(host == h or host.endswith('.' + h) or
                               (parts[0] == 'DOMAIN-SUFFIX' and h.endswith('.' + host)) for h in domestic_hosts),
                       'DOMESTIC_PROXY_EXCEPTION_CONFLICT')
-    base = copy.deepcopy(original)
+    base = claude_group.normalize(c, original, fmt, node, group, ai.catalog(c))
     providers = base.setdefault('rule-providers', {})
     c.require(isinstance(providers, dict), 'DOMESTIC_PROVIDERS_INVALID')
     managed = any(k in providers for k in (VIDEO, CN))
@@ -91,7 +92,7 @@ def build_semantics(c, original, fmt, node, group, direct_review=None):
     tail = [r for r in rules[at + len(guards):] if r != unified.V6_RULE]
     result['rules'] = guards + [unified.V6_RULE] + leading + [VIDEO_RULE, UDP_RULE, CN_RULE] + tail
     result['rule-providers'].update(copy.deepcopy(snapshot()))
-    return result
+    return claude_group.add(c, result, fmt, node, group, catalog)
 
 
 def audit(c, baseline, candidate, fmt, node, group=ai.GROUP, direct_review=None):
@@ -99,6 +100,7 @@ def audit(c, baseline, candidate, fmt, node, group=ai.GROUP, direct_review=None)
     match = expected == c.parse_config(candidate, fmt)
     return {'schema': 'claude-setup-ai-audit/1', 'policy': POLICY,
             'status': 'static_policy_matches' if match else 'unexpected_policy_or_other_changes',
+            'claude_dedicated_group': match,
             'domestic_video_udp_order': match, 'unified_proxy_rules': match,
             'runtime_verified': False, 'system_udp_verified': False, 'application_loaded': 'not_verified'}
 

@@ -1,5 +1,7 @@
 # 自动配置模式：一次确认后连续执行
 
+**v0.10 专属组验收：** 默认 domestic-v4 为 Claude 第一方域名增加 <基础组名>-Claude（默认 AI-ONLY-Claude），与基础组绑定同一具体节点，AI保护块仍优先。生成后检查最终合并和运行连接链，按 [分组与服务路径检查](service-routing-checks.md) 验收；旧候选迁移需先审阅差异。
+
 **v0.8 顺序补充优先适用：** 自动模式采用 [国内视频 UDP 与国内域名](domestic-video-udp.md) 的 domestic-v4。先检查全局 UDP 限制层级；AI 保护优先，视频直连在其余 UDP 拒绝前，普通国内域名在拒绝后。旧 unified-v4 示例仅兼容旧策略；本轮 ai-route / ai-audit / baseline 明确使用 --policy domestic-v4。小火箭由同一策略生成原生 .conf，按 [小火箭适配](shadowrocket-domestic.md) 导入与读回，不套用 Mihomo 文件格式。
 
 需要重启代理客户端/核心/服务或机器时，由客户手动操作；可能中断当前 Codex/远控通道的网络动作或影响不明的重载也交给客户。先保存进度和离线恢复说明，等待客户恢复连接后重新核验，不能自行断开通道；集中批准不替代人工交接。 具体按 [客户手动重启与恢复](five-step-setup.md#客户手动重启与恢复) 执行。

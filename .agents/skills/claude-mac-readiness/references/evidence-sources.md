@@ -55,3 +55,7 @@
 | [Chrome 语言](https://support.google.com/chrome/answer/173424)及本 Skill 平台语言模块所列 Apple／Microsoft 文档 | 区分系统／应用界面／网页首选语言、时区／地区／自动校时 |
 
 [Shadowrocket Wiki](https://github.com/LOWERTOP/Shadowrocket/wiki)属于社区技术资料，单列为第三方；其中 DNS／UDP／STUN 隐式参数需当前软件帮助和目标机复测支持。不能将其冒称为 Anthropic 官方规范，也不把修改这些参数当作默认客户动作。
+
+## Net.Coffee 全部拓展链接的核对（2026-10-21）
+
+截图当前8项均已阅读，逐项处理见 [专属组与拓展资料](service-routing-checks.md)。采用可验证的分组/优先级、功能域名、代理变量生效和故障分层；不采纳第三方分数、防封因果、NTP返回时区等推测。电视文章只作场景参考，不增加设备控制权限或默认修改。

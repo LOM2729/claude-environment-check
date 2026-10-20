@@ -21,7 +21,7 @@
 | 工具 | 能力 |
 | --- | --- |
 | collect / report | 本机元数据与离线 HTML/Markdown 报告；不将采集等同验证 |
-| ai-route / ai-audit | 默认 unified-v4：统一已有代理动作与 AI 到指定节点，保留审核过的国内/本地直连，生成候选、私有差异与审计 |
+| ai-route / ai-audit | 默认 domestic-v4：Claude 专属组和基础组绑定同一指定节点，AI保护优先，保留审核过的国内/本地直连，生成候选、私有差异与审计 |
 | direct-review | 盘点不能直接判定的 DIRECT 规则，由 Codex 按方案填写保留或代理，客户不编辑 JSON |
 | contact-scan / action-check | 启用代理前检查隐含目标；安装/登录/浏览器等动作前核验当前条件，不替用户执行动作 |
 | ipv6-check / dns-ready | 精确接口关闭状态读回；本轮 DNS/代理记录绑定接口、配置和入口，缺失/过期/变化则服务请求停止 |
@@ -45,3 +45,5 @@ IPv6 分为选定系统接口、代理核心、DNS 和节点外层，不能用�
 自动配置默认先核对全局 UDP 限制所在层，再采用国内视频例外：AI 保护最先、国内视频直连、其余 UDP 拒绝、普通国内域名直连、国外统一代理。Mihomo 与小火箭均使用 domestic-v4，分别生成 YAML/JSON 与原生 .conf；具体按对应 Skill 的 references/domestic-video-udp.md，不全局放开 UDP。
 
 小火箭由 Codex 按对应 Skill 的 references/shadowrocket-domestic.md 负责转换、导入和导出核验；客户不手工编辑规则。必要断线/重启仍交客户，恢复连接后继续。
+
+默认创建 AI-ONLY-Claude 与基础 AI-ONLY，分别辨识 Claude 第一方域名与其他统一代理流量，两组同一具体节点，不新增独立出口。Net.Coffee 8项拓展资料的逐项取舍与运行验收见 [分组与服务路径检查](.agents/skills/claude-mac-readiness/references/service-routing-checks.md)。

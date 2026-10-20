@@ -15,12 +15,15 @@ description: Prepare and troubleshoot Claude environments on macOS, including up
 
 自动配置现默认读取 [国内视频 UDP 与国内域名](references/domestic-video-udp.md)，Mihomo 使用 domestic-v4；先 udp-check 和系统/应用层核对，AI 优先、视频直连、其余 UDP 拒绝、普通国内域名直连。小火箭使用同一 domestic-v4 策略生成原生 .conf，按 [小火箭适配](references/shadowrocket-domestic.md) 由 Codex 完成导入和读回。
 
+自动配置与导入后验收同时读取 [Claude专属组与服务路径](references/service-routing-checks.md)：默认新增基础组派生的 Claude 单节点组，所有AI保护规则优先，两组仍用同一指定节点；核对最终运行配置、按功能域名与进程实际采用。
+
 ## 选择范围
 
 从请求与上下文确定目标设备、客户端、代理和现象，只询问影响结果且无法读取的缺失信息。远程服务先标明助手运行在哪台机器；服务提供者本机的命令、浏览器或网络结果不能证明客户设备状态。客户无需安装 Skill，证据来自其授权远控、目标机终端或主动提供的结果；远控不可靠时改为引导客户执行。修改需目标设备所有者对该项的授权。
 
 | 用户请求 | 加载与检查 |
 | --- | --- |
+| Net.Coffee 拓展阅读、Claude 单独分组、规则优先级、网页可用但CLI失败 | 读 [分组与拓展资料吸收](references/service-routing-checks.md)，按当前默认策略验收，官方依据与社区推测分开 |
 | 自动配置、一键配置、除系统语言外帮我配好 | 优先读 [自动配置模式](references/automatic-configuration.md)：系统语言保持不变，先准备具体方案，一次确认后连续执行与复测；不再每项重复询问 |
 | 更新后复查、主动网络验证、检查并启动客户端 | 读 [生命周期检查](references/lifecycle-checks.md)，保存本机基线、审阅探测范围、运行本轮检查；未完成的必需项阻止启动，超时不算零泄漏 |
 | Claude/OpenAI 专属节点、AI 分流、失败不回落直连 | 读 [统一出口规则](references/unified-ipv4.md)，生成候选和审计；自动模式默认统一普通国外与 AI 到同一具体节点，关闭 IPv6，先审阅直连例外 |

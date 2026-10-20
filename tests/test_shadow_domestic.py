@@ -10,6 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 import ai_routing as ai
+import claude_group
 import claude_setup as c
 import domestic_policy as d
 import unified_policy as u
@@ -35,7 +36,7 @@ class ShadowDomestic(unittest.TestCase):
 
     def test_full_snapshot_order_and_original_tail(self):
         result = self.build()
-        guards = ai.guarded_rules(ai.catalog(c), 'shadowrocket', ai.GROUP)
+        guards = claude_group.guarded_rules(ai.catalog(c), 'shadowrocket', ai.GROUP)
         video = native_domains(d.snapshot()[d.VIDEO]['payload'])
         domestic = native_domains(d.snapshot()[d.CN]['payload'])
         expected = guards + [V6, 'DOMAIN,blocked.test,REJECT'] + video + [UDP] + domestic

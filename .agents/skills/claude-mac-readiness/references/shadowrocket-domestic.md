@@ -1,5 +1,7 @@
 # 小火箭原生国内视频与 UDP 配置
 
+**v0.10 专属组验收：** 默认 domestic-v4 为 Claude 第一方域名增加 <基础组名>-Claude（默认 AI-ONLY-Claude），与基础组绑定同一具体节点，AI保护块仍优先。生成后检查最终合并和运行连接链，按 [分组与服务路径检查](service-routing-checks.md) 验收；旧候选迁移需先审阅差异。
+
 与 Clash 使用同一份 AI/视频/国内域名快照和相同策略顺序。`ai-route --policy domestic-v4 --format shadowrocket` 自动生成完整 `candidate.conf`，展开为原生 DOMAIN/DOMAIN-SUFFIX 规则，不包含 Mihomo inline provider，不让客户手工粘贴名单或编辑 JSON。配置生成可在 Mac/Windows 上运行；小火箭实际应用验收只在支持的 Apple 设备上进行，Windows 生成文件不等于 Apple 设备已配置。
 
 ## Codex 完成操作，客户只处理必要交接

@@ -1,5 +1,5 @@
 # Claude 环境检测：从这里开始
-版本：0.9.0 · Mac / Windows
+版本：0.10.0 · Mac / Windows
 
 ## 客户只需准备
 1. 已有的配置文件或订阅，以及希望使用的节点。文件可放入“客户配置”目录；不要把订阅凭据贴到公开聊天。
@@ -39,3 +39,5 @@
 自动配置默认先核对全局 UDP 限制所在层，再采用国内视频例外：AI 保护最先、国内视频直连、其余 UDP 拒绝、普通国内域名直连、国外统一代理。Mihomo 与小火箭均使用 domestic-v4，分别生成 YAML/JSON 与原生 .conf；具体按对应 Skill 的 references/domestic-video-udp.md，不全局放开 UDP。
 
 小火箭由 Codex 按对应 Skill 的 references/shadowrocket-domestic.md 负责转换、导入和导出核验；客户不手工编辑规则。必要断线/重启仍交客户，恢复连接后继续。
+
+Claude 专属组默认显示 AI-ONLY-Claude，基础组显示 AI-ONLY，两组使用同一指定节点。Codex按对应 Skill 的 service-routing-checks.md 检查最终规则优先级与实际采用；新旧差异先确认。

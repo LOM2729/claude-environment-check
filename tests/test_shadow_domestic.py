@@ -144,7 +144,7 @@ class ShadowDomestic(unittest.TestCase):
             self.assertFalse(json.loads(run.stdout)['runtime_verified'])
             candidate = output / 'candidate.conf'
             data = candidate.read_bytes()
-            self.assertTrue(data.startswith(b'# customer comments\n'))
+            self.assertTrue(data.startswith(source.read_bytes().splitlines(keepends=True)[0]))
             self.assertEqual(source.read_text(encoding='utf-8'), SHADOW)
             self.assertEqual(d.audit(c, source.read_bytes(), data, 'shadowrocket', 'Customer Node')['status'],
                              'static_policy_matches')

@@ -24,7 +24,7 @@ def check(c, names):
                 off = evidence is not None and evidence.lower() == 'off'
         elif platform.system() == 'Windows':
             raw = c.run_fixed(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
-                               str(Path(__file__).with_name('check_ipv6_binding.ps1')), '-AdapterName', name])
+                               str(Path(__file__).with_name('check_ipv6_binding.ps1')), '-AdapterName', name], timeout=20)
             try:
                 value = c.load_json(raw.encode()) if raw else None
                 if isinstance(value, dict) and value.get('name') == name:

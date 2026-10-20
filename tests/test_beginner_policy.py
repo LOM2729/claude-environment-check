@@ -183,7 +183,7 @@ class ImplicitContacts(unittest.TestCase):
 class IPv6Readback(unittest.TestCase):
     @unittest.skipUnless(sys.platform == 'win32', 'Native adapter reader on Windows CI')
     def test_native_windows_reader_is_executable_without_policy_bypass(self):
-        name = c.run_fixed(['powershell.exe','-NoProfile','-NonInteractive','-Command', '[Console]::OutputEncoding = [Text.Encoding]::UTF8; Get-NetAdapterBinding -ComponentID ms_tcpip6 | Select-Object -First 1 -ExpandProperty Name'])
+        name = c.run_fixed(['powershell.exe','-NoProfile','-NonInteractive','-Command', '[Console]::OutputEncoding = [Text.Encoding]::UTF8; Get-NetAdapterBinding -ComponentID ms_tcpip6 | Select-Object -First 1 -ExpandProperty Name'], timeout=20)
         self.assertTrue(name)
         rows, evidence = ipv6_scope.check(c, [name])
         self.assertEqual(len(rows), 1)

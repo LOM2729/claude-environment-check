@@ -38,7 +38,7 @@ class ConnectionWorkflow(unittest.TestCase):
             self.assertFalse(candidate['disable-keep-alive'])
             self.assertEqual(candidate['proxies'], original['proxies'])
             self.assertEqual(candidate['rules'], original['rules'])
-            report = (out / 'report.md').read_text()
+            report = (out / 'report.md').read_text(encoding='utf-8')
             self.assertNotIn('secret-fixture', report)
             self.assertNotIn('private-node', report)
             rows = json.loads((out / 'report.json').read_bytes())['rows']

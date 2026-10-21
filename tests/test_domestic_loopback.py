@@ -1,6 +1,7 @@
 """Real Mihomo routing checks; every destination and upstream stays on loopback."""
 import http.client
 from http.server import ThreadingHTTPServer
+import json
 import os
 from pathlib import Path
 import re
@@ -42,9 +43,11 @@ class DomesticLoopback(unittest.TestCase):
         proxy.target_port = target.server_port
         for server in (target, proxy):
             threading.Thread(target=server.serve_forever, daemon=True).start()
-        with socket.socket() as reservation:
+        with socket.socket() as reservation, socket.socket() as controller_reservation:
             reservation.bind(('127.0.0.1', 0))
             port = reservation.getsockname()[1]
+            controller_reservation.bind(('127.0.0.1', 0))
+            controller_port = controller_reservation.getsockname()[1]
         udp_target = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_target.bind(('127.0.0.1', 0))
         udp_target.settimeout(.8)
@@ -55,6 +58,7 @@ class DomesticLoopback(unittest.TestCase):
                 hosts = ('bilibili.com', 'baidu.com', 'api.anthropic.com', 'api.openai.com', 'unknown.test')
                 base = {
                     'mixed-port': port, 'bind-address': '127.0.0.1', 'allow-lan': False,
+                    'external-controller': f'127.0.0.1:{controller_port}',
                     'mode': 'rule', 'log-level': 'info', 'ipv6': False,
                     'dns': {'enable': False}, 'tun': {'enable': False},
                     'hosts': {host: '127.0.0.1' for host in hosts},
@@ -71,15 +75,35 @@ class DomesticLoopback(unittest.TestCase):
                 self.assertEqual(check.returncode, 0, check.stdout.decode(errors='replace') + check.stderr.decode(errors='replace'))
                 with (folder / 'core.log').open('wb') as log:
                     proc = subprocess.Popen([binary, '-d', directory, '-f', str(config)], stdout=log, stderr=log)
+
+                    def diagnostics():
+                        return (f'core_exit={proc.poll()}, direct_hits={target.hits}, proxy_hits={proxy.hits}\n' +
+                                (folder / 'core.log').read_text(errors='replace'))
+
                     until = time.monotonic() + 10
+                    provider_state = None
                     while True:
+                        connection = http.client.HTTPConnection('127.0.0.1', controller_port, timeout=.5)
                         try:
-                            with socket.create_connection(('127.0.0.1', port), timeout=.2):
-                                break
-                        except OSError:
-                            if time.monotonic() > until or proc.poll() is not None:
-                                self.fail('Loopback core did not start: ' + (folder / 'core.log').read_text())
-                            time.sleep(.05)
+                            # The mixed listener opens before inline providers initialize.
+                            # Wait on provider readiness, never retry a failed routing request.
+                            connection.request('GET', '/providers/rules')
+                            response = connection.getresponse()
+                            providers = json.loads(response.read(8 * 1024 * 1024)).get('providers', {})
+                            provider_state = {name: providers.get(name, {}).get('ruleCount', 0)
+                                              for name in (domestic.VIDEO, domestic.CN)}
+                            if response.status == 200 and all(
+                                    count > 0 for count in provider_state.values()):
+                                with socket.create_connection(('127.0.0.1', port), timeout=.2):
+                                    break
+                        except (OSError, http.client.HTTPException, ValueError) as error:
+                            provider_state = {'readiness_error': repr(error)}
+                        finally:
+                            connection.close()
+                        if time.monotonic() > until or proc.poll() is not None:
+                            self.fail('Loopback core/providers did not become ready: ' +
+                                      repr(provider_state) + '\n' + diagnostics())
+                        time.sleep(.05)
 
                     def request(host):
                         connection = http.client.HTTPConnection('127.0.0.1', port, timeout=4)
@@ -94,11 +118,13 @@ class DomesticLoopback(unittest.TestCase):
                             connection.close()
 
                     for host in ('bilibili.com', 'baidu.com'):
-                        self.assertEqual(request(host), 200, host)
+                        status = request(host)
+                        self.assertEqual(status, 200, host + '\n' + diagnostics() if status != 200 else host)
                     self.assertEqual(proxy.hits, 0, 'Domestic TCP unexpectedly used proxy')
                     self.assertEqual(target.hits, 2)
                     for host in ('api.anthropic.com', 'api.openai.com', 'unknown.test'):
-                        self.assertEqual(request(host), 200, host)
+                        status = request(host)
+                        self.assertEqual(status, 200, host + '\n' + diagnostics() if status != 200 else host)
                     self.assertEqual(proxy.hits, 3, 'Claude, OpenAI and ordinary foreign must share the chosen proxy')
                     self.assertEqual(target.hits, 5)
 

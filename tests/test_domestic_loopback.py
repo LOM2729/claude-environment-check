@@ -1,5 +1,6 @@
 """Real Mihomo routing checks; every destination and upstream stays on loopback."""
 import http.client
+from contextlib import ExitStack
 from http.server import ThreadingHTTPServer
 import json
 import os
@@ -17,7 +18,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import ai_routing as ai
 import claude_setup as c
-from test_mihomo_loopback import LocalHTTP, LocalProxy
+from test_mihomo_loopback import LocalHTTP, LocalProxy, available_mixed_port, stop_core
 
 
 def receive_exact(connection, size):
@@ -43,17 +44,16 @@ class DomesticLoopback(unittest.TestCase):
         proxy.target_port = target.server_port
         for server in (target, proxy):
             threading.Thread(target=server.serve_forever, daemon=True).start()
-        with socket.socket() as reservation, socket.socket() as controller_reservation:
-            reservation.bind(('127.0.0.1', 0))
-            port = reservation.getsockname()[1]
+        with socket.socket() as controller_reservation:
             controller_reservation.bind(('127.0.0.1', 0))
             controller_port = controller_reservation.getsockname()[1]
+            port = available_mixed_port()
         udp_target = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_target.bind(('127.0.0.1', 0))
         udp_target.settimeout(.8)
         proc = None
         try:
-            with tempfile.TemporaryDirectory() as directory:
+            with tempfile.TemporaryDirectory() as directory, ExitStack() as cleanup:
                 folder = Path(directory)
                 hosts = ('bilibili.com', 'baidu.com', 'api.anthropic.com', 'api.openai.com', 'unknown.test')
                 base = {
@@ -75,6 +75,7 @@ class DomesticLoopback(unittest.TestCase):
                 self.assertEqual(check.returncode, 0, check.stdout.decode(errors='replace') + check.stderr.decode(errors='replace'))
                 with (folder / 'core.log').open('wb') as log:
                     proc = subprocess.Popen([binary, '-d', directory, '-f', str(config)], stdout=log, stderr=log)
+                    cleanup.callback(stop_core, proc)
 
                     def diagnostics():
                         return (f'core_exit={proc.poll()}, direct_hits={target.hits}, proxy_hits={proxy.hits}\n' +
@@ -89,8 +90,8 @@ class DomesticLoopback(unittest.TestCase):
                             # Wait on provider readiness, never retry a failed routing request.
                             connection.request('GET', '/providers/rules')
                             response = connection.getresponse()
-                            providers = json.loads(response.read(8 * 1024 * 1024)).get('providers', {})
-                            provider_state = {name: providers.get(name, {}).get('ruleCount', 0)
+                            providers = json.loads(response.read(8 * 1024 * 1024)).get('providers') or {}
+                            provider_state = {name: (providers.get(name) or {}).get('ruleCount', 0)
                                               for name in (domestic.VIDEO, domestic.CN)}
                             if response.status == 200 and all(
                                     count > 0 for count in provider_state.values()):

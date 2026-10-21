@@ -4,6 +4,7 @@ Set MIHOMO_BINARY to a publisher-verified local binary. Never downloads dependen
 touches system proxy/TUN or sends requests to real AI services.
 """
 import http.client
+from contextlib import ExitStack
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
 from pathlib import Path
@@ -21,6 +22,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import ai_routing as ai
 import unified_policy as unified
 import claude_setup as c
+
+
+def available_mixed_port():
+    # Windows may allow TCP but reserve the same UDP port. Check both transports.
+    for _ in range(50):
+        with socket.socket() as tcp, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
+            tcp.bind(('127.0.0.1', 0))
+            port = tcp.getsockname()[1]
+            try:
+                udp.bind(('127.0.0.1', port))
+            except OSError:
+                continue
+            return port
+    raise RuntimeError('No loopback port available for both TCP and UDP')
+
+
+def stop_core(process):
+    if process.poll() is None:
+        process.terminate()
+        process.wait(timeout=5)
 
 
 class LocalHTTP(BaseHTTPRequestHandler):
@@ -73,16 +94,13 @@ class MihomoLoopback(unittest.TestCase):
         proxy.target_port = target.server_port
         for server in (target, proxy):
             threading.Thread(target=server.serve_forever, daemon=True).start()
-        reservation = socket.socket()
-        reservation.bind(('127.0.0.1', 0))
-        port = reservation.getsockname()[1]
-        reservation.close()
+        port = available_mixed_port()
         udp_target = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_target.bind(('127.0.0.1', 0))
         udp_target.settimeout(1)
         proc = None
         try:
-            with tempfile.TemporaryDirectory() as directory:
+            with tempfile.TemporaryDirectory() as directory, ExitStack() as cleanup:
                 folder = Path(directory)
                 base = {
                     'mixed-port': port, 'bind-address': '127.0.0.1', 'allow-lan': False,
@@ -104,6 +122,7 @@ class MihomoLoopback(unittest.TestCase):
                 self.assertEqual(check.returncode, 0, check.stdout.decode(errors='replace') + check.stderr.decode(errors='replace'))
                 with (folder / 'core.log').open('wb') as log:
                     proc = subprocess.Popen([binary, '-d', directory, '-f', str(config)], stdout=log, stderr=log)
+                    cleanup.callback(stop_core, proc)
                     until = time.monotonic() + 10
                     while True:
                         try:

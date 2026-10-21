@@ -8,6 +8,7 @@ from pathlib import Path
 
 import ai_routing as ai
 import claude_group
+import community_routing as community
 import unified_policy as unified
 
 POLICY = 'domestic-v4'
@@ -89,6 +90,7 @@ def build_semantics(c, original, fmt, node, group, direct_review=None):
         c.require(parts[0] in ('DOMAIN', 'DOMAIN-SUFFIX') and len(parts) == 3
                   and not any(h == parts[1] or h.endswith('.' + parts[1]) or parts[1].endswith('.' + h) for h in hosts),
                   'DOMESTIC_EXISTING_DENY_REVIEW_REQUIRED')
+        c.require(not community.deny_overlap(parts[0], parts[1]), 'DOMESTIC_EXISTING_DENY_REVIEW_REQUIRED')
     tail = [r for r in rules[at + len(guards):] if r != unified.V6_RULE]
     result['rules'] = guards + [unified.V6_RULE] + leading + [VIDEO_RULE, UDP_RULE, CN_RULE] + tail
     result['rule-providers'].update(copy.deepcopy(snapshot()))
@@ -101,6 +103,7 @@ def audit(c, baseline, candidate, fmt, node, group=ai.GROUP, direct_review=None)
     return {'schema': 'claude-setup-ai-audit/1', 'policy': POLICY,
             'status': 'static_policy_matches' if match else 'unexpected_policy_or_other_changes',
             'claude_dedicated_group': match,
+            'community_routing': community.audit_scope(),
             'domestic_video_udp_order': match, 'unified_proxy_rules': match,
             'runtime_verified': False, 'system_udp_verified': False, 'application_loaded': 'not_verified'}
 

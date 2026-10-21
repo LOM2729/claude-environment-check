@@ -55,7 +55,14 @@ class DomesticLoopback(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as directory, ExitStack() as cleanup:
                 folder = Path(directory)
-                hosts = ('bilibili.com', 'baidu.com', 'api.anthropic.com', 'api.openai.com', 'unknown.test')
+                claude_hosts = ('api.anthropic.com', 'clau.de', 'claudemcpclient.com',
+                                'anthropic.auth0.com', 'servd-anthropic-website.b-cdn.net',
+                                'anthropic.com.cdn.cloudflare.net', 'cdn.usefathom.com',
+                                'metrics.sentry.io', 'sdk.statsigapi.net', 'widget.intercom.io',
+                                'cdn.intercomcdn.com', 'regional-datadog.example',
+                                'metrics-sentry.example', 'track-sift.example', 'ntp.aliyun.com')
+                proxy_hosts = claude_hosts + ('api.openai.com', 'unknown.test')
+                hosts = ('bilibili.com', 'baidu.com') + proxy_hosts
                 base = {
                     'mixed-port': port, 'bind-address': '127.0.0.1', 'allow-lan': False,
                     'external-controller': f'127.0.0.1:{controller_port}',
@@ -123,11 +130,11 @@ class DomesticLoopback(unittest.TestCase):
                         self.assertEqual(status, 200, host + '\n' + diagnostics() if status != 200 else host)
                     self.assertEqual(proxy.hits, 0, 'Domestic TCP unexpectedly used proxy')
                     self.assertEqual(target.hits, 2)
-                    for host in ('api.anthropic.com', 'api.openai.com', 'unknown.test'):
+                    for host in proxy_hosts:
                         status = request(host)
                         self.assertEqual(status, 200, host + '\n' + diagnostics() if status != 200 else host)
-                    self.assertEqual(proxy.hits, 3, 'Claude, OpenAI and ordinary foreign must share the chosen proxy')
-                    self.assertEqual(target.hits, 5)
+                    self.assertEqual(proxy.hits, len(proxy_hosts), 'Claude, OpenAI and ordinary foreign must share the chosen proxy')
+                    self.assertEqual(target.hits, len(hosts))
 
                     with socket.create_connection(('127.0.0.1', port), timeout=3) as control:
                         control.sendall(b'\x05\x01\x00')
@@ -157,19 +164,19 @@ class DomesticLoopback(unittest.TestCase):
 
                     proxy.shutdown()
                     proxy.server_close()
-                    for host in ('api.anthropic.com', 'api.openai.com', 'unknown.test'):
+                    for host in proxy_hosts:
                         self.assertNotEqual(request(host), 200, host)
-                    self.assertEqual(target.hits, 5, 'Stopped proxy fell back to direct')
+                    self.assertEqual(target.hits, len(hosts), 'Stopped proxy fell back to direct')
                     self.assertEqual(request('baidu.com'), 200)
-                    self.assertEqual(target.hits, 6, 'Domestic direct must remain available')
+                    self.assertEqual(target.hits, len(hosts) + 1, 'Domestic direct must remain available')
                     proc.terminate()
                     proc.wait(timeout=5)
                     proc = None
                 log_text = (folder / 'core.log').read_text()
                 # Check the real core's selected chains, not just generated rule text.
                 # Both groups must terminate at the exact same loopback proxy node.
-                for host, group in (('api.anthropic.com', ai.GROUP + '-Claude'),
-                                    ('api.openai.com', ai.GROUP), ('unknown.test', ai.GROUP)):
+                for host, group in ([(host, ai.GROUP + '-Claude') for host in claude_hosts] +
+                                    [('api.openai.com', ai.GROUP), ('unknown.test', ai.GROUP)]):
                     with self.subTest(route_host=host):
                         self.assertRegex(log_text, re.escape(host) + r':\d+[^\n]*using ' +
                                          re.escape(group + '[Chosen]'), log_text)

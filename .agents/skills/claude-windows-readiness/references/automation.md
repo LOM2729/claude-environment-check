@@ -2,6 +2,8 @@
 
 `scripts/claude_setup.py` 是跨平台统一入口，Python 3.9+。Windows 原生采集由同目录 `collect_windows.ps1` 完成，使用系统 Windows PowerShell；不绕过执行策略。YAML 分析另需 `PyYAML==6.0.3`，其他 JSON、Shadowrocket、采集和报告功能只用 Python 标准库。
 
+教程扩展使用 `tutorial-check --config <实际文件> --node <指定节点> --out <新报告目录>` 逐项核对静态覆盖，保留实际流量未完成；见 [教程覆盖表](tutorial-coverage.md)。`connection-check` 和 `connection-plan` 按已确认内核准备保活及适用外层指纹，见 [连接设置](connection-reuse.md)。这些命令不联网、不导入、不重启，详细结果留本机，对客户只展示简短摘要。
+
 ## 先检查运行条件
 
 在客户机确认已有 `python3`（Mac）或 `py -3`／`python`（Windows），不要把 WSL Python 的采集结果当作 Windows 原生。缺 Python 时先说明安装范围；不能声称包本身附带 Python。需要 YAML 时可在客户批准后用现有 Python 创建本任务 `.venv`，从随包 `scripts/requirements.txt` 安装固定依赖；不全局安装、不自动联网安装、不执行配置内代码。Mac 资料与 Windows 脚本结果都只能反映执行端。

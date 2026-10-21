@@ -17,6 +17,8 @@ description: Prepare and troubleshoot Claude environments on macOS, including up
 
 自动配置与导入后验收同时读取 [Claude专属组与服务路径](references/service-routing-checks.md)：默认新增基础组派生的 Claude 单节点组，所有AI保护规则优先，两组仍用同一指定节点；核对最终运行配置、按功能域名与进程实际采用。
 
+默认自动配置同时按 [教程逐项覆盖表](references/tutorial-coverage.md) 执行社区扩展目标和 11 项适配，并运行 [连接保活检查与候选](references/connection-reuse.md)。详细差异与逐项证据留本机；客户只看已完成/未完成摘要和下一步。新增共享服务、关键词、IP 范围须包含在一次具体方案中；系统语言保持，IPv6 和 UDP 策略不变。
+
 ## 选择范围
 
 从请求与上下文确定目标设备、客户端、代理和现象，只询问影响结果且无法读取的缺失信息。远程服务先标明助手运行在哪台机器；服务提供者本机的命令、浏览器或网络结果不能证明客户设备状态。客户无需安装 Skill，证据来自其授权远控、目标机终端或主动提供的结果；远控不可靠时改为引导客户执行。修改需目标设备所有者对该项的授权。

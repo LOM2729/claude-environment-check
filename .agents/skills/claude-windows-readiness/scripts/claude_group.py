@@ -1,7 +1,8 @@
-"""A visible Claude selector bound to the same concrete node as unified traffic."""
+"""A visible Claude selector with legacy-safe community protection upgrades."""
 import copy
 
 import ai_routing as ai
+import community_routing as community
 
 SUFFIXES = frozenset(('claude.ai', 'claude.com', 'anthropic.com',
                       'claudeusercontent.com', 'claudemcpcontent.com'))
@@ -17,13 +18,17 @@ def labels(c, node, group):
     c.require(node not in (group, name(group)), 'CLAUDE_GROUP_NODE_COLLISION')
 
 
-def guarded_rules(catalog, fmt, group):
+def legacy_guarded_rules(catalog, fmt, group):
     rules = ai.guarded_rules(catalog, fmt, group)
     for index, rule in enumerate(rules):
         parts = rule.split(',')
         if len(parts) == 3 and parts[0] == 'DOMAIN-SUFFIX' and parts[1] in SUFFIXES and parts[2] == group:
             rules[index] = ','.join(parts[:2] + [name(group)])
     return rules
+
+
+def guarded_rules(catalog, fmt, group):
+    return community.guarded_rules(fmt, name(group)) + legacy_guarded_rules(catalog, fmt, group)
 
 
 def normalize(c, original, fmt, node, group, catalog):
@@ -54,7 +59,8 @@ def normalize(c, original, fmt, node, group, catalog):
     if not existing:
         c.require(not references, 'CLAUDE_GROUP_MANAGED_BLOCK_CHANGED')
         return base
-    guarded = guarded_rules(catalog, fmt, group)
+    variants = (guarded_rules(catalog, fmt, group), legacy_guarded_rules(catalog, fmt, group))
+    guarded = next((block for block in variants if rules[:len(block)] == block), variants[0])
     c.require(len(existing) == 1 and rules[:len(guarded)] == guarded
               and references == [r for r in guarded if ai.target(r) == derived]
               and sum(rules[i:i + len(guarded)] == guarded for i in range(len(rules))) == 1,
@@ -88,7 +94,7 @@ def normalize(c, original, fmt, node, group, catalog):
 
 
 def add(c, result, fmt, node, group, catalog):
-    """Convert first-party Claude actions only; preserve all UDP and reject guards."""
+    """Add community scope and Claude actions; preserve UDP and reject guards."""
     labels(c, node, group)
     rulekey = 'rule' if fmt == 'shadowrocket' else 'rules'
     old = ai.guarded_rules(catalog, fmt, group)

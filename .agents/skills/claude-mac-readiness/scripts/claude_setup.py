@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.10.0'
+VERSION = '0.11.0'
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -923,9 +923,39 @@ def main(argv=None):
     uc.add_argument('--config', required=True)
     uc.add_argument('--format', default='auto', choices=('auto', 'json', 'yaml', 'shadowrocket'))
     uc.add_argument('--out', required=True)
+    for command in ('connection-check', 'connection-plan'):
+        cp = sub.add_parser(command, help='Offline connection settings review or private candidate; never apply')
+        cp.add_argument('--config', required=True)
+        cp.add_argument('--format', default='auto', choices=('auto', 'json', 'yaml', 'shadowrocket'))
+        cp.add_argument('--core', choices=('mihomo', 'clash', 'shadowrocket'))
+        cp.add_argument('--core-version')
+        cp.add_argument('--node', help='Explicit local node to inspect; never choose a node by guessing')
+        cp.add_argument('--chrome-fingerprint', action='store_true', help='Prepare supported outer TLS client fingerprint only')
+        cp.add_argument('--out', required=True)
+    tc = sub.add_parser('tutorial-check', help='Offline per-target tutorial coverage report; no network')
+    tc.add_argument('--config', required=True)
+    tc.add_argument('--format', default='auto', choices=('auto', 'json', 'yaml', 'shadowrocket'))
+    tc.add_argument('--node', required=True)
+    tc.add_argument('--group', default='AI-ONLY')
+    tc.add_argument('--out', required=True)
     args = parser.parse_args(argv)
     try:
-        if args.command == 'direct-review':
+        if args.command == 'tutorial-check':
+            import community_routing
+            import claude_group
+            import readiness_lifecycle as lifecycle
+            context = SimpleNamespace(**globals())
+            claude_group.labels(context, args.node, args.group)
+            source = read_bytes(args.config)
+            fmt = config_format(args.config, args.format)
+            summary = config_summary(source, fmt)
+            rows = community_routing.coverage(context, parse_config(source, fmt), fmt, args.node, args.group, summary=summary)
+            result = lifecycle.save_report(context, args.out, args.command, rows,
+                extra={'source_sha256': sha(source), 'scope': community_routing.audit_scope(), 'runtime_verified': False})
+        elif args.command in ('connection-check', 'connection-plan'):
+            import connection_workflow
+            result = connection_workflow.run(SimpleNamespace(**globals()), args)
+        elif args.command == 'direct-review':
             import unified_policy
             context = SimpleNamespace(**globals())
             value = unified_policy.direct_template(context, args.config, args.format)
@@ -1010,7 +1040,7 @@ def main(argv=None):
             if args.output:
                 write_new(args.output, encode(result))
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-        if args.command in ('network-check', 'recheck', 'preflight', 'contact-scan', 'action-check', 'ipv6-check', 'udp-check') and not result['required_checks_completed']:
+        if args.command in ('network-check', 'recheck', 'preflight', 'contact-scan', 'action-check', 'ipv6-check', 'udp-check', 'connection-check', 'connection-plan', 'tutorial-check') and not result['required_checks_completed']:
             return 2
         if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
             return 2

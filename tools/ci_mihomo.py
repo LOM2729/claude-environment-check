@@ -42,11 +42,15 @@ def main():
             binary.write_bytes(gzip.decompress(data))
         binary.chmod(0o700)
         subprocess.run([str(binary), '-v'], check=True, timeout=10)
-        result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests',
-                                 '-p', 'test*loopback.py', '-v'],
-                                cwd=Path(__file__).resolve().parents[1],
-                                env=dict(os.environ, MIHOMO_BINARY=str(binary)), timeout=90)
-        return result.returncode
+        # The expanded per-target UDP/failure checks need a bounded larger budget.
+        for pattern, timeout in (('test*loopback.py', 180), ('test_connection_reuse.py', 45)):
+            result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests',
+                                     '-p', pattern, '-v'],
+                                    cwd=Path(__file__).resolve().parents[1],
+                                    env=dict(os.environ, MIHOMO_BINARY=str(binary)), timeout=timeout)
+            if result.returncode:
+                return result.returncode
+        return 0
 
 
 if __name__ == '__main__':

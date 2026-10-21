@@ -22,6 +22,8 @@
 | --- | --- |
 | collect / report | 本机元数据与离线 HTML/Markdown 报告；不将采集等同验证 |
 | ai-route / ai-audit | 默认 domestic-v4：Claude 专属组和基础组绑定同一指定节点，AI保护优先，保留审核过的国内/本地直连，生成候选、私有差异与审计 |
+| connection-check / connection-plan | 按实际内核版本检查 TCP 保活，准备可审阅候选；不把保活等同 HTTP 复用 |
+| tutorial-check | 按教程扩展目标逐项核对静态覆盖，缺项保留未完成，详细清单留本机 |
 | direct-review | 盘点不能直接判定的 DIRECT 规则，由 Codex 按方案填写保留或代理，客户不编辑 JSON |
 | contact-scan / action-check | 启用代理前检查隐含目标；安装/登录/浏览器等动作前核验当前条件，不替用户执行动作 |
 | ipv6-check / dns-ready | 精确接口关闭状态读回；本轮 DNS/代理记录绑定接口、配置和入口，缺失/过期/变化则服务请求停止 |
@@ -47,3 +49,5 @@ IPv6 分为选定系统接口、代理核心、DNS 和节点外层，不能用�
 小火箭由 Codex 按对应 Skill 的 references/shadowrocket-domestic.md 负责转换、导入和导出核验；客户不手工编辑规则。必要断线/重启仍交客户，恢复连接后继续。
 
 默认创建 AI-ONLY-Claude 与基础 AI-ONLY，分别辨识 Claude 第一方域名与其他统一代理流量，两组同一具体节点，不新增独立出口。Net.Coffee 8项拓展资料的逐项取舍与运行验收见 [分组与服务路径检查](.agents/skills/claude-mac-readiness/references/service-routing-checks.md)。
+
+默认按 [教程逐项覆盖表](.agents/skills/claude-mac-readiness/references/tutorial-coverage.md) 纳入补充域名、共享服务、关键词、离线分类与 IP/ASN 快照；不在首用时下载规则数据库。社区建议与官方依据分开，NTP UDP 仍拒绝，IPv6 仍关闭。

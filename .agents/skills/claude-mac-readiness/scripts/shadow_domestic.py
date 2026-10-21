@@ -4,6 +4,7 @@ import re
 
 import ai_routing as ai
 import claude_group
+import community_routing as community
 import unified_policy as unified
 
 UDP_RULE = 'AND,((PROTOCOL,UDP),(PROTOCOL,UDP)),REJECT-NO-DROP'
@@ -77,6 +78,7 @@ def build(c, original, node, group, direct_review=None):
         c.require(parts[0] in ('DOMAIN', 'DOMAIN-SUFFIX') and len(parts) == 3
                   and not any(h == parts[1] or h.endswith('.' + parts[1]) or parts[1].endswith('.' + h) for h in protected),
                   'DOMESTIC_EXISTING_DENY_REVIEW_REQUIRED')
+        c.require(not community.deny_overlap(parts[0], parts[1]), 'DOMESTIC_EXISTING_DENY_REVIEW_REQUIRED')
     tail = [r for r in rules[at + len(guards):] if r != unified.V6_RULE]
     video, cn = native_blocks()
     result['rule'] = guards + [V6_RULE] + leading + video + [UDP_RULE] + cn + tail

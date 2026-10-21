@@ -1,5 +1,7 @@
 # 五步自动配置：客户只做选择，Codex 负责执行
 
+**当前教程扩展：** 默认按 [教程覆盖表](tutorial-coverage.md) 逐项处理全部列出的目标、分类与 11 项建议；新增共享范围进入具体方案。先按 [连接保活](connection-reuse.md) 准备适配候选，再生成统一分流；最终全量差异和规则审计分别绑定正确输入。运行 `tutorial-check` 检查静态逐项覆盖，运行态仍需目标机验收。客户只看简短结果。
+
 **v0.10 专属组验收：** 默认 domestic-v4 为 Claude 第一方域名增加 <基础组名>-Claude（默认 AI-ONLY-Claude），与基础组绑定同一具体节点，AI保护块仍优先。生成后检查最终合并和运行连接链，按 [分组与服务路径检查](service-routing-checks.md) 验收；旧候选迁移需先审阅差异。
 
 **v0.8 顺序补充优先适用：** 自动模式采用 [国内视频 UDP 与国内域名](domestic-video-udp.md) 的 domestic-v4。先检查全局 UDP 限制层级；AI 保护优先，视频直连在其余 UDP 拒绝前，普通国内域名在拒绝后。旧 unified-v4 示例仅兼容旧策略；本轮 ai-route / ai-audit / baseline 明确使用 --policy domestic-v4。小火箭由同一策略生成原生 .conf，按 [小火箭适配](shadowrocket-domestic.md) 导入与读回，不套用 Mihomo 文件格式。

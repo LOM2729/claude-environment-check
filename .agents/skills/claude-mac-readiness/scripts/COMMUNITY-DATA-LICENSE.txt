@@ -1,0 +1,32 @@
+Community domain data snapshot
+
+Source: https://github.com/v2fly/domain-list-community
+Commit: e8f6d1e5c4a01cda943c0784ffa834340eeab5ae
+Retrieved: 2026-10-21
+Files: data/anthropic, data/category-ntp, data/category-ntp-cn, data/category-ntp-jp
+Transformation: recursive includes expanded offline; full: becomes DOMAIN; plain domain becomes DOMAIN-SUFFIX; attributes retained as membership without filtering. UDP rejects and TCP proxy/reject guards are local policy, not upstream behavior. Original texts and SHA256 hashes are in community_snapshot.json.
+
+RIPEstat AS399358 announcement snapshot: https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS399358
+Recorded query ends 2026-10-20; observed routes only, not a claim of complete real-time ASN coverage. IPv6 entries are recorded but never emitted as proxy allows.
+
+MIT License
+
+Copyright (c) 2018-2019 V2Ray
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

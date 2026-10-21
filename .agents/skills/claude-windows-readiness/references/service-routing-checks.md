@@ -8,7 +8,7 @@
 
 组名由 `--group` 派生为 `<基础组名>-Claude`。修改基础组名时，生成、审计和基线命令必须保持一致；Codex 根据真实界面说明，不让客户手工改 JSON。现有无关同名组不能直接覆盖；发现同名、损坏管理块、两组绑定不同节点或未知链时停止该项，准备明确方案。
 
-已知 Claude 第一方范围来自包内已核对目录，包括 `claude.ai`、`claude.com`、`anthropic.com`、内容/MCP后缀；共享服务准确主机仍走基础组的同一节点。这个分类不是永久完整功能清单，也不代表所有共享主机只属于某一家。
+Claude范围由原目录与本轮社区补充共同构成，包括 `claude.ai`、`claude.com`、`anthropic.com`、`clau.de`、内容/MCP后缀及离线分类展开；共享服务也纳入同一指定节点，具体匹配范围见 [教程覆盖表](tutorial-coverage.md)。这个分类不是永久完整功能清单，也不代表所有共享主机只属于某一家。
 
 旧 v0.9 单组候选可通过精确识别的管理块迁移；重复执行不叠加组和规则。已有基线不会因为新版本默认行为改变就自动被接受：准备差异、按本轮目标确认后导入并建立新基线。`unified-v4`、`ai-only` 是旧兼容策略，不把它们的旧排序当作当前默认。
 
@@ -31,13 +31,15 @@
 
 规则机制依据：[Mihomo 规则优先级及 UDP 后续匹配](https://wiki.metacubex.one/config/rules/)。生成器/小火箭格式的结果按本包测试及当前软件分别验证，不能拿 Mihomo 核心通过代替小火箭运行验收。
 
-## 3. 域名按功能核对，不照抄“大全”
+## 3. 按教程完整扩展，并逐项核验
 
-先问实际用的是网页、Desktop、Claude Code、MCP/插件、第三方网关还是云提供商。依据 [Claude Code 官方网络说明](https://code.claude.com/docs/en/network-config) 对应功能核对需要的主机，再和包内 `ai_domains.json` 及脱敏连接记录对照；缺项先列来源、用途、准确域名和共享影响，确认后才补。
+本轮按用户选择，以 Net.Coffee 域名页及11项配置页为基准补充默认 `domestic-v4`，详细目标、逐项执行点、官方机制与社区建议见 [教程覆盖表](tutorial-coverage.md)。旧 `ai_domains.json` 作为兼容目录保留，新补充范围单独管理与审计；不能只检查旧目录就断言覆盖完整。
 
-不把整段 `sentry`/`datadog`/`sift` 关键词、共享服务根域、整个 ASN/IP 段或所有 NTP 加成默认代理兜底。`no-resolve` 是控制 IP 类规则是否触发目标解析，不是“反向 DNS 防泄漏”开关；WebRTC/STUN 的结果也不能覆盖所有 UDP/NTP。第三方清单的新域名不是自动可信更新源，不额外触发下载或检测。
+扩展包含教程列出的共享后缀、精确CDN／认证主机、`sentry`／`datadog`／`sift`关键词、IPv4兜底与离线分类／ASN展开。它们会影响其他匹配的应用流量，具体差异必须进入预览，均保持客户指定节点和失败保护。IPv6仍拒绝；NTP域名的TCP采用同节点、UDP遵守当前拒绝策略，不能宣称已经配置UDP NTP代理。分类及ASN使用随包快照，不在客户首次运行时下载未知数据。`no-resolve`控制IP类规则是否触发目标解析，不是反向DNS防泄漏开关。
 
-尤其不能采用“Claude Code 用 NTP 返回的时区识别所在地，所以代理 NTP 就能隐藏时区”的说法。[RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html) 描述的是与 UTC 的时钟同步，系统时区属于另一层。未取得 Claude Code 特定版本实际执行 NTP 的证据，不把该推测作为默认规则；正常校时与UDP限制的兼容性仍需核对。
+社区清单的配置选择与其因果解释分开记录。“NTP返回系统时区、代理NTP可以隐藏时区”的解释不成立：[RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html)描述的是与UTC的时钟同步，系统时区属于另一层。正常校时与UDP限制的兼容性仍需核对；未实现的UDP校时明确写未完成及下一步。
+
+按实际网页、Desktop、Claude Code、MCP／插件、网关或云提供商核对功能，再依据 [Claude Code官方网络说明](https://code.claude.com/docs/en/network-config)与脱敏连接记录补查。完整纳入本轮教程不代表永久覆盖未来全部域名，不把社区列举的每个目标都称为核心必需。
 
 ## 4. 网页可用但 CLI 不行：查实际进程
 
@@ -60,8 +62,8 @@ Windows 桌面应用打不开时：区分原生/WSL/网页/CLI，先保存工作
 
 | 资料 | 纳入 Skill 的执行点 | 保留的证据边界 |
 | --- | --- | --- |
-| [稳定使用的 11 项配置](https://ip.net.coffee/claude/claudecode.html) | 专属组、优先级、DNS/客户端实际采用、避免无意义重连的检查线索 | 属于社区经验；不采纳住宅/机房固定因果、统一 TLS 指纹、固定并发阈值或账号保证 |
-| [域名分流清单](https://ip.net.coffee/claude/site.html) | 按核心、认证、CDN等用途核对实际功能和覆盖缺口 | 不照抄宽泛关键词、共享根域、ASN或NTP兜底，不宣称一个列表覆盖永久全部目标 |
+| [稳定使用的 11 项配置](https://ip.net.coffee/claude/claudecode.html) | [逐项覆盖表](tutorial-coverage.md)中的11项全部设有执行和验收点，包括连接保活、TLS支持检查与并发建议 | 社区经验与官方机制分开；不承诺住宅IP免验证、外层TLS指纹改变CLI内层、固定并发阈值防封 |
+| [域名分流清单](https://ip.net.coffee/claude/site.html) | 纳入明确选择的扩展域名／关键词、离线分类与IP兜底，并保留IPv6／UDP约束 | 共享流量影响进入预览；NTP时区解释修正；不宣称该快照永久完整或阻断UDP等于已代理NTP |
 | [Windows 打不开](https://ip.net.coffee/claude/pc.html) | 按症状选择目标应用修复，修复与重置分开 | 结合 Microsoft 官方功能说明；不保证必定修好或资料完全不受影响 |
 | [实时服务监控](https://ip.net.coffee/claude/status.html) | 按症状核对官方组件/事故时间，第三方监控作补充 | 静态页显示加载中不是探测结果；不因此新建监控或提前放行服务访问 |
 | [时区/设备自查](https://ip.net.coffee/claude/timezone.html) | 分别读回时钟、系统时区、语言和浏览器实际报告值 | 社区逆向/爆料不等于官方机制或账号处置因果；不为消黄标统一改语言或时区 |

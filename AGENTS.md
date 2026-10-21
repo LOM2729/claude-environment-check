@@ -28,3 +28,5 @@
 小火箭由 Codex 按对应 Skill 的 references/shadowrocket-domestic.md 负责转换、导入和导出核验；客户不手工编辑规则。必要断线/重启仍交客户，恢复连接后继续。
 
 默认 domestic-v4 的 Claude 专属分组与拓展文章取舍按对应 references/service-routing-checks.md 执行：两组同节点，实际AI保护规则优先，独立核对进程采用；不因第三方评分/时区/NTP推测扩大配置范围。
+
+当前自动模式默认执行 tutorial-coverage.md 全清单与 connection-reuse.md 适配，不把阅读资料当作已配置。教程扩展共享范围进入具体预览；geosite/ASN 使用随包离线快照，NTP UDP 拒绝且 IPv6 关闭。工具只读与候选准备均在仓库/客户本机进行，不为测试修改提供者本机网络；对客户仅展示简短结果。

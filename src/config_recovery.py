@@ -483,10 +483,25 @@ def _sync_dir(path):
 
 
 def _write(c, path, data):
-    c.write_new(path, data)
-    with path.open('rb') as stream:
-        os.fsync(stream.fileno())
-    _sync_dir(path.parent)
+    # Windows CRT _commit (os.fsync) requires a writable descriptor. Persist on
+    # the same exclusive-create handle; reopening after write would introduce
+    # an unnecessary identity race and a read-only handle cannot be committed.
+    fd = None
+    try:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, 'O_NOFOLLOW', 0)
+        flags |= getattr(os, 'O_BINARY', 0) | getattr(os, 'O_NOINHERIT', 0)
+        fd = os.open(path, flags, 0o600)
+        with os.fdopen(fd, 'wb') as stream:
+            fd = None  # fdopen now owns the descriptor
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        _sync_dir(path.parent)
+    except OSError:
+        raise c.SetupError('RECOVERY_DURABLE_WRITE_FAILED') from None
+    finally:
+        if fd is not None:
+            os.close(fd)
 
 
 def _pin(c, data, supplied, code):

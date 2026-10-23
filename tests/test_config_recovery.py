@@ -146,6 +146,36 @@ class RecoveryTests(unittest.TestCase):
             recovery.prepare(c, self.target, self.candidate, dest)
         self.assertEqual((dest / 'keep').read_text(encoding='utf-8'), 'customer')
 
+    def test_private_artifact_is_flushed_and_synced_on_same_writable_descriptor(self):
+        folder = recovery._private_dir(c, self.root / 'durable', create=True)
+        path = folder / 'record.private.bin'
+        data = b'first\r\nsecond\n\x1a\xff'
+        real_sync = os.fsync
+        syncs = []
+        def checked_sync(fd):
+            current = os.fstat(fd)
+            if stat.S_ISREG(current.st_mode):
+                # A zero-length write checks write capability without changing
+                # content on both Windows and POSIX.
+                self.assertEqual(os.write(fd, b''), 0)
+                self.assertEqual(current.st_size, len(data), 'flush must precede fsync')
+                syncs.append((current.st_dev, current.st_ino))
+            return real_sync(fd)
+        with patch.object(recovery.os, 'fsync', side_effect=checked_sync):
+            recovery._write(c, path, data)
+        self.assertEqual(syncs, [(path.stat().st_dev, path.stat().st_ino)])
+        self.assertEqual(path.read_bytes(), data)
+        with self.assertRaisesRegex(c.SetupError, 'DURABLE_WRITE_FAILED'):
+            recovery._write(c, path, b'must not overwrite')
+        self.assertEqual(path.read_bytes(), data)
+
+    def test_private_artifact_fsync_failure_is_not_ignored(self):
+        folder = recovery._private_dir(c, self.root / 'not-durable', create=True)
+        with patch.object(recovery.os, 'fsync', side_effect=OSError('synthetic durability failure')):
+            with self.assertRaisesRegex(c.SetupError, 'DURABLE_WRITE_FAILED'):
+                recovery._write(c, folder / 'incomplete.private.bin', b'synthetic')
+        self.assertEqual(self.target.read_bytes(), BEFORE)
+
     def test_cli_has_explicit_write_flags(self):
         parser = argparse.ArgumentParser()
         sub = parser.add_subparsers(dest='command', required=True)
@@ -314,6 +344,22 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual((dest / 'original.private.bin').read_bytes(), BEFORE)
         check = recovery.check(c, dest, result['receipt_sha256'], self.root / 'replace-check')
         self.assertEqual(check['recovery_state'], 'original_unchanged')
+
+    @unittest.skipUnless(NATIVE, 'native writes only')
+    def test_backup_fsync_failure_prevents_target_commit(self):
+        folder, pin = self.plan()
+        real_sync = os.fsync
+        def unavailable_file_sync(fd):
+            if stat.S_ISREG(os.fstat(fd).st_mode):
+                raise OSError('synthetic file commit failure')
+            return real_sync(fd)
+        with patch.object(recovery.os, 'fsync', side_effect=unavailable_file_sync):
+            result = recovery.apply(c, folder, pin, True, True, self.root / 'backup-sync-failure')
+        self.assertEqual(result['status'], '未完成')
+        self.assertEqual(result['reason_code'], 'RECOVERY_DURABLE_WRITE_FAILED')
+        self.assertFalse(result['write_attempted'])
+        self.assertFalse(result['config_file_changed'])
+        self.assertEqual(self.target.read_bytes(), BEFORE)
 
     @unittest.skipUnless(NATIVE, 'native writes only')
     def test_replace_then_error_does_not_claim_unchanged(self):

@@ -53,6 +53,10 @@ def _safe_path(c, value, directory=False, missing=False):
     # Disallow ADS, UNC/network paths and device names on Windows.
     if os.name == 'nt':
         c.require(bool(p.drive) and not p.drive.startswith(('\\\\', '//')), 'RECOVERY_LOCAL_PATH_REQUIRED')
+        w, kernel, _ = _windows()
+        kernel.GetDriveTypeW.argtypes = [w.LPCWSTR]
+        kernel.GetDriveTypeW.restype = w.UINT
+        c.require(kernel.GetDriveTypeW(p.anchor) == 3, 'RECOVERY_LOCAL_FIXED_DRIVE_REQUIRED')
         for part in p.parts[1:]:
             c.require(':' not in part and part.rstrip(' .') == part and not re.match(r'(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)', part), 'RECOVERY_PATH_INVALID')
     chain = []
@@ -379,6 +383,68 @@ def _win_stage_owner_group(path, security):
         kernel.LocalFree(descriptor)
 
 
+def _win_stage_security(c, path, security):
+    """Restore the exact original descriptor while the staging file is empty.
+
+    SetFileSecurityW is intentionally used for its legacy DACL model. Modern
+    SetSecurityInfo/ReplaceFileW may append inherited parent ACEs. An unexpected
+    control/ACE result is a hard pre-commit failure, never normalized away.
+    """
+    _win_stage_owner_group(path, security)
+    w, kernel, advapi = _windows()
+    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.ULONG)]
+    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = w.BOOL
+    advapi.SetFileSecurityW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.c_void_p]
+    advapi.SetFileSecurityW.restype = w.BOOL
+    descriptor = ctypes.c_void_p()
+    if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(security, 1, ctypes.byref(descriptor), None):
+        raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_UNAVAILABLE')
+    try:
+        if not advapi.SetFileSecurityW(str(path), 4, descriptor):
+            raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_COPY_FAILED')
+    finally:
+        kernel.LocalFree(descriptor)
+    observed = _win_security(path)
+    if observed != security:
+        error = c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_MISMATCH')
+        error.recovery_diagnostics = {'windows_stage_security': _win_security_comparison(security, observed)}
+        raise error
+
+
+def _win_creation_time(path):
+    w, kernel, _ = _windows()
+    kernel.CreateFileW.argtypes = [w.LPCWSTR, w.DWORD, w.DWORD, ctypes.c_void_p, w.DWORD, w.DWORD, w.HANDLE]
+    kernel.CreateFileW.restype = w.HANDLE
+    kernel.GetFileTime.argtypes = [w.HANDLE, ctypes.POINTER(w.FILETIME), ctypes.c_void_p, ctypes.c_void_p]
+    kernel.GetFileTime.restype = w.BOOL
+    kernel.CloseHandle.argtypes = [w.HANDLE]
+    handle = kernel.CreateFileW(str(path), 0x80, 7, None, 3, 0x00200000, None)
+    if handle == w.HANDLE(-1).value:
+        raise OSError('creation-time-unavailable')
+    try:
+        value = w.FILETIME()
+        if not kernel.GetFileTime(handle, ctypes.byref(value), None, None):
+            raise OSError('creation-time-unavailable')
+        return (value.dwHighDateTime << 32) | value.dwLowDateTime
+    finally:
+        kernel.CloseHandle(handle)
+
+
+def _win_stage_attributes(path, fd, expected):
+    import msvcrt
+    w, kernel, _ = _windows()
+    kernel.SetFileTime.argtypes = [w.HANDLE, ctypes.POINTER(w.FILETIME), ctypes.c_void_p, ctypes.c_void_p]
+    kernel.SetFileTime.restype = w.BOOL
+    kernel.SetFileAttributesW.argtypes = [w.LPCWSTR, w.DWORD]
+    kernel.SetFileAttributesW.restype = w.BOOL
+    stamp = expected['metadata']['creation_time_100ns']
+    creation = w.FILETIME(stamp & 0xffffffff, stamp >> 32)
+    if not kernel.SetFileTime(msvcrt.get_osfhandle(fd), ctypes.byref(creation), None, None):
+        raise OSError('creation-time-preserve')
+    if not kernel.SetFileAttributesW(str(path), expected['fingerprint']['attributes']):
+        raise OSError('file-attributes-preserve')
+
+
 def _win_make_private(path):
     w, kernel, advapi = _windows()
     class Attributes(ctypes.Structure):
@@ -399,8 +465,13 @@ def _win_make_private(path):
         kernel.LocalFree(descriptor)
 
 
-def _win_private_stage(parent):
-    """Create the sensitive candidate with an explicit DACL from its first byte."""
+def _win_private_stage(parent, protected=True):
+    """Create an empty stage; the exact final DACL is checked before any data.
+
+    Match the source protection model at creation. An unprotected empty file
+    may initially inherit parent ACEs; _win_stage_security removes unintended
+    grants and validates the whole descriptor before writing candidate bytes.
+    """
     import msvcrt
     w, kernel, advapi = _windows()
     class Attributes(ctypes.Structure):
@@ -412,7 +483,8 @@ def _win_private_stage(parent):
     kernel.CloseHandle.argtypes = [w.HANDLE]
     sid = _win_sid()
     descriptor = ctypes.c_void_p()
-    if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW('O:' + sid + 'D:P(A;;FA;;;' + sid + ')(A;;FA;;;SY)', 1, ctypes.byref(descriptor), None):
+    protection = 'P' if protected else ''
+    if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW('O:' + sid + 'D:' + protection + '(A;;FA;;;' + sid + ')(A;;FA;;;SY)', 1, ctypes.byref(descriptor), None):
         raise OSError('private-stage-acl')
     handle = None
     path = parent / ('.claude-recovery-' + uuid.uuid4().hex + '.tmp')
@@ -458,12 +530,13 @@ def _private_dir(c, value, create=False):
 def _metadata(path):
     info = path.lstat()
     if os.name == 'nt':
-        # ReplaceFileW must preserve this security descriptor. Read-only/system,
+        # Staging and native rename must preserve this descriptor. Read-only/system,
         # EFS, sparse, compressed and reparse targets require a native adapter.
         if getattr(info, 'st_file_attributes', 0) & (1 | 4 | 0x200 | 0x400 | 0x800 | 0x4000):
             raise OSError('attributes-unsupported')
         _win_no_named_streams(path)
-        return {'security': _win_security(path), 'attributes': getattr(info, 'st_file_attributes', 0) & ~0x20}
+        return {'security': _win_security(path), 'attributes': getattr(info, 'st_file_attributes', 0) & ~0x20,
+                'creation_time_100ns': _win_creation_time(path)}
     if getattr(info, 'st_flags', 0):
         raise OSError('flags-unsupported')
     attrs = {}
@@ -664,23 +737,25 @@ def _assert_expected(c, path, expected):
 
 
 def _stage(c, target, data, expected):
-    fd, name = (_win_private_stage(target.parent) if os.name == 'nt' else
-                tempfile.mkstemp(prefix='.claude-recovery-', suffix='.tmp', dir=target.parent))
+    if os.name == 'nt':
+        security = expected['metadata']['security']
+        protected = _win_security_comparison(security, security)['expected_dacl_control']['protected']
+        fd, name = _win_private_stage(target.parent, protected)
+    else:
+        fd, name = tempfile.mkstemp(prefix='.claude-recovery-', suffix='.tmp', dir=target.parent)
     stage = Path(name)
     try:
         with os.fdopen(fd, 'wb') as stream:
+            if os.name == 'nt':
+                # Validate the final ACL on an empty file, before any candidate
+                # credentials could be exposed to an unexpected inherited ACE.
+                _win_stage_security(c, stage, expected['metadata']['security'])
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
             if os.name == 'nt':
-                # ReplaceFileW preserves DACLs, but it retains the replacement
-                # file's owner/group. Refuse unsupported ownership before a
-                # commit instead of discovering a metadata loss afterwards.
-                security = _win_security(stage)
-                if security.split('D:', 1)[0] != expected['metadata']['security'].split('D:', 1)[0]:
-                    _win_stage_owner_group(stage, expected['metadata']['security'])
-                    security = _win_security(stage)
-                c.require(security.split('D:', 1)[0] == expected['metadata']['security'].split('D:', 1)[0], 'RECOVERY_WINDOWS_OWNER_GROUP_UNSUPPORTED')
+                _win_stage_attributes(stage, stream.fileno(), expected)
+                c.require(_metadata(stage) == expected['metadata'], 'RECOVERY_STAGE_METADATA_MISMATCH')
             if os.name != 'nt':
                 if platform.system() == 'Darwin':
                     source = os.open(target, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
@@ -709,16 +784,19 @@ def _stage(c, target, data, expected):
 
 def _replace(c, stage, target, expected, stage_identity):
     if os.name == 'nt':
-        # Windows ReplaceFileW has no compare-and-swap contract. Recheck as
+        # Windows rename-replace has no compare-and-swap contract. Recheck as
         # close as possible, require stopped writers, and verify afterwards.
         _assert_expected(c, target, expected)
         c.require(_fingerprint(stage.lstat()) == stage_identity, 'RECOVERY_STAGE_CHANGED')
+        c.require(stage.parent == target.parent and stage_identity['device'] == expected['fingerprint']['device'], 'RECOVERY_SAME_DIRECTORY_VOLUME_REQUIRED')
+        c.require(_metadata(stage) == expected['metadata'], 'RECOVERY_STAGE_METADATA_MISMATCH')
         w, kernel, _ = _windows()
-        kernel.ReplaceFileW.argtypes = [w.LPCWSTR, w.LPCWSTR, w.LPCWSTR, w.DWORD, ctypes.c_void_p, ctypes.c_void_p]
-        kernel.ReplaceFileW.restype = w.BOOL
-        if not kernel.ReplaceFileW(str(target), str(stage), None, 0, None, None):
-            # ReplaceFileW may fail after moving individual files; inspect the
-            # target instead of asserting an unchanged state from return code.
+        kernel.MoveFileExW.argtypes = [w.LPCWSTR, w.LPCWSTR, w.DWORD]
+        kernel.MoveFileExW.restype = w.BOOL
+        # Never enable COPY_ALLOWED: only the already prepared file identity
+        # may be renamed over this local, same-directory target. Unlike
+        # ReplaceFileW, this does not merge a broader parent DACL into the file.
+        if not kernel.MoveFileExW(str(stage), str(target), 0x1 | 0x8):
             raise OSError('replace-failed')
     else:
         fd = os.open(target.parent, os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0) | getattr(os, 'O_NOFOLLOW', 0))
@@ -825,7 +903,7 @@ def _transaction(c, original, candidate, expected, folder, origin, action):
         readback_checks = {'content_matches': actual == candidate,
                            'metadata_matches': current['metadata'] == expected['metadata'],
                            'metadata_keys_match': {key: current['metadata'].get(key) == expected['metadata'].get(key)
-                              for key in ('mode', 'uid', 'gid', 'xattrs', 'acl', 'security', 'attributes')
+                              for key in ('mode', 'uid', 'gid', 'xattrs', 'acl', 'security', 'attributes', 'creation_time_100ns')
                               if key in current['metadata'] or key in expected['metadata']},
                            'stage_device_matches': current['fingerprint']['device'] == intent['stage_identity']['device'],
                            'stage_inode_matches': current['fingerprint']['inode'] == intent['stage_identity']['inode']}
@@ -841,6 +919,8 @@ def _transaction(c, original, candidate, expected, folder, origin, action):
         state = 'committed'
     except (Exception, KeyboardInterrupt) as exc:
         error = str(exc) if isinstance(exc, c.SetupError) else 'RECOVERY_TRANSACTION_IO_OR_INTERRUPTED'
+        if isinstance(exc, c.SetupError) and hasattr(exc, 'recovery_diagnostics'):
+            readback_checks = exc.recovery_diagnostics
         if attempted:
             try:
                 actual, current = _snapshot(c, target)

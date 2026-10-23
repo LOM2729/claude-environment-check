@@ -559,6 +559,93 @@ class RecoveryTests(unittest.TestCase):
             self.plan()
         self.assertEqual(self.target.read_bytes(), BEFORE)
 
+    def _set_synthetic_windows_dacl(self, path, text, modern=False):
+        w, kernel, advapi = recovery._windows()
+        advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.ULONG)]
+        advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = w.BOOL
+        descriptor = ctypes.c_void_p()
+        self.assertTrue(advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(text, 1, ctypes.byref(descriptor), None), 'synthetic ACL conversion failed')
+        try:
+            if modern:
+                present, defaulted, dacl = w.BOOL(), w.BOOL(), ctypes.c_void_p()
+                advapi.GetSecurityDescriptorDacl.argtypes = [ctypes.c_void_p, ctypes.POINTER(w.BOOL), ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.BOOL)]
+                advapi.GetSecurityDescriptorDacl.restype = w.BOOL
+                self.assertTrue(advapi.GetSecurityDescriptorDacl(descriptor, ctypes.byref(present), ctypes.byref(dacl), ctypes.byref(defaulted)))
+                advapi.SetNamedSecurityInfoW.argtypes = [w.LPCWSTR, ctypes.c_int, w.DWORD, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+                advapi.SetNamedSecurityInfoW.restype = w.DWORD
+                self.assertEqual(advapi.SetNamedSecurityInfoW(str(path), 1, 4 | 0x20000000, None, None, dacl, None), 0, 'synthetic modern DACL setting failed')
+            else:
+                advapi.SetFileSecurityW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.c_void_p]
+                advapi.SetFileSecurityW.restype = w.BOOL
+                protected = recovery._win_security_comparison(text, text)['expected_dacl_control']['protected']
+                information = 4 | (0x80000000 if protected else 0)
+                self.assertTrue(advapi.SetFileSecurityW(str(path), information, descriptor), 'synthetic legacy DACL setting failed')
+        finally:
+            kernel.LocalFree(descriptor)
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows restrictive and inherited ACL roundtrip')
+    def test_windows_exact_acl_roundtrips_with_broader_parent(self):
+        sid = recovery._win_sid()
+        for index, model in enumerate(('legacy-explicit', 'protected', 'auto-inherited')):
+            with self.subTest(model=model):
+                parent = self.root / ('windows-dacl-' + str(index))
+                parent.mkdir()
+                identity = recovery._win_security(parent).split('D:', 1)[0]
+                parent_acl = identity + 'D:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)(A;OICI;FR;;;WD)'
+                self._set_synthetic_windows_dacl(parent, parent_acl)
+                target = parent / 'customer.json'
+                target.write_bytes(BEFORE)
+                identity = recovery._win_security(target).split('D:', 1)[0]
+                flags = 'P' if model == 'protected' else ''
+                original_dacl = identity + 'D:' + flags + '(A;;FA;;;' + sid + ')(A;;FA;;;SY)'
+                self._set_synthetic_windows_dacl(target, original_dacl, modern=model == 'auto-inherited')
+                original_security = recovery._win_security(target)
+                details = recovery._win_security_comparison(original_security, original_security)
+                self.assertEqual(details['expected_dacl_control']['protected'], model == 'protected', details)
+                if model != 'auto-inherited':
+                    self.assertEqual(details['expected_ace_flags'], [0, 0], details)
+                else:
+                    self.assertIn(16, details['expected_ace_flags'], details)
+                original_time = recovery._win_creation_time(target)
+                plan_dir = self.root / ('dacl-plan-' + str(index))
+                plan = recovery.prepare(c, target, self.candidate, plan_dir)
+                apply_dir = self.root / ('dacl-apply-' + str(index))
+                applied = recovery.apply(c, plan_dir, plan['plan_sha256'], True, True, apply_dir)
+                self.assertEqual(applied['status'], '已完成', applied)
+                self.assertEqual(recovery._win_security(target), original_security)
+                self.assertEqual(recovery._win_creation_time(target), original_time)
+                self.assertEqual(target.read_bytes(), AFTER)
+                undone = recovery.rollback(c, apply_dir, applied['receipt_sha256'], True, True, self.root / ('dacl-undo-' + str(index)))
+                self.assertEqual(undone['status'], '已完成', undone)
+                self.assertEqual(recovery._win_security(target), original_security)
+                self.assertEqual(recovery._win_creation_time(target), original_time)
+                self.assertEqual(target.read_bytes(), BEFORE)
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows stage-before-credentials safety')
+    def test_windows_stage_acl_failure_occurs_while_file_is_empty(self):
+        folder, pin = self.plan()
+        lengths = []
+        def unsupported_descriptor(context, path, security):
+            lengths.append(path.stat().st_size)
+            raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_COPY_FAILED')
+        with patch.object(recovery, '_win_stage_security', side_effect=unsupported_descriptor):
+            result = recovery.apply(c, folder, pin, True, True, self.root / 'stage-acl-failure')
+        self.assertEqual(lengths, [0])
+        self.assertEqual(result['status'], '未完成')
+        self.assertFalse(result['write_attempted'])
+        self.assertFalse(result['config_file_changed'])
+        self.assertEqual(self.target.read_bytes(), BEFORE)
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows fixed drive validation')
+    def test_windows_mapped_or_unknown_drive_types_are_rejected(self):
+        native = recovery._windows()
+        with patch.object(recovery, '_windows', return_value=native):
+            for kind in (0, 1, 2, 4, 5, 6):
+                with patch.object(native[1], 'GetDriveTypeW', return_value=kind):
+                    with self.assertRaisesRegex(c.SetupError, 'LOCAL_FIXED_DRIVE_REQUIRED'):
+                        recovery.prepare(c, self.target, self.candidate, self.root / ('bad-drive-' + str(kind)))
+        self.assertEqual(self.target.read_bytes(), BEFORE)
+
     @unittest.skipUnless(platform.system() == 'Linux', 'actual unsupported host check')
     def test_linux_cannot_apply_by_reusing_an_existing_plan(self):
         folder, pin = self.plan()

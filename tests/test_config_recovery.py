@@ -2,6 +2,7 @@
 import argparse
 import ctypes
 import getpass
+import json
 import os
 from pathlib import Path
 import platform
@@ -39,7 +40,16 @@ class RecoveryTests(unittest.TestCase):
 
     def plan(self, name='plan'):
         dest = self.root / name
-        result = recovery.prepare(c, self.target, self.candidate, dest)
+        try:
+            result = recovery.prepare(c, self.target, self.candidate, dest)
+        except c.SetupError:
+            if os.name == 'nt' and dest.is_dir():
+                try:
+                    diagnostic = recovery._win_acl_summary(dest)
+                except OSError:
+                    diagnostic = {'native_acl_read_succeeded': False}
+                print('synthetic_windows_acl_diagnostic=' + json.dumps(diagnostic, sort_keys=True), file=sys.stderr)
+            raise
         self.assertFalse(result['config_file_changed'])
         self.assertEqual(self.target.read_bytes(), BEFORE)
         return dest, result['plan_sha256']
@@ -82,6 +92,7 @@ class RecoveryTests(unittest.TestCase):
             security = recovery._win_security(folder)
             self.assertIn('D:P', security)
             self.assertNotIn(';;;WD)', security)
+            self.assertTrue(recovery._win_acl_summary(folder)['private'])
         self.assert_status_schema(folder)
 
     def test_parser_rejects_nontext_database_and_invalid_candidate(self):
@@ -410,6 +421,58 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(recovery._win_security(self.target), descriptor)
         recovery.rollback(c, dest, pin, True, True, self.root / 'windows-restore')
         self.assertEqual(recovery._win_security(self.target), descriptor)
+
+    def _native_sddl_summary(self, text, roundtrip=False):
+        w, kernel, advapi = recovery._windows()
+        advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.ULONG)]
+        advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = w.BOOL
+        descriptor = ctypes.c_void_p()
+        self.assertTrue(advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(text, 1, ctypes.byref(descriptor), None), 'synthetic SDDL conversion failed')
+        try:
+            if roundtrip:
+                serialized = w.LPWSTR()
+                self.assertTrue(advapi.ConvertSecurityDescriptorToStringSecurityDescriptorW(descriptor, 1, 7, ctypes.byref(serialized), None), 'synthetic SDDL serialization failed')
+                try:
+                    return self._native_sddl_summary(serialized.value)
+                finally:
+                    kernel.LocalFree(serialized)
+            return recovery._win_acl_summary(descriptor=descriptor)
+        finally:
+            kernel.LocalFree(descriptor)
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows SID alias regression')
+    def test_windows_sid_aliases_and_serialized_owner_are_compared_semantically(self):
+        sid = recovery._win_sid()
+        full = 'O:' + sid + 'D:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;S-1-5-18)'
+        alias = 'O:' + sid + 'D:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)'
+        full_summary = self._native_sddl_summary(full)
+        self.assertTrue(full_summary['private'], full_summary)
+        self.assertEqual(self._native_sddl_summary(alias), full_summary)
+        self.assertEqual(self._native_sddl_summary(full, roundtrip=True), full_summary)
+        # Owner aliases must also retain SID semantics; SYSTEM is a fixed SID
+        # on every runner regardless of whether the runner account is SYSTEM.
+        owner_alias = 'O:SYD:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)'
+        owner_full = 'O:S-1-5-18D:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;S-1-5-18)'
+        self.assertEqual(self._native_sddl_summary(owner_alias), self._native_sddl_summary(owner_full))
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows SID/privacy rejection regression')
+    def test_windows_semantic_acl_check_rejects_other_sids_null_empty_and_unprotected(self):
+        sid = recovery._win_sid()
+        safe = '(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)'
+        cases = [
+            ('other-read', 'O:' + sid + 'D:P' + safe + '(A;OICI;FR;;;WD)'),
+            ('other-owner', 'O:BAD:P' + safe),
+            ('no-dacl', 'O:' + sid),
+            ('null-dacl', 'O:' + sid + 'D:NO_ACCESS_CONTROL'),
+            ('empty-dacl', 'O:' + sid + 'D:P'),
+            ('unprotected', 'O:' + sid + 'D:' + safe),
+            ('deny-ace-layout', 'O:' + sid + 'D:P(D;OICI;FA;;;WD)' + safe),
+            ('children-not-private', 'O:' + sid + 'D:P(A;;FA;;;' + sid + ')(A;;FA;;;SY)'),
+        ]
+        for label, text in cases:
+            with self.subTest(case=label):
+                summary = self._native_sddl_summary(text)
+                self.assertFalse(summary['private'], summary)
 
     @unittest.skipUnless(os.name == 'nt', 'actual Windows alternate-stream boundary')
     def test_windows_named_streams_refused_before_plan(self):

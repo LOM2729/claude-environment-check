@@ -150,7 +150,7 @@ def _win_sid():
         kernel.CloseHandle(token)
 
 
-def _win_security(path):
+def _win_security_buffer(path):
     w, kernel, advapi = _windows()
     size = w.DWORD()
     advapi.GetFileSecurityW(str(path), 7, None, 0, ctypes.byref(size))
@@ -159,6 +159,12 @@ def _win_security(path):
     raw = ctypes.create_string_buffer(size.value)
     if not advapi.GetFileSecurityW(str(path), 7, raw, size, ctypes.byref(size)):
         raise OSError('security-unavailable')
+    return raw
+
+
+def _win_security(path):
+    w, kernel, advapi = _windows()
+    raw = _win_security_buffer(path)
     value = w.LPWSTR()
     if not advapi.ConvertSecurityDescriptorToStringSecurityDescriptorW(raw, 1, 7, ctypes.byref(value), None):
         raise OSError('security-unavailable')
@@ -166,6 +172,95 @@ def _win_security(path):
         return value.value
     finally:
         kernel.LocalFree(value)
+
+
+def _win_acl_summary(path=None, descriptor=None):
+    """Semantic ACL check; diagnostics contain no names, SIDs, paths or SDDL.
+
+    SDDL abbreviates well-known SIDs (and sometimes the current account) on
+    serialization. Compare native SID values instead of matching that spelling.
+    The optional descriptor supports native synthetic regression tests only.
+    """
+    w, kernel, advapi = _windows()
+    raw = _win_security_buffer(path) if descriptor is None else descriptor
+    class AclSize(ctypes.Structure):
+        _fields_ = [('ace_count', w.DWORD), ('bytes_in_use', w.DWORD), ('bytes_free', w.DWORD)]
+    class AceHeader(ctypes.Structure):
+        _fields_ = [('kind', w.BYTE), ('flags', w.BYTE), ('size', w.WORD)]
+    advapi.IsValidSecurityDescriptor.argtypes = [ctypes.c_void_p]
+    advapi.IsValidSecurityDescriptor.restype = w.BOOL
+    advapi.GetSecurityDescriptorOwner.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.BOOL)]
+    advapi.GetSecurityDescriptorOwner.restype = w.BOOL
+    advapi.GetSecurityDescriptorControl.argtypes = [ctypes.c_void_p, ctypes.POINTER(w.WORD), ctypes.POINTER(w.DWORD)]
+    advapi.GetSecurityDescriptorControl.restype = w.BOOL
+    advapi.GetSecurityDescriptorDacl.argtypes = [ctypes.c_void_p, ctypes.POINTER(w.BOOL), ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.BOOL)]
+    advapi.GetSecurityDescriptorDacl.restype = w.BOOL
+    advapi.GetAclInformation.argtypes = [ctypes.c_void_p, ctypes.c_void_p, w.DWORD, ctypes.c_int]
+    advapi.GetAclInformation.restype = w.BOOL
+    advapi.GetAce.argtypes = [ctypes.c_void_p, w.DWORD, ctypes.POINTER(ctypes.c_void_p)]
+    advapi.GetAce.restype = w.BOOL
+    advapi.ConvertStringSidToSidW.argtypes = [w.LPCWSTR, ctypes.POINTER(ctypes.c_void_p)]
+    advapi.ConvertStringSidToSidW.restype = w.BOOL
+    advapi.EqualSid.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    advapi.EqualSid.restype = w.BOOL
+    advapi.IsValidSid.argtypes = [ctypes.c_void_p]
+    advapi.IsValidSid.restype = w.BOOL
+    advapi.GetLengthSid.argtypes = [ctypes.c_void_p]
+    advapi.GetLengthSid.restype = w.DWORD
+    if not advapi.IsValidSecurityDescriptor(raw):
+        raise OSError('security-descriptor-invalid')
+    owner, dacl, user, system = (ctypes.c_void_p() for _ in range(4))
+    owner_defaulted, present, dacl_defaulted = (w.BOOL() for _ in range(3))
+    control, revision = w.WORD(), w.DWORD()
+    if not advapi.GetSecurityDescriptorOwner(raw, ctypes.byref(owner), ctypes.byref(owner_defaulted)) or not advapi.GetSecurityDescriptorControl(raw, ctypes.byref(control), ctypes.byref(revision)) or not advapi.GetSecurityDescriptorDacl(raw, ctypes.byref(present), ctypes.byref(dacl), ctypes.byref(dacl_defaulted)):
+        raise OSError('security-descriptor-unavailable')
+    result = {'owner_is_current': False, 'dacl_present': bool(present.value),
+              'dacl_nonnull': bool(dacl.value), 'dacl_protected': bool(control.value & 0x1000),
+              'ace_count': 0, 'ace_types': [], 'only_allowed_principals': False,
+              'current_user_full_access': False, 'current_user_children_full_access': False, 'private': False}
+    try:
+        if not advapi.ConvertStringSidToSidW(_win_sid(), ctypes.byref(user)) or not advapi.ConvertStringSidToSidW('S-1-5-18', ctypes.byref(system)):
+            raise OSError('security-sid-unavailable')
+        result['owner_is_current'] = bool(owner.value and advapi.EqualSid(owner, user))
+        if not present.value or not dacl.value:
+            return result
+        size = AclSize()
+        if not advapi.GetAclInformation(dacl, ctypes.byref(size), ctypes.sizeof(size), 2) or size.ace_count > 1024:
+            raise OSError('security-acl-unavailable')
+        result['ace_count'] = size.ace_count
+        all_allowed = bool(size.ace_count)
+        for index in range(size.ace_count):
+            pointer = ctypes.c_void_p()
+            if not advapi.GetAce(dacl, index, ctypes.byref(pointer)) or not pointer.value:
+                raise OSError('security-ace-unavailable')
+            header = ctypes.cast(pointer, ctypes.POINTER(AceHeader)).contents
+            result['ace_types'].append(header.kind)
+            # Only ordinary ACCESS_ALLOWED_ACE has this layout. Reject deny,
+            # callback/object or conditional ACEs conservatively.
+            if header.kind != 0 or header.size < 16:
+                all_allowed = False
+                continue
+            sid = ctypes.c_void_p(pointer.value + 8)
+            if not advapi.IsValidSid(sid) or advapi.GetLengthSid(sid) > header.size - 8:
+                raise OSError('security-ace-invalid')
+            is_user = bool(advapi.EqualSid(sid, user))
+            is_system = bool(advapi.EqualSid(sid, system))
+            all_allowed = all_allowed and (is_user or is_system)
+            mask = ctypes.cast(ctypes.c_void_p(pointer.value + 4), ctypes.POINTER(w.DWORD)).contents.value
+            if is_user and not header.flags & 0x08 and mask & 0x001F01FF == 0x001F01FF:
+                result['current_user_full_access'] = True
+                if header.flags & 0x03 == 0x03:
+                    result['current_user_children_full_access'] = True
+        result['only_allowed_principals'] = bool(all_allowed)
+        result['private'] = all(result[k] for k in ('owner_is_current', 'dacl_present', 'dacl_nonnull',
+                         'dacl_protected', 'only_allowed_principals', 'current_user_full_access',
+                         'current_user_children_full_access'))
+        return result
+    finally:
+        if user.value:
+            kernel.LocalFree(user)
+        if system.value:
+            kernel.LocalFree(system)
 
 
 def _win_no_named_streams(path):
@@ -276,11 +371,7 @@ def _private_dir(c, value, create=False):
                 p.mkdir(mode=0o700)
         info = p.lstat()
         if os.name == 'nt':
-            text = _win_security(p)
-            sid = _win_sid()
-            aces = re.findall(r'\(([^()]*)\)', text)
-            c.require('D:P' in text and ('O:' + sid) in text and bool(aces) and
-                      all(x.split(';')[0] == 'A' and x.split(';')[-1] in (sid, 'SY', 'S-1-5-18') for x in aces), 'RECOVERY_PRIVATE_ACL_REQUIRED')
+            c.require(_win_acl_summary(p)['private'], 'RECOVERY_PRIVATE_ACL_REQUIRED')
         else:
             c.require(info.st_uid == os.getuid() and stat.S_IMODE(info.st_mode) == 0o700, 'RECOVERY_PRIVATE_DIRECTORY_REQUIRED')
             if platform.system() == 'Darwin':

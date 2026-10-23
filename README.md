@@ -27,6 +27,8 @@
 | direct-review | 盘点不能直接判定的 DIRECT 规则，由 Codex 按方案填写保留或代理，客户不编辑 JSON |
 | contact-scan / action-check | 启用代理前检查隐含目标；安装/登录/浏览器等动作前核验当前条件，不替用户执行动作 |
 | ipv6-check / dns-ready | 精确接口关闭状态读回；本轮 DNS/代理记录绑定接口、配置和入口，缺失/过期/变化则服务请求停止 |
+| recovery-plan / recovery-apply / recovery-check / recovery-rollback | 精确文本配置备份、原子写入、读回和冲突保护；恢复不覆盖客户后续修改，不操作应用数据库或重载客户端 |
+| lifecycle-template / lifecycle-accept | 按实际客户端分开核验正常使用、更新、重启、唤醒、换网、故障恢复；客户只看八项事件汇总，未实测保持未完成 |
 | baseline / recheck / preflight | 更新后复查，不自动恢复旧值；本次检查通过后可明确请求原生客户端启动 |
 
 完整参数见 [工具说明](.agents/skills/claude-mac-readiness/references/automation.md) 和 [生命周期流程](.agents/skills/claude-mac-readiness/references/lifecycle-checks.md)。
@@ -51,3 +53,5 @@ IPv6 分为选定系统接口、代理核心、DNS 和节点外层，不能用�
 默认创建 AI-ONLY-Claude 与基础 AI-ONLY，分别辨识 Claude 第一方域名与其他统一代理流量，两组同一具体节点，不新增独立出口。Net.Coffee 8项拓展资料的逐项取舍与运行验收见 [分组与服务路径检查](.agents/skills/claude-mac-readiness/references/service-routing-checks.md)。
 
 默认按 [教程逐项覆盖表](.agents/skills/claude-mac-readiness/references/tutorial-coverage.md) 纳入补充域名、共享服务、关键词、离线分类与 IP/ASN 快照；不在首用时下载规则数据库。社区建议与官方依据分开，NTP UDP 仍拒绝，IPv6 仍关闭。
+
+可靠回滚与生命周期验收详见 [操作说明](.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)。`recovery-*` 的写入范围仅限明确批准的现存文本配置，原生应用导入与系统设置恢复仍须现场执行与核验；生命周期工具只判断供给证据，不自行制造事件或联网。

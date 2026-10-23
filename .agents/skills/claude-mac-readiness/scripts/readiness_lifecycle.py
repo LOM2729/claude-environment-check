@@ -113,22 +113,34 @@ def save_report(c, output, kind, rows, extra=None, private=None, create=True):
     completed = sum(r['status'] == '已完成' for r in rows)
     summary = f'已完成 {completed} 项／共 {len(rows)} 项，未完成 {len(rows) - completed} 项'
     launch_text = '已发送启动／激活请求，客户端实际采用待核验。' if result.get('launch_requested') else '本轮未发送启动请求。'
-    lines = ['# 环境检查报告', '', summary, '', '检查时间：' + result['checked_at'], '', launch_text, '', '| 检查项 | 启动必需 | 状态 | 原因／结果 | 下一步 |', '| --- | --- | --- | --- | --- |']
+    separate_acceptance = kind.startswith(('recovery', 'lifecycle-')) or kind in ('config-recovery', 'lifecycle_acceptance')
+    required_label = '本次必需' if separate_acceptance else '启动必需'
+    if separate_acceptance:
+        launch_text = ('仅处理明确指定的文本文件；应用载入和实际网络效果仍需另行核验。'
+                       if 'recovery' in kind else
+                       '依据本轮供给的事件与进程证据判定；本工具不主动重启、换网、断网或发送请求。')
+    lines = ['# 环境检查报告', '', summary, '', '检查时间：' + result['checked_at'], '', launch_text, '', f'| 检查项 | {required_label} | 状态 | 原因／结果 | 下一步 |', '| --- | --- | --- | --- | --- |']
     escape_md = lambda value: str(value).replace('|', '\\|').replace('\n', ' ')
     for r in ordered:
         r = dict(r, required_label='是' if r['required'] else '否（补充检查）')
         lines.append('| ' + ' | '.join(escape_md(r[k]) for k in ('title', 'required_label', 'status', 'reason', 'next_step')) + ' |')
-    lines += ['', '仅覆盖本次列出的检查和探测路径；不是持续断网保护，也不证明实际客户端已采用同一路径。', '标为非启动必需的项目仍如实显示未完成；不能据此宣称全项验收通过。', '']
+    lines += ['', '仅覆盖本次列出的检查和证据范围；不是持续断网保护，也不证明未观测的客户端采用同一路径。', f'标为非{required_label}的项目仍如实显示未完成；不能据此宣称全项验收通过。', '']
     c.write_new(folder / 'report.md', '\n'.join(lines).encode())
     body = ''.join('<tr>' + ''.join('<td>' + html.escape(str(value)) + '</td>' for value in (r['title'], '是' if r['required'] else '否（补充检查）', r['status'], r['reason'], r['next_step'])) + '</tr>' for r in ordered)
-    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>环境检查报告</title><style>body{font:16px/1.6 system-ui;margin:32px;max-width:1100px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:12px;text-align:left}th{background:#eef2f6}</style><h1>环境检查报告</h1><p>' + html.escape(summary) + '</p><p>检查时间：' + html.escape(result['checked_at']) + '</p><p>' + html.escape(launch_text) + '</p><table><thead><tr><th>检查项</th><th>启动必需</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + body + '</tbody></table><p>仅覆盖本次列出的检查和探测路径，不是持续断网保护。非启动必需项目仍保留未完成结果。</p></html>'
+    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>环境检查报告</title><style>body{font:16px/1.6 system-ui;margin:32px;max-width:1100px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:12px;text-align:left}th{background:#eef2f6}</style><h1>环境检查报告</h1><p>' + html.escape(summary) + '</p><p>检查时间：' + html.escape(result['checked_at']) + '</p><p>' + html.escape(launch_text) + '</p><table><thead><tr><th>检查项</th><th>' + required_label + '</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + body + '</tbody></table><p>仅覆盖本次列出的检查和证据范围，不是持续断网保护。补充项目仍保留未完成结果。</p></html>'
     c.write_new(folder / 'report.html', page.encode())
     if private is not None:
         c.write_new(folder / 'evidence.private.json', c.encode(private))
-    return {'status': 'report_written', 'completed': sum(r['status'] == '已完成' for r in rows),
+    public = {'status': 'report_written', 'completed': sum(r['status'] == '已完成' for r in rows),
             'incomplete': sum(r['status'] != '已完成' for r in rows),
-            'required_checks_completed': result['required_checks_completed'], 'system_settings_changed': False,
+            'required_checks_completed': result['required_checks_completed'],
+            'system_settings_changed': result['system_settings_changed'],
             'launch_requested': bool(result.get('launch_requested')), 'runtime_adoption_verified': False}
+    for key in ('system_changes_performed', 'config_file_changed', 'recovery_state',
+                'plan_sha256', 'receipt_sha256', 'evidence_scope', 'evidence_authenticity_verified'):
+        if key in result:
+            public[key] = result[key]
+    return public
 
 
 def create_baseline(c, config, fmt, original, node, group, executable, browser, output, policy='ai-only', direct_review=None):

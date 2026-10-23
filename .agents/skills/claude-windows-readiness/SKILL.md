@@ -19,6 +19,8 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 默认自动配置同时按 [教程逐项覆盖表](references/tutorial-coverage.md) 执行社区扩展目标和 11 项适配，并运行 [连接保活检查与候选](references/connection-reuse.md)。详细差异与逐项证据留本机；客户只看已完成/未完成摘要和下一步。新增共享服务、关键词、IP 范围须包含在一次具体方案中；系统语言保持，IPv6 和 UDP 策略不变。
 
+配置写入、恢复和交付验收同时读取 [可靠回滚与生命周期验收](references/recovery-and-acceptance.md)：文本事务保护客户后续修改；应用导入、系统设置与运行效果另验。按实际使用的客户端逐事件记录更新、重启、唤醒、换网及故障恢复，未实测仍显示未完成，不自行中断当前通道。
+
 ## 选择范围
 
 从请求与上下文确定目标设备、Windows 版本、客户端、代理和现象，只询问影响结果且无法读取的缺失信息。Claude Code 必须区分 Windows 原生与实际使用的 WSL 发行版；两边的 PATH、认证、代理和 DNS 不能互相证明。
@@ -74,6 +76,6 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 Windows 流程尚未在真实 Windows 机器上端到端验证；执行以目标机版本与实际结果为准，不能将 Mac 检查或 PowerShell 脚本静态审查说成 Windows 实测。
 
-统一工具在本 Skill 的 `scripts/claude_setup.py`，Windows 采集器和依赖清单同目录。先读取工具说明，优先复用结构化采集和报告；文件原文差异只保存在客户本地私有目录。工具不应用系统配置，实际导入／保存仍按已批准范围操作。
+统一工具在本 Skill 的 `scripts/claude_setup.py`，Windows 采集器和依赖清单同目录。先读取工具说明，优先复用结构化采集和报告；文件原文差异只保存在客户本地私有目录。工具不自动应用系统网络设置；仅 recovery-* 可在本轮精确批准下处理指定文本文件，实际应用导入／保存和运行效果另行核验。
 
 客户服务默认逐项模式：每项修改前说明具体原值、目标、影响及恢复方式并询问客户。自动配置模式将这些具体项目集中成一份方案，一次确认后连续执行；已明确批准的同一项不重复询问。用 review-template 创建默认未完成的核验记录，由 Codex 按真实结果填写，客户无需编辑 JSON。未复测、待决定或问题未解决的项目不得标完成；记录中的同意字段不能授权新操作。

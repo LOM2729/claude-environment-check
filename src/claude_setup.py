@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Customer readiness: local review, opt-in probes and guarded launch; no settings writes."""
+"""Customer readiness, scoped text-file recovery and evidence-based acceptance."""
 import argparse
 import datetime as dt
 import difflib
@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.11.0'
+VERSION = '0.12.0'
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -938,9 +938,17 @@ def main(argv=None):
     tc.add_argument('--node', required=True)
     tc.add_argument('--group', default='AI-ONLY')
     tc.add_argument('--out', required=True)
+    import config_recovery
+    import lifecycle_acceptance
+    config_recovery.register_commands(sub)
+    lifecycle_acceptance.register_commands(sub)
     args = parser.parse_args(argv)
     try:
-        if args.command == 'tutorial-check':
+        if args.command in config_recovery.COMMANDS:
+            result = config_recovery.run(SimpleNamespace(**globals()), args)
+        elif args.command in lifecycle_acceptance.COMMANDS:
+            result = lifecycle_acceptance.run(SimpleNamespace(**globals()), args)
+        elif args.command == 'tutorial-check':
             import community_routing
             import claude_group
             import readiness_lifecycle as lifecycle
@@ -1040,6 +1048,10 @@ def main(argv=None):
             if args.output:
                 write_new(args.output, encode(result))
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        if args.command == 'lifecycle-template':
+            return 0  # Template creation succeeded; its unperformed events remain incomplete.
+        if args.command in config_recovery.COMMANDS + lifecycle_acceptance.COMMANDS:
+            return 0 if result.get('required_checks_completed', False) else 2
         if args.command in ('network-check', 'recheck', 'preflight', 'contact-scan', 'action-check', 'ipv6-check', 'udp-check', 'connection-check', 'connection-plan', 'tutorial-check') and not result['required_checks_completed']:
             return 2
         if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
@@ -1047,7 +1059,12 @@ def main(argv=None):
         return 2 if args.command == 'verify' and result['status'] != 'candidate_bytes_match' else 0
     except (SetupError, OSError, ValueError, TypeError, KeyError, RecursionError) as exc:
         error = {'error': str(exc) if isinstance(exc, SetupError) else 'OPERATION_FAILED', 'system_settings_changed': False}
-        if args.command == 'preflight' and args.launch:
+        if args.command in ('recovery-apply', 'recovery-rollback'):
+            # A failed readback/journal write is not evidence that replacement never happened.
+            error.update(system_settings_changed=None, system_changes_performed=None,
+                         config_file_changed=None,
+                         recovery_state='unknown_check_private_receipt_before_retry')
+        elif args.command == 'preflight' and args.launch:
             error['launch_outcome'] = 'unknown_check_client_before_retry'
         else:
             error['system_changes_performed'] = False
@@ -1056,4 +1073,8 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
+    # Structured CLI results and UTF-8 report files use the same encoding on Windows pipes.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8')
     sys.exit(main())

@@ -96,7 +96,7 @@
 
 ## 按清单交付
 
-工具产物只填有证据的检查项；其余由 Codex 完成目标客户端、外部检测及故障实验的授权与验证。差异和读回不会把“写入内容匹配”升级为“网络安全”。没有自动回滚命令；恢复前须检查后续修改及批准范围，按清单选择恢复原配置或重新规划。
+工具产物只填有证据的检查项；其余由 Codex 完成目标客户端、外部检测及故障实验的授权与验证。差异和读回不会把“写入内容匹配”升级为“网络安全”。新增 recovery-plan／apply／check／rollback 处理显式文本文件，命令和边界见 [可靠回滚](recovery-and-acceptance.md)。恢复前检查后续修改及本轮批准；原生应用和系统设置仍按受支持方式恢复，不自动重载。
 
 ## AI 专属代理默认策略
 
@@ -109,3 +109,7 @@
 ## v0.7 默认入口
 
 按 [五步流程](five-step-setup.md) 和 [统一 IPv4 策略](unified-ipv4.md) 操作。ai-route/ai-audit/baseline 默认 unified-v4；direct-review 分类直连例外；contact-scan/action-check 检查隐含请求和服务动作；ipv6-check 读回精确接口，dns-ready v2 要求关闭状态。应用动作仍由客户机 Codex 按批准范围执行。
+
+## 可靠回滚与生命周期事件
+
+`recovery-*` 与 `lifecycle-template`／`lifecycle-accept` 的参数、绑定、Mac/Windows 差异和实际验收边界统一见 [可靠回滚与生命周期验收](recovery-and-acceptance.md)。这些报告只使用已完成／未完成；模板默认未完成，不替代具体授权或自动故障实验。

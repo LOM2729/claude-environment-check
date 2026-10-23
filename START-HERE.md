@@ -1,5 +1,5 @@
 # Claude 环境检测：从这里开始
-版本：0.11.0 · Mac / Windows
+版本：0.12.0 · Mac / Windows
 
 ## 客户只需准备
 1. 已有的配置文件或订阅，以及希望使用的节点。文件可放入“客户配置”目录；不要把订阅凭据贴到公开聊天。
@@ -25,6 +25,7 @@
 - [五步执行细则](.agents/skills/claude-mac-readiness/references/five-step-setup.md)
 - [统一出口与 IPv6 关闭](.agents/skills/claude-mac-readiness/references/unified-ipv4.md)
 - [主动检测与本轮核验记录](.agents/skills/claude-mac-readiness/references/lifecycle-checks.md)
+- [可靠回滚与生命周期验收](.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)
 - [逐项确认模式（可选）](启动提示词.txt)
 
 先选实际系统，只加载对应 Skill。若有同名全局 Skill，本次使用包内文件，不覆盖客户原安装。缺 Python/YAML 依赖时先由 Codex 说明准备范围；不改系统 Python 或绕过执行策略。
@@ -43,3 +44,5 @@
 Claude 专属组默认显示 AI-ONLY-Claude，基础组显示 AI-ONLY，两组使用同一指定节点。Codex按对应 Skill 的 service-routing-checks.md 检查最终规则优先级与实际采用；新旧差异先确认。
 
 默认按包内教程覆盖表检查完整扩展规则与连接保活，客户不手工选择规则；新增影响统一放入确认方案，最终只展示已完成/未完成及下一步。
+
+配置前由 Codex 准备本轮精确备份与恢复材料，恢复冲突时保护客户后续修改。交付按八类生命周期事件分别记录；尚未更新／重启／唤醒／换网／故障演练就保持未完成，不自动执行这些动作。报告仍只用已完成／未完成与原因、下一步。

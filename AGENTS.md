@@ -30,3 +30,5 @@
 默认 domestic-v4 的 Claude 专属分组与拓展文章取舍按对应 references/service-routing-checks.md 执行：两组同节点，实际AI保护规则优先，独立核对进程采用；不因第三方评分/时区/NTP推测扩大配置范围。
 
 当前自动模式默认执行 tutorial-coverage.md 全清单与 connection-reuse.md 适配，不把阅读资料当作已配置。教程扩展共享范围进入具体预览；geosite/ASN 使用随包离线快照，NTP UDP 拒绝且 IPv6 关闭。工具只读与候选准备均在仓库/客户本机进行，不为测试修改提供者本机网络；对客户仅展示简短结果。
+
+配置文件的受限写入、回滚和生命周期验收按对应 references/recovery-and-acceptance.md。recovery-* 只处理本轮明确批准的精确文本目标，不写应用数据库，不自动重载或断开网络；写入状态不明先读恢复依据，不盲目重试。生命周期证据按真实事件、进程与本轮配置绑定，缺少或拒绝实验时显示未完成，不由其他通过项代证。

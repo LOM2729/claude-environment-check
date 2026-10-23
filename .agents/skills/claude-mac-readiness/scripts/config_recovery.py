@@ -368,23 +368,53 @@ def _win_no_named_streams(path):
 def _win_stage_security(c, path, security):
     """Restore the exact original descriptor while the staging file is empty.
 
-    SetFileSecurityW is intentionally used for its legacy DACL model. Modern
-    SetSecurityInfo/ReplaceFileW may append inherited parent ACEs. An unexpected
-    control/ACE result is a hard pre-commit failure, never normalized away.
+    Legacy descriptors use SetFileSecurityW. Already auto-inherited, unprotected
+    descriptors use SetNamedSecurityInfoW to reconstruct that same model from
+    the current parent. Unexpected ACEs/control are a hard pre-commit failure,
+    never normalized away. Unknown models stay unsupported.
     """
     w, kernel, advapi = _windows()
     advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.ULONG)]
     advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = w.BOOL
     advapi.SetFileSecurityW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.c_void_p]
     advapi.SetFileSecurityW.restype = w.BOOL
+    advapi.GetSecurityDescriptorControl.argtypes = [ctypes.c_void_p, ctypes.POINTER(w.WORD), ctypes.POINTER(w.DWORD)]
+    advapi.GetSecurityDescriptorControl.restype = w.BOOL
     descriptor = ctypes.c_void_p()
     if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(security, 1, ctypes.byref(descriptor), None):
         raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_UNAVAILABLE')
     try:
         # One complete descriptor transition from the private empty stage.
-        # Do not clear protection with a separate inheritance-enabling call.
-        if not advapi.SetFileSecurityW(str(path), 1 | 2 | 4, descriptor):
-            raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_COPY_FAILED')
+        # Do not clear protection with a separate inheritance-enabling call,
+        # or retry after a potentially broader descriptor has been exposed.
+        control, revision = w.WORD(), w.DWORD()
+        c.require(advapi.GetSecurityDescriptorControl(descriptor, ctypes.byref(control), ctypes.byref(revision)), 'RECOVERY_WINDOWS_STAGE_SECURITY_UNAVAILABLE')
+        auto_inherited = bool(control.value & 0x0400)
+        protected = bool(control.value & 0x1000)
+        c.require(not control.value & 0x0100 and not (auto_inherited and protected), 'RECOVERY_WINDOWS_INHERITANCE_MODEL_UNSUPPORTED')
+        if auto_inherited:
+            owner, group, dacl = (ctypes.c_void_p() for _ in range(3))
+            defaulted, present = w.BOOL(), w.BOOL()
+            for name in ('GetSecurityDescriptorOwner', 'GetSecurityDescriptorGroup'):
+                fn = getattr(advapi, name)
+                fn.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.BOOL)]
+                fn.restype = w.BOOL
+            advapi.GetSecurityDescriptorDacl.argtypes = [ctypes.c_void_p, ctypes.POINTER(w.BOOL), ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.BOOL)]
+            advapi.GetSecurityDescriptorDacl.restype = w.BOOL
+            c.require(advapi.GetSecurityDescriptorOwner(descriptor, ctypes.byref(owner), ctypes.byref(defaulted)) and
+                      advapi.GetSecurityDescriptorGroup(descriptor, ctypes.byref(group), ctypes.byref(defaulted)) and
+                      advapi.GetSecurityDescriptorDacl(descriptor, ctypes.byref(present), ctypes.byref(dacl), ctypes.byref(defaulted)) and
+                      present.value and bool(dacl.value), 'RECOVERY_WINDOWS_STAGE_SECURITY_UNAVAILABLE')
+            advapi.SetNamedSecurityInfoW.argtypes = [w.LPCWSTR, ctypes.c_int, w.DWORD, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+            advapi.SetNamedSecurityInfoW.restype = w.DWORD
+            # UNPROTECTED is appropriate only for a source already in this
+            # modern inheritance model. If the parent's ACL has changed, the
+            # exact readback below rejects the result before any data write.
+            result = advapi.SetNamedSecurityInfoW(str(path), 1, 1 | 2 | 4 | 0x20000000, owner, group, dacl, None)
+            c.require(result == 0, 'RECOVERY_WINDOWS_STAGE_SECURITY_COPY_FAILED')
+        else:
+            if not advapi.SetFileSecurityW(str(path), 1 | 2 | 4, descriptor):
+                raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_COPY_FAILED')
     finally:
         kernel.LocalFree(descriptor)
     observed = _win_security(path)

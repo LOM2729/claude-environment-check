@@ -662,6 +662,52 @@ class RecoveryTests(unittest.TestCase):
         self.assertFalse(result['config_file_changed'])
         self.assertEqual(self.target.read_bytes(), BEFORE)
 
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows modern inheritance conflict')
+    def test_windows_changed_parent_acl_cannot_expand_modern_stage_permissions(self):
+        sid = recovery._win_sid()
+        parent = self.root / 'modern-parent-conflict'
+        parent.mkdir()
+        identity = recovery._win_security(parent).split('D:', 1)[0]
+        original_parent = identity + 'D:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)'
+        self._set_synthetic_windows_dacl(parent, original_parent)
+        target = parent / 'customer.json'
+        target.write_bytes(BEFORE)
+        identity = recovery._win_security(target).split('D:', 1)[0]
+        explicit = identity + 'D:(A;;FA;;;' + sid + ')(A;;FA;;;SY)'
+        self._set_synthetic_windows_dacl(target, explicit, modern=True)
+        saved_security = recovery._win_security(target)
+        self.assertTrue(recovery._win_security_comparison(saved_security, saved_security)['expected_dacl_control']['auto_inherited'])
+        # Legacy parent assignment intentionally does not propagate to its
+        # existing child. A modern stage reconstruction must detect the new ACE.
+        self._set_synthetic_windows_dacl(parent, original_parent + '(A;OICI;FR;;;WD)')
+        self.assertEqual(recovery._win_security(target), saved_security)
+        fd, name = recovery._win_private_stage(parent)
+        try:
+            stage = Path(name)
+            with self.assertRaisesRegex(c.SetupError, 'STAGE_SECURITY_MISMATCH'):
+                recovery._win_stage_security(c, stage, saved_security)
+            self.assertEqual(stage.stat().st_size, 0)
+            self.assertEqual(target.read_bytes(), BEFORE)
+        finally:
+            os.close(fd)
+            Path(name).unlink()
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows unsupported inheritance model')
+    def test_windows_protected_auto_inherited_model_is_rejected_before_stage_data(self):
+        sid = recovery._win_sid()
+        descriptor = 'O:' + sid + 'D:PAI(A;;FA;;;' + sid + ')(A;;FA;;;SY)'
+        fd, name = recovery._win_private_stage(self.root)
+        try:
+            stage = Path(name)
+            original = recovery._win_security(stage)
+            with self.assertRaisesRegex(c.SetupError, 'INHERITANCE_MODEL_UNSUPPORTED'):
+                recovery._win_stage_security(c, stage, descriptor)
+            self.assertEqual(stage.stat().st_size, 0)
+            self.assertEqual(recovery._win_security(stage), original)
+        finally:
+            os.close(fd)
+            Path(name).unlink()
+
     @unittest.skipUnless(os.name == 'nt', 'actual Windows fixed drive validation')
     def test_windows_mapped_or_unknown_drive_types_are_rejected(self):
         native = recovery._windows()

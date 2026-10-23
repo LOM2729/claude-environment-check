@@ -622,6 +622,32 @@ class RecoveryTests(unittest.TestCase):
                 self.assertEqual(target.read_bytes(), BEFORE)
 
     @unittest.skipUnless(os.name == 'nt', 'actual Windows stage-before-credentials safety')
+    def test_windows_unprotected_source_and_broader_parent_still_create_protected_private_stage(self):
+        sid = recovery._win_sid()
+        parent = self.root / 'broader-parent'
+        parent.mkdir()
+        identity = recovery._win_security(parent).split('D:', 1)[0]
+        self._set_synthetic_windows_dacl(parent, identity + 'D:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)(A;OICI;FR;;;WD)')
+        target = parent / 'customer.json'
+        target.write_bytes(BEFORE)
+        identity = recovery._win_security(target).split('D:', 1)[0]
+        self._set_synthetic_windows_dacl(target, identity + 'D:(A;;FA;;;' + sid + ')(A;;FA;;;SY)')
+        source = recovery._win_security(target)
+        self.assertFalse(recovery._win_security_comparison(source, source)['expected_dacl_control']['protected'])
+        fd, name = recovery._win_private_stage(parent)
+        try:
+            stage = Path(name)
+            self.assertEqual(stage.stat().st_size, 0)
+            info = recovery._win_acl_summary(stage)
+            for key in ('owner_is_current', 'dacl_present', 'dacl_nonnull', 'dacl_protected', 'only_allowed_principals', 'current_user_full_access'):
+                self.assertTrue(info[key], info)
+            self.assertEqual(info['ace_count'], 2, info)
+            self.assertEqual(target.read_bytes(), BEFORE)
+        finally:
+            os.close(fd)
+            Path(name).unlink()
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows stage-before-credentials safety')
     def test_windows_stage_acl_failure_occurs_while_file_is_empty(self):
         folder, pin = self.plan()
         lengths = []

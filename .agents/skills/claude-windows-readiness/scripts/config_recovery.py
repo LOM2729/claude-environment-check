@@ -365,24 +365,6 @@ def _win_no_named_streams(path):
         kernel.FindClose(handle)
 
 
-def _win_stage_owner_group(path, security):
-    """Keep the private staging DACL, but preserve the original owner/group."""
-    w, kernel, advapi = _windows()
-    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.ULONG)]
-    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = w.BOOL
-    advapi.SetFileSecurityW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.c_void_p]
-    advapi.SetFileSecurityW.restype = w.BOOL
-    descriptor = ctypes.c_void_p()
-    identity = security.split('D:', 1)[0]
-    if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(identity, 1, ctypes.byref(descriptor), None):
-        raise OSError('owner-group-unavailable')
-    try:
-        if not advapi.SetFileSecurityW(str(path), 1 | 2, descriptor):
-            raise OSError('owner-group-preserve')
-    finally:
-        kernel.LocalFree(descriptor)
-
-
 def _win_stage_security(c, path, security):
     """Restore the exact original descriptor while the staging file is empty.
 
@@ -390,7 +372,6 @@ def _win_stage_security(c, path, security):
     SetSecurityInfo/ReplaceFileW may append inherited parent ACEs. An unexpected
     control/ACE result is a hard pre-commit failure, never normalized away.
     """
-    _win_stage_owner_group(path, security)
     w, kernel, advapi = _windows()
     advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.ULONG)]
     advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = w.BOOL
@@ -400,7 +381,9 @@ def _win_stage_security(c, path, security):
     if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(security, 1, ctypes.byref(descriptor), None):
         raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_UNAVAILABLE')
     try:
-        if not advapi.SetFileSecurityW(str(path), 4, descriptor):
+        # One complete descriptor transition from the private empty stage.
+        # Do not clear protection with a separate inheritance-enabling call.
+        if not advapi.SetFileSecurityW(str(path), 1 | 2 | 4, descriptor):
             raise c.SetupError('RECOVERY_WINDOWS_STAGE_SECURITY_COPY_FAILED')
     finally:
         kernel.LocalFree(descriptor)
@@ -465,12 +448,12 @@ def _win_make_private(path):
         kernel.LocalFree(descriptor)
 
 
-def _win_private_stage(parent, protected=True):
-    """Create an empty stage; the exact final DACL is checked before any data.
+def _win_private_stage(parent):
+    """Create an empty, protected stage with no parent ACE inheritance.
 
-    Match the source protection model at creation. An unprotected empty file
-    may initially inherit parent ACEs; _win_stage_security removes unintended
-    grants and validates the whole descriptor before writing candidate bytes.
+    Even an empty broadly readable stage would be unsafe: another account
+    could keep a read handle after a later ACL restriction. Only one exact
+    transition to the approved source descriptor precedes candidate writing.
     """
     import msvcrt
     w, kernel, advapi = _windows()
@@ -483,8 +466,7 @@ def _win_private_stage(parent, protected=True):
     kernel.CloseHandle.argtypes = [w.HANDLE]
     sid = _win_sid()
     descriptor = ctypes.c_void_p()
-    protection = 'P' if protected else ''
-    if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW('O:' + sid + 'D:' + protection + '(A;;FA;;;' + sid + ')(A;;FA;;;SY)', 1, ctypes.byref(descriptor), None):
+    if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW('O:' + sid + 'D:P(A;;FA;;;' + sid + ')(A;;FA;;;SY)', 1, ctypes.byref(descriptor), None):
         raise OSError('private-stage-acl')
     handle = None
     path = parent / ('.claude-recovery-' + uuid.uuid4().hex + '.tmp')
@@ -738,9 +720,7 @@ def _assert_expected(c, path, expected):
 
 def _stage(c, target, data, expected):
     if os.name == 'nt':
-        security = expected['metadata']['security']
-        protected = _win_security_comparison(security, security)['expected_dacl_control']['protected']
-        fd, name = _win_private_stage(target.parent, protected)
+        fd, name = _win_private_stage(target.parent)
     else:
         fd, name = tempfile.mkstemp(prefix='.claude-recovery-', suffix='.tmp', dir=target.parent)
     stage = Path(name)

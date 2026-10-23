@@ -376,6 +376,23 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(self.target.read_bytes(), AFTER)
 
     @unittest.skipUnless(NATIVE, 'native writes only')
+    def test_readback_failure_reports_separate_checks_without_private_values(self):
+        folder, pin = self.plan()
+        real_replace = recovery._replace
+        def unexpected_content(*args):
+            real_replace(*args)
+            self.target.write_bytes(b'{"customer":"synthetic interference"}\n')
+        with patch.object(recovery, '_replace', side_effect=unexpected_content):
+            result = recovery.apply(c, folder, pin, True, True, self.root / 'readback-mismatch')
+        self.assertEqual(result['reason_code'], 'RECOVERY_READBACK_MISMATCH')
+        self.assertTrue(result['config_file_changed'])
+        self.assertFalse(result['readback_checks']['content_matches'])
+        self.assertTrue(result['readback_checks']['stage_device_matches'])
+        self.assertTrue(result['readback_checks']['stage_inode_matches'])
+        self.assertNotIn(str(self.target), json.dumps(result))
+        self.assertNotIn('synthetic interference', json.dumps(result))
+
+    @unittest.skipUnless(NATIVE, 'native writes only')
     def test_final_receipt_failure_retains_intent_and_never_enables_undo(self):
         folder, pin = self.plan()
         dest = self.root / 'receipt-failure'
@@ -500,6 +517,21 @@ class RecoveryTests(unittest.TestCase):
         owner_alias = 'O:SYD:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)'
         owner_full = 'O:S-1-5-18D:P(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;S-1-5-18)'
         self.assertEqual(self._native_sddl_summary(owner_alias), self._native_sddl_summary(owner_full))
+
+    @unittest.skipUnless(os.name == 'nt', 'actual Windows control/ACE diagnostic')
+    def test_windows_security_comparison_distinguishes_control_from_permission_bytes(self):
+        sid = recovery._win_sid()
+        aces = '(A;OICI;FA;;;' + sid + ')(A;OICI;FA;;;SY)'
+        protected = 'O:' + sid + 'D:P' + aces
+        unprotected = 'O:' + sid + 'D:' + aces
+        result = recovery._win_security_comparison(protected, unprotected)
+        self.assertTrue(result['available'])
+        self.assertTrue(result['owner_sid_matches'])
+        self.assertTrue(result['group_sid_matches'])
+        self.assertTrue(result['dacl_ace_bytes_match'])
+        self.assertFalse(result['control_matches'])
+        self.assertTrue(result['expected_dacl_control']['protected'])
+        self.assertFalse(result['actual_dacl_control']['protected'])
 
     @unittest.skipUnless(os.name == 'nt', 'actual Windows SID/privacy rejection regression')
     def test_windows_semantic_acl_check_rejects_other_sids_null_empty_and_unprotected(self):

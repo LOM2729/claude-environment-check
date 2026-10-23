@@ -263,6 +263,76 @@ def _win_acl_summary(path=None, descriptor=None):
             kernel.LocalFree(system)
 
 
+def _win_security_comparison(expected, actual):
+    """Explain native descriptor differences without emitting SIDs or SDDL."""
+    w, kernel, advapi = _windows()
+    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [w.LPCWSTR, w.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.ULONG)]
+    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = w.BOOL
+    for name in ('GetSecurityDescriptorOwner', 'GetSecurityDescriptorGroup'):
+        fn = getattr(advapi, name)
+        fn.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.BOOL)]
+        fn.restype = w.BOOL
+    advapi.GetSecurityDescriptorControl.argtypes = [ctypes.c_void_p, ctypes.POINTER(w.WORD), ctypes.POINTER(w.DWORD)]
+    advapi.GetSecurityDescriptorControl.restype = w.BOOL
+    advapi.GetSecurityDescriptorDacl.argtypes = [ctypes.c_void_p, ctypes.POINTER(w.BOOL), ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(w.BOOL)]
+    advapi.GetSecurityDescriptorDacl.restype = w.BOOL
+    advapi.GetAclInformation.argtypes = [ctypes.c_void_p, ctypes.c_void_p, w.DWORD, ctypes.c_int]
+    advapi.GetAclInformation.restype = w.BOOL
+    advapi.GetAce.argtypes = [ctypes.c_void_p, w.DWORD, ctypes.POINTER(ctypes.c_void_p)]
+    advapi.GetAce.restype = w.BOOL
+    advapi.EqualSid.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    advapi.EqualSid.restype = w.BOOL
+    class AclSize(ctypes.Structure):
+        _fields_ = [('ace_count', w.DWORD), ('bytes_in_use', w.DWORD), ('bytes_free', w.DWORD)]
+    allocations = []
+    def components(text):
+        descriptor = ctypes.c_void_p()
+        if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(text, 1, ctypes.byref(descriptor), None):
+            raise OSError('descriptor-comparison-unavailable')
+        allocations.append(descriptor)
+        owner, group, dacl = (ctypes.c_void_p() for _ in range(3))
+        defaulted, present, dacl_defaulted = (w.BOOL() for _ in range(3))
+        control, revision = w.WORD(), w.DWORD()
+        if not advapi.GetSecurityDescriptorOwner(descriptor, ctypes.byref(owner), ctypes.byref(defaulted)) or not advapi.GetSecurityDescriptorGroup(descriptor, ctypes.byref(group), ctypes.byref(defaulted)) or not advapi.GetSecurityDescriptorControl(descriptor, ctypes.byref(control), ctypes.byref(revision)) or not advapi.GetSecurityDescriptorDacl(descriptor, ctypes.byref(present), ctypes.byref(dacl), ctypes.byref(dacl_defaulted)):
+            raise OSError('descriptor-comparison-unavailable')
+        aces = []
+        if dacl.value:
+            size = AclSize()
+            if not advapi.GetAclInformation(dacl, ctypes.byref(size), ctypes.sizeof(size), 2) or size.ace_count > 1024:
+                raise OSError('descriptor-comparison-unavailable')
+            for index in range(size.ace_count):
+                ace = ctypes.c_void_p()
+                if not advapi.GetAce(dacl, index, ctypes.byref(ace)) or not ace.value:
+                    raise OSError('descriptor-comparison-unavailable')
+                header = ctypes.string_at(ace, 4)
+                length = int.from_bytes(header[2:4], 'little')
+                if length < 4:
+                    raise OSError('descriptor-comparison-unavailable')
+                aces.append(ctypes.string_at(ace, length))
+        return {'owner': owner, 'group': group, 'control': control.value,
+                'dacl_present': bool(present.value), 'dacl_nonnull': bool(dacl.value),
+                'dacl_defaulted': bool(dacl_defaulted.value), 'aces': aces}
+    try:
+        left, right = components(expected), components(actual)
+        sid_equal = lambda a, b: bool(advapi.EqualSid(a, b)) if a.value and b.value else not a.value and not b.value
+        flags = {'protected': 0x1000, 'auto_inherited': 0x0400, 'auto_inherit_required': 0x0100, 'defaulted': 0x0008}
+        return {'available': True, 'owner_sid_matches': sid_equal(left['owner'], right['owner']),
+                'group_sid_matches': sid_equal(left['group'], right['group']),
+                'control_matches': left['control'] == right['control'],
+                'expected_dacl_control': {key: bool(left['control'] & mask) for key, mask in flags.items()},
+                'actual_dacl_control': {key: bool(right['control'] & mask) for key, mask in flags.items()},
+                'dacl_present_matches': left['dacl_present'] == right['dacl_present'],
+                'dacl_nonnull_matches': left['dacl_nonnull'] == right['dacl_nonnull'],
+                'dacl_ace_bytes_match': left['aces'] == right['aces'],
+                'dacl_ace_count_matches': len(left['aces']) == len(right['aces']),
+                'expected_ace_types': [ace[0] for ace in left['aces']], 'actual_ace_types': [ace[0] for ace in right['aces']],
+                'expected_ace_flags': [ace[1] for ace in left['aces']], 'actual_ace_flags': [ace[1] for ace in right['aces']],
+                'dacl_ace_masks_match': [ace[4:8] for ace in left['aces']] == [ace[4:8] for ace in right['aces']]}
+    finally:
+        for descriptor in allocations:
+            kernel.LocalFree(descriptor)
+
+
 def _win_no_named_streams(path):
     """This text-only backup does not claim to snapshot alternate data streams."""
     w, kernel, _ = _windows()
@@ -719,6 +789,7 @@ def _transaction(c, original, candidate, expected, folder, origin, action):
     current = None
     error = None
     lock_cleanup_completed = True
+    readback_checks = None
     try:
         # The lock remains after a hard interruption. Never delete another run's
         # lock automatically; an operator must first inspect its private intent.
@@ -751,9 +822,19 @@ def _transaction(c, original, candidate, expected, folder, origin, action):
         changed = True
         state = 'committed_readback_pending'
         actual, current = _snapshot(c, target)
-        c.require(actual == candidate and current['metadata'] == expected['metadata'] and
-                  (current['fingerprint']['device'], current['fingerprint']['inode']) ==
-                  (intent['stage_identity']['device'], intent['stage_identity']['inode']), 'RECOVERY_READBACK_MISMATCH')
+        readback_checks = {'content_matches': actual == candidate,
+                           'metadata_matches': current['metadata'] == expected['metadata'],
+                           'metadata_keys_match': {key: current['metadata'].get(key) == expected['metadata'].get(key)
+                              for key in ('mode', 'uid', 'gid', 'xattrs', 'acl', 'security', 'attributes')
+                              if key in current['metadata'] or key in expected['metadata']},
+                           'stage_device_matches': current['fingerprint']['device'] == intent['stage_identity']['device'],
+                           'stage_inode_matches': current['fingerprint']['inode'] == intent['stage_identity']['inode']}
+        if os.name == 'nt' and not readback_checks['metadata_keys_match'].get('security', True):
+            try:
+                readback_checks['windows_security'] = _win_security_comparison(expected['metadata']['security'], current['metadata']['security'])
+            except Exception:
+                readback_checks['windows_security'] = {'available': False}
+        c.require(all(readback_checks[key] for key in ('content_matches', 'metadata_matches', 'stage_device_matches', 'stage_inode_matches')), 'RECOVERY_READBACK_MISMATCH')
         state = 'committed'
     except (Exception, KeyboardInterrupt) as exc:
         error = str(exc) if isinstance(exc, c.SetupError) else 'RECOVERY_TRANSACTION_IO_OR_INTERRUPTED'
@@ -786,7 +867,8 @@ def _transaction(c, original, candidate, expected, folder, origin, action):
     if intent is not None:
         receipt = {'schema': PRIVATE_SCHEMA, 'kind': 'receipt', 'binding': _binding(), 'created_at': c.now(),
                    'intent_sha256': intent_pin, 'state': state, 'target_after': current,
-                   'write_attempted': attempted, 'config_file_changed': changed, 'error_code': error}
+                   'write_attempted': attempted, 'config_file_changed': changed, 'error_code': error,
+                   'readback_checks': readback_checks}
         try:
             raw = c.encode(receipt)
             _write(c, folder / 'receipt.private.json', raw)
@@ -808,7 +890,8 @@ def _transaction(c, original, candidate, expected, folder, origin, action):
     return _report(c, folder, 'recovery-' + ('rollback' if action == 'rollback' else 'apply'), rows,
                    {'config_file_changed': changed, 'write_attempted': attempted, 'recovery_state': state,
                     'receipt_complete': receipt_written, 'receipt_sha256': receipt_pin, 'intent_sha256': intent_pin,
-                    'reason_code': error, 'lock_cleanup_completed': lock_cleanup_completed, 'target_runtime_verified': False})
+                    'reason_code': error, 'lock_cleanup_completed': lock_cleanup_completed,
+                    'readback_checks': readback_checks, 'target_runtime_verified': False})
 
 
 def apply(c, folder, pin, allow, stopped, output):

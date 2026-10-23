@@ -37,7 +37,7 @@ class WorkflowProgressTests(unittest.TestCase):
         self.artifact = self.root / 'candidate.json'
         self.artifact.write_bytes(b'{"candidate":"synthetic"}\n')
         self.scope = self.root / '本轮 范围说明.md'
-        self.scope.write_text(SCOPE, encoding='utf-8')
+        self.scope.write_bytes(SCOPE.encode('utf-8'))
         self.number = 0
 
     def tearDown(self):
@@ -137,6 +137,7 @@ class WorkflowProgressTests(unittest.TestCase):
                 self.assertNotIn(str(self.root), public)
                 self.assertNotIn('synthetic-only-value', public)
                 self.assertNotIn('customer-one', public)
+
                 self.assertNotIn('synthetic-node-private', public)
                 self.assertNotIn(SCOPE, public)
             index = (directory / '材料索引.private.md').read_text(encoding='utf-8')
@@ -146,6 +147,19 @@ class WorkflowProgressTests(unittest.TestCase):
             self.assertNotIn(str(self.config), index)
             self.assertNotIn('synthetic-only-value', index)
             self.assertNotIn('synthetic-node-private', index)
+
+    def test_scope_line_endings_are_bound_as_file_bytes(self):
+        raw = SCOPE.replace('\n', '\r\n').encode('utf-8')
+        self.scope.write_bytes(raw)
+        saved = self.save()
+        record = c.load_json((saved / 'checkpoint.private.json').read_bytes())
+        self.assertEqual(record['scope']['sha256'], c.sha(raw))
+        _, result = self.resume(saved)
+        self.assertEqual(result['checkpoint_matches'], NATIVE)
+        self.scope.write_bytes(SCOPE.encode('utf-8'))
+        out, result = self.resume(saved)
+        self.assertFalse(result['checkpoint_matches'])
+        self.assertEqual(self.rows(out)['scope']['status'], '未完成')
 
     def test_cli_never_has_write_network_or_launch_switches(self):
         parser = argparse.ArgumentParser()

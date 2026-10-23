@@ -4,7 +4,7 @@ Mac、Windows 使用同一组工具与报告状态：**已完成／未完成**�
 
 ## 1. 修改前准备恢复材料
 
-先确认实际平台、当前客户端版本、活动配置归属、具体目标文件和保留项，再准备候选。完整方案包含原值、候选差异、备份位置、恢复方式和复测范围；同一份具体方案获准后连续执行。
+按 [五步流程](five-step-setup.md) 在批准前完成实际平台／版本／配置归属核对、完整最终候选、原值、私有差异、备份位置、恢复方式与复测范围。同一份具体方案获准后连续执行，紧邻写入仍要复核目标未变；不能把恢复材料留到批准后才准备。
 
 `recovery-*` 只处理明确指定的现存纯文本 `.json`／`.yaml`／`.yml`／`.conf` 配置文件；不是任意系统设置写入器。它不修改应用数据库、系统 DNS、网卡、防火墙、订阅账户，不启动、重载或重启客户端。保护当前控制通道。权限、文件元数据或路径归属不能满足检查时停止，不用关闭检查来强行执行。
 
@@ -43,9 +43,13 @@ python <Skill>/scripts/claude_setup.py lifecycle-template --config <实际配置
 python <Skill>/scripts/claude_setup.py lifecycle-accept --config <同一配置读回> --input <记录目录>/lifecycle-record.private.json --target-alias <同一别名> --platform <同一平台> --evidence-dir <本轮私有证据目录> --out <新验收报告目录>
 ```
 
+默认只有 `normal_use` 为本次必需验收；其他七类事件列后续复查，未实测显示未完成并写原因与下一步，不进入本次必需完成数。客户明确选择本轮事件时重复 `--required-event <事件ID>`，`normal_use` 始终必需；显式纳入的事件严格验收，不能把失败项改成可选。旧版本全必需记录保持全必需，不自动降级。
+
+事件ID：`normal_use`、`client_update`、`proxy_update`、`client_restart`、`system_restart`、`sleep_wake`、`network_change`、`proxy_fault_recovery`。例如明确选择本轮换网时，创建模板加 `--required-event network_change`；工具只记录范围，不执行切网，也不授予该动作许可。
+
 多个客户端重复 `--client`。允许类型为 `browser`、`terminal`、`claude_gui`、`codex_gui`、`claude_cli`、`codex_cli`、`background`。先创建未完成模板，由 Codex 依据真正发生的操作和采样填写事件、进程观察、证据文件及摘要，再运行验收；不能为使检查通过补写不存在的事件。
 
-模板创建成功的退出码为 0，表示材料已生成，不表示验收通过；`lifecycle-accept` 仍有未完成项时退出码为 2。模板可以离线准备其他平台材料，但验收执行平台与实际目标不一致时全部保持未完成，不能由 Mac 代 Windows 或由 Linux 代客户电脑验收。
+模板创建成功的退出码为 0，表示材料已生成，不表示验收通过；`lifecycle-accept` 仍有本次必需项未完成时退出码为 2；仅后续复查未完成不阻止本次必需验收。模板可以离线准备其他平台材料，但验收执行平台与实际目标不一致时全部保持未完成，不能由 Mac 代 Windows 或由 Linux 代客户电脑验收。
 
 | 事件 | 本轮必须核实的事实 |
 | --- | --- |
@@ -58,7 +62,7 @@ python <Skill>/scripts/claude_setup.py lifecycle-accept --config <同一配置�
 | 换网后 | 实际网络切换；新接口与 DNS 已识别，不复用旧网络通过结论 |
 | 代理故障与恢复 | 探测原先确实可用、故障确实发生、有能力观察直连及恢复结果；本来就断网或只有超时不能证明阻断成功 |
 
-客户报告按事件汇总，详细的客户端和路径证据留在本机。没发生、客户暂不做、拒绝、观察不全、证据过期或配置变化，都显示未完成并写清原因与下一步。当前正常使用通过，不替其他七类事件通过；有些事件通过，也不产生“持续保护已完成”的整体推断。
+客户报告按本次必需与后续复查分别汇总：短摘要使用 `required_completed`／`required_incomplete`，其他事件使用 `followup_completed`／`followup_incomplete` 单列；旧 `completed`／`incomplete` 仍为全部事件的兼容计数，不能拿来充当本次必需计数。详细客户端和路径证据留本机。没发生、客户暂不做、拒绝、观察不全、证据过期或配置变化，都显示未完成并写清原因与下一步。当前正常使用通过可完成默认本次必需范围，但不替其他七类事件通过；有些事件通过，也不产生“持续保护已完成”的整体推断。
 
 ### Codex 填写证据的契约
 

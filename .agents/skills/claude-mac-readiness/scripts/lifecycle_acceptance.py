@@ -14,7 +14,8 @@ import uuid
 import readiness_lifecycle as life
 
 COMMANDS = ('lifecycle-template', 'lifecycle-accept')
-SCHEMA = 'claude-lifecycle-acceptance/1'
+SCHEMA = 'claude-lifecycle-acceptance/2'
+LEGACY_SCHEMA = 'claude-lifecycle-acceptance/1'
 CLIENTS = {'browser': '浏览器', 'terminal': '终端', 'claude_gui': 'Claude 桌面端',
            'codex_gui': 'Codex 桌面端', 'claude_cli': 'Claude CLI',
            'codex_cli': 'Codex CLI', 'background': '所选后台进程'}
@@ -47,6 +48,8 @@ def register_commands(subparsers):
         if command == 'lifecycle-template':
             parser.add_argument('--client', action='append', choices=tuple(CLIENTS), required=True,
                                 help='Only client families actually in the agreed target scope; repeat as needed')
+            parser.add_argument('--required-event', action='append', choices=tuple(EVENTS),
+                                help='Additional events required for this delivery; normal_use is always required')
         else:
             parser.add_argument('--input', required=True)
             parser.add_argument('--evidence-dir', help='Explicit local root for private relative receipt/source files; defaults to input parent')
@@ -86,13 +89,29 @@ def _binding(c, config, target, target_platform):
             'execution_platform': _execution_platform()}
 
 
-def template(c, config, target, target_platform, clients, output):
+def _required_events(c, events):
+    c.require(isinstance(events, list) and len(events) <= len(EVENTS)
+              and all(isinstance(x, str) and x in EVENTS for x in events)
+              and len(set(events)) == len(events), 'LIFECYCLE_REQUIRED_EVENTS_INVALID')
+    return [event for event in EVENTS if event == 'normal_use' or event in events]
+
+
+def _record_required_events(record):
+    # Older records described one all-required acceptance run. Never silently
+    # reinterpret their unfinished events as follow-up-only work.
+    return list(EVENTS) if record['schema'] == LEGACY_SCHEMA else record['required_events']
+
+
+def template(c, config, target, target_platform, clients, output, required_events=None):
     c.require(isinstance(clients, list) and clients and len(clients) <= len(CLIENTS)
               and all(isinstance(x, str) and x in CLIENTS for x in clients) and len(set(clients)) == len(clients), 'LIFECYCLE_CLIENT_SCOPE_INVALID')
     created = _time(c, c.now())
+    required = _required_events(c, [] if required_events is None else required_events)
+    binding = _binding(c, config, target, target_platform)
+    binding['required_events_sha256'] = c.sha(c.encode(required))
     record = {'schema': SCHEMA, 'record_id': uuid.uuid4().hex, 'created_at': created.isoformat(),
-              'expires_at': (created + MAX_AGE).isoformat(), 'binding': _binding(c, config, target, target_platform),
-              'clients': list(clients), 'events': []}
+              'expires_at': (created + MAX_AGE).isoformat(), 'binding': binding,
+              'clients': list(clients), 'required_events': required, 'events': []}
     for event in EVENTS:
         record['events'].append({'id': event, 'state': 'not_performed', 'instance_id': None,
                                  'started_at': None, 'ended_at': None, 'event_receipt': None,
@@ -100,17 +119,26 @@ def template(c, config, target, target_platform, clients, output):
     c.new_dir(output)
     c.write_new(Path(output) / 'lifecycle-record.private.json', c.encode(record))
     return {'status': 'private_lifecycle_template_written', 'events': len(EVENTS), 'clients': len(clients),
+            'required_events': required, 'followup_events': [event for event in EVENTS if event not in required],
             'completed': 0, 'required_checks_completed': False,
             'network_requests': 0, 'system_settings_changed': False,
             'evidence_authenticity_verified': False}
 
 
 def _record(c, value):
-    _keys(c, value, ('schema', 'record_id', 'created_at', 'expires_at', 'binding', 'clients', 'events'))
-    c.require(value['schema'] == SCHEMA, 'LIFECYCLE_SCHEMA_INVALID')
+    c.require(isinstance(value, dict) and value.get('schema') in (SCHEMA, LEGACY_SCHEMA), 'LIFECYCLE_SCHEMA_INVALID')
+    modern = value['schema'] == SCHEMA
+    fields = ('schema', 'record_id', 'created_at', 'expires_at', 'binding', 'clients', 'events')
+    _keys(c, value, fields + (('required_events',) if modern else ()))
     _id(c, value['record_id'])
     binding = value['binding']
-    _keys(c, binding, ('config_sha256', 'target_alias', 'target_platform', 'execution_id', 'execution_platform'))
+    binding_fields = ('config_sha256', 'target_alias', 'target_platform', 'execution_id', 'execution_platform')
+    _keys(c, binding, binding_fields + (('required_events_sha256',) if modern else ()))
+    if modern:
+        required = _required_events(c, value['required_events'])
+        c.require(required == value['required_events'], 'LIFECYCLE_REQUIRED_EVENTS_INVALID')
+        _hash(c, binding['required_events_sha256'])
+        c.require(binding['required_events_sha256'] == c.sha(c.encode(required)), 'LIFECYCLE_REQUIRED_EVENTS_BINDING_MISMATCH')
     _id(c, binding['target_alias'])
     for key in ('config_sha256', 'execution_id'):
         _hash(c, binding[key])
@@ -279,6 +307,7 @@ def _observation(c, root, record, event, client, reference, now, event_receipt):
 
 def accept(c, config, input_file, target, target_platform, output, evidence_dir=None):
     record = _record(c, c.load_json(c.read_bytes(input_file)))
+    required = _record_required_events(record)
     actual = _binding(c, config, target, target_platform)
     now = _time(c, c.now())
     root = Path(evidence_dir).absolute() if evidence_dir else Path(input_file).absolute().parent
@@ -325,22 +354,24 @@ def accept(c, config, input_file, target, target_platform, output, evidence_dir=
         action = '保留本机证据；配置、版本或网络变化后重新核验。' if completed else (
             '为当前目标和配置新建记录，再补充实际事件及逐客户端证据。' if reason else
             'Codex 按已授权范围补充本事件证据；重启、换网或故障实验由客户决定并手动操作，未授权则保留未完成。')
-        rows.append(life.item('lifecycle_' + event['id'], EVENTS[event['id']], completed, result, action))
-        matrix.append({'event': event['id'], 'details': details, 'completed': completed})
+        rows.append(life.item('lifecycle_' + event['id'], EVENTS[event['id']], completed, result, action,
+                              required=event['id'] in required))
+        matrix.append({'event': event['id'], 'details': details, 'completed': completed, 'required': event['id'] in required})
     if c.sha(c.read_bytes(config)) != actual['config_sha256']:
         rows = [life.item(row['id'], row['title'], False, '验收期间配置发生变化，本轮结果不能沿用。',
-                          '读回当前配置并新建绑定记录，再按实际范围验收。') for row in rows]
+                          '读回当前配置并新建绑定记录，再按实际范围验收。', required=row['required']) for row in rows]
         for entry in matrix:
             entry['completed'] = False
     return life.save_report(c, output, 'lifecycle-acceptance', rows,
         extra={'evidence_authenticity_verified': False, 'evidence_review_only': True,
                'network_requests': 0, 'target_platform': target_platform, 'runtime_adoption_verified': False,
+               'required_events': required, 'followup_events': [event for event in EVENTS if event not in required],
                'scope_note': '仅判定所提供证据的完整性与绑定，不自行采集或认证真实性；不提供持续阻断或新操作授权。'},
         private={'record_id': record['record_id'], 'binding': record['binding'], 'matrix': matrix})
 
 
 def run(c, args):
     if args.command == 'lifecycle-template':
-        return template(c, args.config, args.target_alias, args.platform, args.client, args.out)
+        return template(c, args.config, args.target_alias, args.platform, args.client, args.out, args.required_event)
     c.require(args.command == 'lifecycle-accept', 'LIFECYCLE_COMMAND_INVALID')
     return accept(c, args.config, args.input, args.target_alias, args.platform, args.out, args.evidence_dir)

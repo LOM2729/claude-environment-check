@@ -1,6 +1,6 @@
 # Claude / OpenAI 专属代理（兼容模式）
 
-当前自动配置以 [Claude专属组与服务路径](service-routing-checks.md)、[国内视频与UDP](domestic-video-udp.md) 为准；默认 domestic-v4 会建立同节点 Claude 专属组。v0.7 兼容配置使用 [统一出口与 IPv4](unified-ipv4.md) 和 [五步顺序](five-step-setup.md)。以下仅供明确选择 ai-only 的兼容任务；不覆盖新的默认目标。
+当前自动配置以 [Claude专属组与服务路径](service-routing-checks.md)、[国内视频与UDP](domestic-video-udp.md) 为准；默认 domestic-v4 会建立同节点 Claude 专属组。明确选择旧统一策略时使用 [统一出口与 IPv4](unified-ipv4.md) 和 [五步顺序](five-step-setup.md)。以下仅供明确选择 ai-only 的兼容任务；不覆盖新的默认目标。
 
 自动配置模式默认将**已核对目录内的 Claude、OpenAI 域名固定到客户指定的一个代理节点**，代理失败时不改走 DIRECT。其余配置沿用现有国内直连、国外代理的规则、顺序、DNS 和传输限制。系统语言保持不变。
 

@@ -223,14 +223,16 @@ class CustomerRecoveryAcceptanceWorkflow(unittest.TestCase):
                 record['events'][3]['state'] = 'declined'
                 record_path.write_text(json.dumps(record), encoding='utf-8')
                 accepted = self.out('normal-only')
+                native_target = {'Darwin': 'macos', 'Windows': 'windows'}.get(platform.system()) == target_platform
                 result = self.run_cli('lifecycle-accept', '--config', config, '--input', record_path,
                                       '--target-alias', 'synthetic-customer', '--platform', target_platform,
-                                      '--evidence-dir', template, '--out', accepted, expected=2)
-                native_target = {'Darwin': 'macos', 'Windows': 'windows'}.get(platform.system()) == target_platform
+                                      '--evidence-dir', template, '--out', accepted, expected=0 if native_target else 2)
                 expected_completed = 1 if native_target else 0
                 self.assertEqual(result['completed'], expected_completed)
                 self.assertEqual(result['incomplete'], 8 - expected_completed)
-                self.assertFalse(result['required_checks_completed'])
+                self.assertEqual(result['required_checks_completed'], native_target)
+                self.assertEqual(result['required_incomplete'], 0 if native_target else 1)
+                self.assertEqual(result['followup_incomplete'], 7)
                 report = self.check_report(accepted)
                 self.assertFalse(report['continuous_protection'])
                 self.assertFalse(report['runtime_adoption_verified'])

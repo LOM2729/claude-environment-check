@@ -36,10 +36,19 @@ class LifecycleAcceptance(unittest.TestCase):
         self.execution_platform.start()
         self.addCleanup(self.execution_platform.stop)
         self.created = self.root / 'template'
-        lifecycle.template(c, self.config, 'customer-one', 'macos', ['browser', 'codex_gui'], self.created)
+        lifecycle.template(c, self.config, 'customer-one', 'macos', ['browser', 'codex_gui'], self.created,
+                           required_events=list(lifecycle.EVENTS))
         self.input = self.created / 'lifecycle-record.private.json'
         self.record = c.load_json(self.input.read_bytes())
         self.serial = 0
+
+    def new_scope(self, required_events=None):
+        self.serial += 1
+        self.created = self.root / ('scope-' + str(self.serial))
+        lifecycle.template(c, self.config, 'customer-one', 'macos', ['browser', 'codex_gui'], self.created,
+                           required_events=required_events)
+        self.input = self.created / 'lifecycle-record.private.json'
+        self.record = c.load_json(self.input.read_bytes())
 
     def ref(self, value, suffix='.json'):
         self.serial += 1
@@ -134,6 +143,95 @@ class LifecycleAcceptance(unittest.TestCase):
         self.assertEqual(result['completed'], 0)
         self.assertIn('未选择', report['rows'][0]['reason'])
         self.assertFalse(result['required_checks_completed'])
+
+    def test_default_delivery_requires_only_normal_and_keeps_seven_followups_pending(self):
+        self.new_scope()
+        self.assertEqual(self.record['schema'], lifecycle.SCHEMA)
+        self.assertEqual(self.record['required_events'], ['normal_use'])
+        self.perform()
+        result, report = self.review()
+        self.assertEqual(result['completed'], 1)
+        self.assertTrue(result['required_checks_completed'])
+        required_rows = [row for row in report['rows'] if row['required']]
+        followup_rows = [row for row in report['rows'] if not row['required']]
+        self.assertEqual(len(required_rows), 1)
+        self.assertEqual(required_rows[0]['status'], '已完成')
+        self.assertEqual(len(followup_rows), 7)
+        self.assertTrue(all(row['status'] == '未完成' for row in followup_rows))
+        self.assertEqual(report['required_events'], ['normal_use'])
+        self.assertEqual(set(report['followup_events']), set(lifecycle.EVENTS) - {'normal_use'})
+
+    def test_explicit_required_event_blocks_until_its_evidence_is_complete(self):
+        self.new_scope(['system_restart'])
+        self.assertEqual(self.record['required_events'], ['normal_use', 'system_restart'])
+        self.perform()
+        result, report = self.review()
+        self.assertFalse(result['required_checks_completed'])
+        restart = next(row for row in report['rows'] if row['id'] == 'lifecycle_system_restart')
+        self.assertTrue(restart['required'])
+        self.assertEqual(restart['status'], '未完成')
+        self.perform('system_restart')
+        result, _ = self.review()
+        self.assertTrue(result['required_checks_completed'])
+
+    def test_completed_followup_stays_outside_delivery_required_count(self):
+        self.new_scope()
+        self.perform()
+        self.perform('client_update')
+        result, report = self.review()
+        self.assertEqual(result['completed'], 2)
+        self.assertTrue(result['required_checks_completed'])
+        self.assertEqual(sum(row['required'] and row['status'] == '已完成' for row in report['rows']), 1)
+        update = next(row for row in report['rows'] if row['id'] == 'lifecycle_client_update')
+        self.assertFalse(update['required'])
+        self.assertEqual(update['status'], '已完成')
+
+    def test_legacy_records_remain_all_required_and_keep_original_receipt_binding(self):
+        self.record['schema'] = lifecycle.LEGACY_SCHEMA
+        self.record.pop('required_events')
+        self.record['binding'].pop('required_events_sha256')
+        self.perform()
+        result, report = self.review()
+        self.assertEqual(result['completed'], 1)
+        self.assertFalse(result['required_checks_completed'])
+        self.assertTrue(all(row['required'] for row in report['rows']))
+        self.assertEqual(report['required_events'], list(lifecycle.EVENTS))
+        self.assertEqual(report['followup_events'], [])
+        for event in list(lifecycle.EVENTS)[1:]:
+            self.perform(event)
+        result, _ = self.review()
+        self.assertTrue(result['required_checks_completed'])
+
+    def test_required_scope_cannot_silently_change_existing_receipts(self):
+        self.new_scope(['system_restart'])
+        self.perform()
+        self.record['required_events'] = ['normal_use']
+        with self.assertRaisesRegex(c.SetupError, 'LIFECYCLE_REQUIRED_EVENTS_BINDING_MISMATCH'):
+            self.review()
+        # Updating the digest makes the record structurally valid, but previous
+        # receipts remain bound to the original full required-event scope.
+        self.record['binding']['required_events_sha256'] = c.sha(c.encode(self.record['required_events']))
+        result, report = self.review()
+        self.assertFalse(result['required_checks_completed'])
+        self.assertEqual(result['completed'], 0)
+        self.assertEqual(report['rows'][0]['status'], '未完成')
+
+    def test_required_scope_rejects_missing_normal_duplicates_unknown_or_noncanonical(self):
+        for value in ([], ['system_restart'], ['normal_use', 'normal_use'], ['normal_use', 'invented'],
+                      ['system_restart', 'normal_use'], 'normal_use'):
+            self.new_scope()
+            self.record['required_events'] = value
+            self.record['binding']['required_events_sha256'] = c.sha(c.encode(value))
+            with self.assertRaisesRegex(c.SetupError, 'LIFECYCLE_REQUIRED_EVENTS_INVALID'):
+                self.review()
+        for value in (['system_restart', 'system_restart'], ['unknown']):
+            with self.assertRaisesRegex(c.SetupError, 'LIFECYCLE_REQUIRED_EVENTS_INVALID'):
+                self.new_scope(value)
+
+    def test_legacy_schema_cannot_add_scope_fields_to_downgrade_old_requirements(self):
+        self.record['schema'] = lifecycle.LEGACY_SCHEMA
+        with self.assertRaisesRegex(c.SetupError, 'LIFECYCLE_SCHEMA_INVALID'):
+            self.review()
 
     def test_supplied_complete_contract_is_not_automatic_authentication(self):
         for event in lifecycle.EVENTS:
@@ -272,6 +370,7 @@ class LifecycleAcceptance(unittest.TestCase):
         self.assertEqual(result['completed'], 0)
 
     def test_configuration_change_during_review_invalidates_all_results(self):
+        self.new_scope()
         self.perform()
         original_read = c.read_bytes
         read_count = 0
@@ -286,6 +385,7 @@ class LifecycleAcceptance(unittest.TestCase):
             result, report = self.review()
         self.assertEqual(result['completed'], 0)
         self.assertIn('验收期间', report['rows'][0]['reason'])
+        self.assertEqual([row['required'] for row in report['rows']], [True] + [False] * 7)
 
     def test_source_traversal_changed_bytes_and_symlink_are_not_followed(self):
         for invalid in ('../outside.json', '/tmp/outside.json', 'C:\\secret.json'):
@@ -325,11 +425,13 @@ class LifecycleAcceptance(unittest.TestCase):
         lifecycle.register_commands(parser.add_subparsers(dest='command', required=True))
         out = self.root / 'cli'
         args = parser.parse_args(['lifecycle-template', '--config', str(self.config), '--target-alias', 'customer-two',
-                                  '--platform', 'windows', '--client', 'codex_cli', '--out', str(out)])
+                                  '--platform', 'windows', '--client', 'codex_cli', '--required-event', 'system_restart',
+                                  '--required-event', 'proxy_update', '--out', str(out)])
         result = lifecycle.run(c, args)
         self.assertEqual(result['completed'], 0)
         record = c.load_json((out / 'lifecycle-record.private.json').read_bytes())
         self.assertEqual(record['clients'], ['codex_cli'])
+        self.assertEqual(record['required_events'], ['normal_use', 'proxy_update', 'system_restart'])
 
 
 if __name__ == '__main__':

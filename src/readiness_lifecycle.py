@@ -108,26 +108,52 @@ def save_report(c, output, kind, rows, extra=None, private=None, create=True):
               'system_settings_changed': False, 'continuous_protection': False}
     if extra:
         result.update(extra)
+    required_rows = [r for r in rows if r['required']]
+    followup_rows = [r for r in rows if not r['required']]
+    counts = {'required_completed': sum(r['status'] == '已完成' for r in required_rows),
+              'required_incomplete': sum(r['status'] != '已完成' for r in required_rows),
+              'followup_completed': sum(r['status'] == '已完成' for r in followup_rows),
+              'followup_incomplete': sum(r['status'] != '已完成' for r in followup_rows)}
+    result.update(counts)
     c.write_new(folder / 'report.json', c.encode(result))
     ordered = sorted(rows, key=lambda r: r['status'] == '已完成')
     completed = sum(r['status'] == '已完成' for r in rows)
     summary = f'已完成 {completed} 项／共 {len(rows)} 项，未完成 {len(rows) - completed} 项'
     launch_text = '已发送启动／激活请求，客户端实际采用待核验。' if result.get('launch_requested') else '本轮未发送启动请求。'
-    separate_acceptance = kind.startswith(('recovery', 'lifecycle-')) or kind in ('config-recovery', 'lifecycle_acceptance')
+    separate_acceptance = kind.startswith(('recovery', 'lifecycle-', 'workflow-')) or kind in ('config-recovery', 'lifecycle_acceptance')
     required_label = '本次必需' if separate_acceptance else '启动必需'
     if separate_acceptance:
         launch_text = ('仅处理明确指定的文本文件；应用载入和实际网络效果仍需另行核验。'
                        if 'recovery' in kind else
                        '依据本轮供给的事件与进程证据判定；本工具不主动重启、换网、断网或发送请求。')
+    if kind.startswith('workflow-'):
+        launch_text = '仅保存或核对续做材料；网络须重新核验，操作授权不从记录恢复。'
     lines = ['# 环境检查报告', '', summary, '', '检查时间：' + result['checked_at'], '', launch_text, '', f'| 检查项 | {required_label} | 状态 | 原因／结果 | 下一步 |', '| --- | --- | --- | --- | --- |']
     escape_md = lambda value: str(value).replace('|', '\\|').replace('\n', ' ')
     for r in ordered:
         r = dict(r, required_label='是' if r['required'] else '否（补充检查）')
         lines.append('| ' + ' | '.join(escape_md(r[k]) for k in ('title', 'required_label', 'status', 'reason', 'next_step')) + ' |')
     lines += ['', '仅覆盖本次列出的检查和证据范围；不是持续断网保护，也不证明未观测的客户端采用同一路径。', f'标为非{required_label}的项目仍如实显示未完成；不能据此宣称全项验收通过。', '']
-    c.write_new(folder / 'report.md', '\n'.join(lines).encode())
     body = ''.join('<tr>' + ''.join('<td>' + html.escape(str(value)) + '</td>' for value in (r['title'], '是' if r['required'] else '否（补充检查）', r['status'], r['reason'], r['next_step'])) + '</tr>' for r in ordered)
     page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>环境检查报告</title><style>body{font:16px/1.6 system-ui;margin:32px;max-width:1100px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:12px;text-align:left}th{background:#eef2f6}</style><h1>环境检查报告</h1><p>' + html.escape(summary) + '</p><p>检查时间：' + html.escape(result['checked_at']) + '</p><p>' + html.escape(launch_text) + '</p><table><thead><tr><th>检查项</th><th>' + required_label + '</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + body + '</tbody></table><p>仅覆盖本次列出的检查和证据范围，不是持续断网保护。补充项目仍保留未完成结果。</p></html>'
+    if kind == 'lifecycle-acceptance':
+        summary = f"本次交付：已完成 {counts['required_completed']} 项／共 {len(required_rows)} 项，未完成 {counts['required_incomplete']} 项"
+        followup_summary = f"后续复查：已完成 {counts['followup_completed']} 项，未完成 {counts['followup_incomplete']} 项"
+        lines = ['# 生命周期验收', '', summary, '', '检查时间：' + result['checked_at'], '',
+                 '仅判定本轮供给证据；未实测项目仍为未完成。']
+        tables = []
+        for title, section in (('本次交付', required_rows), ('后续复查', followup_rows)):
+            ordered_section = sorted(section, key=lambda r: r['status'] == '已完成')
+            lines += ['', '## ' + title, '', '| 检查项 | 状态 | 原因／结果 | 下一步 |', '| --- | --- | --- | --- |']
+            body = ''
+            for row in ordered_section:
+                values = [row[k] for k in ('title', 'status', 'reason', 'next_step')]
+                lines.append('| ' + ' | '.join(escape_md(value) for value in values) + ' |')
+                body += '<tr>' + ''.join('<td>' + html.escape(str(value)) + '</td>' for value in values) + '</tr>'
+            tables.append('<table><thead><tr><th>检查项</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + body + '</tbody></table>')
+        lines += ['', followup_summary + '。后续项目不计入本次交付数量；未实测不代表通过或持续保护。', '']
+        page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>生命周期验收</title><style>body{font:16px/1.6 system-ui;margin:32px;max-width:1100px}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ddd;padding:12px;text-align:left}th{background:#eef2f6}summary{cursor:pointer}details{margin-top:24px}</style><h1>生命周期验收</h1><p>' + html.escape(summary) + '</p><p>检查时间：' + html.escape(result['checked_at']) + '</p>' + tables[0] + '<details><summary>' + html.escape(followup_summary) + '</summary>' + tables[1] + '</details><p>仅判定本轮供给证据。后续项目不计入本次交付数量；未实测不代表通过或持续保护。</p></html>'
+    c.write_new(folder / 'report.md', '\n'.join(lines).encode())
     c.write_new(folder / 'report.html', page.encode())
     if private is not None:
         c.write_new(folder / 'evidence.private.json', c.encode(private))
@@ -136,6 +162,7 @@ def save_report(c, output, kind, rows, extra=None, private=None, create=True):
             'required_checks_completed': result['required_checks_completed'],
             'system_settings_changed': result['system_settings_changed'],
             'launch_requested': bool(result.get('launch_requested')), 'runtime_adoption_verified': False}
+    public.update(counts)
     for key in ('system_changes_performed', 'config_file_changed', 'recovery_state',
                 'plan_sha256', 'receipt_sha256', 'evidence_scope', 'evidence_authenticity_verified'):
         if key in result:

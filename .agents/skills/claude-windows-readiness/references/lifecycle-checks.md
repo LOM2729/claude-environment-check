@@ -1,8 +1,6 @@
 # 更新后复查、主动网络验证与启动前检查
 
-本轮配置与交付同时采用 [可靠回滚与生命周期验收](recovery-and-acceptance.md)：先准备精确恢复材料，保护客户后续修改；更新、重启、唤醒、换网和故障逐事件留证，没做的显示未完成。需要重启或可能断开通道仍交客户操作。
-
-**v0.8 顺序补充优先适用：** 自动模式采用 [国内视频 UDP 与国内域名](domestic-video-udp.md) 的 domestic-v4。先检查全局 UDP 限制层级；AI 保护优先，视频直连在其余 UDP 拒绝前，普通国内域名在拒绝后。旧 unified-v4 示例仅兼容旧策略；本轮 ai-route / ai-audit / baseline 明确使用 --policy domestic-v4。小火箭由同一策略生成原生 .conf，按 [小火箭适配](shadowrocket-domestic.md) 导入与读回，不套用 Mihomo 文件格式。
+执行顺序只按 [五步流程](five-step-setup.md)。本模块提供参数与证据边界；[生命周期验收](recovery-and-acceptance.md) 默认只有正常使用属于本次必需，其余七类事件列后续复查，未实测仍显示未完成，不为补齐报告主动重启／断网。
 
 需要重启代理客户端/核心/服务或机器时，由客户手动操作；可能中断当前 Codex/远控通道的网络动作或影响不明的重载也交给客户。先保存进度和离线恢复说明，等待客户恢复连接后重新核验，不能自行断开通道；集中批准不替代人工交接。 具体按 [客户手动重启与恢复](five-step-setup.md#客户手动重启与恢复) 执行。
 
@@ -34,7 +32,7 @@ DNS 尚未完成时，不访问、解析或用浏览器/CLI 探测 Claude/OpenAI
 使用本 Skill 的 `scripts/claude_setup.py`，命令中的路径由 Codex 现场填写。Windows 使用原生 Python/PowerShell；WSL 状态不能充当 Windows 宿主证据。
 
 ```text
-python <Skill>/scripts/claude_setup.py baseline --config <当前活动配置的本地读回> --ai-original <ai-route计划目录>/original.bin --node <指定节点名> --executable <客户指定客户端入口> --out <新私有基线目录>
+python <Skill>/scripts/claude_setup.py baseline --policy domestic-v4 --config <当前活动配置的本地读回> --ai-original <ai-route计划目录>/original.bin --node <指定节点名> --executable <客户指定客户端入口> --out <新私有基线目录>
 python <Skill>/scripts/claude_setup.py recheck --baseline <私有基线目录> --config <本次活动配置的本地读回> --executable <同一客户端入口> --out <新报告目录>
 ```
 

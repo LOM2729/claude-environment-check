@@ -1,57 +1,50 @@
 # Claude 环境检测
 
-让客户电脑上的 Codex 按五步完成环境配置：准备 → 确认方案 → 配置网络 → 打开服务 → 交付。支持 Mac / Windows，系统语言保持，报告只显示已完成／未完成。
+让客户电脑上的 Codex 自动识别现状、准备具体方案，一次确认后完成配置与实际验证。支持 Mac / Windows，客户只看简短的已完成／未完成结果。
 
 **[下载最新客户包](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip)** · [校验文件](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip.sha256) · [使用说明](START-HERE.md)
 
 ## 给客户的一句话
 
-请按 https://github.com/LOM2729/claude-environment-check 下载并校验最新版，使用五步自动配置模式：系统语言不改，国内直连，国外与 AI 统一指定代理，IPv6 关闭；先给我具体方案，一次确认后连续配置和复测。
+请按 https://github.com/LOM2729/claude-environment-check 下载并校验最新版，按仓库五步自动配置：先准备完整方案并集中确认，网络核验后再打开 AI；保留系统语言，其他按现有用途处理，最后只给简短结果。
 
-## 默认流程
-1. **准备**：读取本机元数据，识别现有软件和配置；不为检查安装情况而启动 AI。客户提供已有文件，必要时选一个节点。
-2. **确认**：展示具体变更、保留项、备份恢复和准确检测范围，集中确认一次。
-3. **配置网络**：审阅 DIRECT 例外和自动测速等隐含请求，统一代理、配置 DNS、分层关闭 IPv6；导入后读取最终运行配置，再做非 AI 验证。
-4. **打开服务**：凭当前有效核验记录才安装、启动、打开网页、重启浏览器或登录；启动瞬间还要再次检查。
-5. **交付**：报告已完成/未完成及原因和下一步，保留本机基线和恢复说明，中断后继续。
+## 五步完成
 
-[五步细则](.agents/skills/claude-mac-readiness/references/five-step-setup.md) · [统一出口与 IPv6](.agents/skills/claude-mac-readiness/references/unified-ipv4.md)
+1. **准备**：读取本机版本、软件、端口与现有配置，只补必要缺口；离线检查隐含请求、DIRECT、UDP 和依赖，备齐最终候选、差异与恢复材料。
+2. **确认**：展示保留项、具体改动、影响、恢复和准确检测范围，集中确认一次。
+3. **配置网络**：执行已批准项并读回，先核对 DNS、选定接口 IPv6 和非 AI 路径。
+4. **使用 AI**：当前网络核验通过后，才启动／安装／登录实际需要的客户端并验证真实功能。
+5. **交付**：简短结果、未完成原因和下一步，私有记录留本机；需要中断时保存进度，恢复后从核对点继续。
 
-## 实际工具
-| 工具 | 能力 |
+[五步细则](.agents/skills/claude-mac-readiness/references/five-step-setup.md) 是唯一执行顺序；长清单是内部核对表。客户不用填写技术参数或 JSON，已有配置和节点不重复问。系统语言保持，时区和浏览器语言没有明确目标也保留。
+
+## 默认网络目标
+
+采用 `domestic-v4`，保留完整 AI、IPv6、UDP、国内视频／域名与教程扩展规则：Claude 专属组 `AI-ONLY-Claude` 和基础组 `AI-ONLY` 用同一指定节点，AI 保护优先且失败不回落 DIRECT；关闭选定联网接口及代理层 IPv6；国内视频直连位于其余 UDP 拒绝前，普通国内直连、普通国外统一代理。Mihomo 输出 YAML／JSON，小火箭输出原生 `.conf`。
+
+[规则与视频](.agents/skills/claude-mac-readiness/references/domestic-video-udp.md) · [小火箭适配](.agents/skills/claude-mac-readiness/references/shadowrocket-domestic.md) · [教程覆盖与来源边界](.agents/skills/claude-mac-readiness/references/tutorial-coverage.md)
+
+## 工具与交付
+
+| 工具 | 用途 |
 | --- | --- |
-| collect / report | 本机元数据与离线 HTML/Markdown 报告；不将采集等同验证 |
-| ai-route / ai-audit | 默认 domestic-v4：Claude 专属组和基础组绑定同一指定节点，AI保护优先，保留审核过的国内/本地直连，生成候选、私有差异与审计 |
-| connection-check / connection-plan | 按实际内核版本检查 TCP 保活，准备可审阅候选；不把保活等同 HTTP 复用 |
-| tutorial-check | 按教程扩展目标逐项核对静态覆盖，缺项保留未完成，详细清单留本机 |
-| direct-review | 盘点不能直接判定的 DIRECT 规则，由 Codex 按方案填写保留或代理，客户不编辑 JSON |
-| contact-scan / action-check | 启用代理前检查隐含目标；安装/登录/浏览器等动作前核验当前条件，不替用户执行动作 |
-| ipv6-check / dns-ready | 精确接口关闭状态读回；本轮 DNS/代理记录绑定接口、配置和入口，缺失/过期/变化则服务请求停止 |
-| recovery-plan / recovery-apply / recovery-check / recovery-rollback | 精确文本配置备份、原子写入、读回和冲突保护；恢复不覆盖客户后续修改，不操作应用数据库或重载客户端 |
-| lifecycle-template / lifecycle-accept | 按实际客户端分开核验正常使用、更新、重启、唤醒、换网、故障恢复；客户只看八项事件汇总，未实测保持未完成 |
-| baseline / recheck / preflight | 更新后复查，不自动恢复旧值；本次检查通过后可明确请求原生客户端启动 |
+| collect / review-template / report | 只读采集、按模式记录保留项、生成二状态报告；自动模式保留系统语言 |
+| contact-scan / direct-review / udp-check | 批准前离线检查隐含请求、直连例外和 UDP 限制层 |
+| connection-check / connection-plan / ai-route / ai-audit / tutorial-check | 生成完整候选与私有差异，核对当前规则和连接设置，保留既有政策 |
+| plan / verify / recovery-* | 文本快照、读回与可靠恢复，拒绝覆盖客户后续修改，不写应用数据库或自动重载 |
+| network-plan / network-check / dns-ready / ipv6-check / action-check / preflight | 非 AI 前置核验、当前证据与服务动作门槛；外部请求必须在批准范围内 |
+| lifecycle-template / lifecycle-accept | 默认仅正常使用为本次必需；其他七类后续复查未实测仍显示未完成，明确选择的事件严格验收 |
+| workflow-save / workflow-resume | 私有进度与离线继续说明；恢复先查材料变化并重新核验网络，不恢复操作授权 |
+| baseline / recheck | 更新后复查当前状态，不自动恢复旧值 |
 
-完整参数见 [工具说明](.agents/skills/claude-mac-readiness/references/automation.md) 和 [生命周期流程](.agents/skills/claude-mac-readiness/references/lifecycle-checks.md)。
+[工具参数](.agents/skills/claude-mac-readiness/references/automation.md) · [进度与离线恢复](.agents/skills/claude-mac-readiness/references/workflow-progress.md) · [回滚与生命周期验收](.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)
 
-## 使用条件与边界
-客户已有可用控制通道时，Codex 继续处理；全新未配置电脑先用离线说明或人工准备基础代理，不能让在线 Codex 保证自身首次联网之前零 AI 请求。
+## 使用边界
 
-Python 3.9+，YAML 需 PyYAML 6.0.3，优先使用现有运行时。原生 Windows 与 WSL 分别核验。软件实际保存、导入和管理员认证依客户机可用工具；不绕过权限，不自动关闭唯一远控通道。
+Python 3.9+，YAML 需 PyYAML 6.0.3，优先复用已有运行时；确实缺依赖且无法准备候选时先单独确认明确的依赖安装，完成后再出最终配置方案，安装批准不覆盖未知配置改动。Mac、Windows 原生与 WSL／虚拟机／远端分别核验。缺少基础网络时先用可信材料或人工准备，在线 Codex 无法保证自身第一次联网前零 AI 请求。
 
-IPv6 分为选定系统接口、代理核心、DNS 和节点外层，不能用“优先 IPv4”或无 AAAA 响应代替全部关闭；loopback 和未选接口不冒充已关闭。必要依赖冲突、小火箭版本行为或远端出口地址族没有证据时保留未完成。统一指定节点也不能保证供应商对所有目的地永远使用同一公网 IP，仍需实测。
+需要重启客户端、核心、服务、机器，或操作可能中断控制通道时，只在确有需要后给客户明确动作、影响及本机离线恢复办法，再安排操作时机。客户手动完成、恢复连接后重新读回与核验，不能自行断开当前通道。
 
-候选与文件读回不等于运行生效，探针通过不等于客户端采用。报告完整 IP 只在本地私有证据里；配置和凭据不上传。每个客户新解压原始 ZIP，发布包采用文件白名单，测试证书、客户文件和运行报告均不打包。
+候选、文件匹配、应用载入、实际进程采用和端到端观察分别记录。生命周期工具只审阅供给证据，不自行制造事件；Mac／Windows 合成测试不等于客户网络实测。没有常驻监控、系统 Kill Switch 或账号防封保证。官方资料、源码参考和个人经验分开，见 [来源说明](.agents/skills/claude-mac-readiness/references/evidence-sources.md)。
 
-没有常驻后台监控、系统 Kill Switch 或账号防封保证。官方资料、源码参考与个人经验分开，见 [来源说明](.agents/skills/claude-mac-readiness/references/evidence-sources.md)。
-
-需要重启代理客户端/核心/服务或机器时，由客户手动操作；可能中断当前 Codex/远控通道的网络动作或影响不明的重载也交给客户。先保存进度和离线恢复说明，等待客户恢复连接后重新核验，不能自行断开通道；集中批准不替代人工交接。
-
-自动配置默认先核对全局 UDP 限制所在层，再采用国内视频例外：AI 保护最先、国内视频直连、其余 UDP 拒绝、普通国内域名直连、国外统一代理。Mihomo 与小火箭均使用 domestic-v4，分别生成 YAML/JSON 与原生 .conf；具体按对应 Skill 的 references/domestic-video-udp.md，不全局放开 UDP。
-
-小火箭由 Codex 按对应 Skill 的 references/shadowrocket-domestic.md 负责转换、导入和导出核验；客户不手工编辑规则。必要断线/重启仍交客户，恢复连接后继续。
-
-默认创建 AI-ONLY-Claude 与基础 AI-ONLY，分别辨识 Claude 第一方域名与其他统一代理流量，两组同一具体节点，不新增独立出口。Net.Coffee 8项拓展资料的逐项取舍与运行验收见 [分组与服务路径检查](.agents/skills/claude-mac-readiness/references/service-routing-checks.md)。
-
-默认按 [教程逐项覆盖表](.agents/skills/claude-mac-readiness/references/tutorial-coverage.md) 纳入补充域名、共享服务、关键词、离线分类与 IP/ASN 快照；不在首用时下载规则数据库。社区建议与官方依据分开，NTP UDP 仍拒绝，IPv6 仍关闭。
-
-可靠回滚与生命周期验收详见 [操作说明](.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)。`recovery-*` 的写入范围仅限明确批准的现存文本配置，原生应用导入与系统设置恢复仍须现场执行与核验；生命周期工具只判断供给证据，不自行制造事件或联网。
+完整配置、凭据、差异、IP 与证据只留客户本机；每位客户新解压一份。发布包按文件白名单生成，不含客户文件、运行报告或未完成教程草稿。

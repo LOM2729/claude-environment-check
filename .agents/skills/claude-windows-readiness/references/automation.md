@@ -34,11 +34,19 @@
 仅 collect 取得的设置不证明检查及必要处理已闭环，因此默认项目都是未完成。Codex 在客户机完成实际检查／处理／复测后，填写核验记录再生成交付报告；客户无需编辑 JSON。
 
 ```text
-<PYTHON> <TOOL> review-template --input <collection.json> --output <新建的review.json>
+<PYTHON> <TOOL> review-template --input <collection.json> --mode automatic --output <新建的review.json>
 <PYTHON> <TOOL> report --input <collection.json> --review <review.json> --out <新的交付报告目录>
 ```
 
-模板有 14 个汇总检查项，对应现场清单的任务组；不是把静态采集字段数当完成数。可只填写部分项目，其余保持未完成。每个条目字段：
+模板按固定任务组覆盖现场核对表，不是把静态采集字段数当完成数。可只填写部分项目，其余保持未完成。
+
+`--mode automatic|individual` 绑定本轮交互模式；旧调用省略时仍为 individual。自动模式默认保留 `system_language`，`--preserve <TASK_ID>` 可重复以保留明确完整任务组。系统语言与其他保留项不因“自动”而改动，保留也不会自动完成。时区／浏览器语言未给目标就保留相应设置，不为此排除整组网络核验。
+
+新模板使用 review/2 的 `execution_mode`、`preserved_items` 与 `followup_items`；report 从review读取，自动模式后续建议按集中具体方案表达，不再逐开关要求重复批准。旧review/1兼容旧逐项语义，不能通过改模式／保留字段补造授权。
+
+**总报告也区分本次与后续。** automatic 默认将 `ai_failure`、`lifecycle`、`update_recheck` 列为后续复查，没实测仍显示未完成，不混入本次必需计数。individual 与旧review/1仍按原范围全必需，不自动降级；正常使用、DNS、代理等当前必需项目不能挪到后续。非适用项目仍须按 `applicable`／`scope_confirmed` 的原规则确认排除。
+
+Codex 根据本轮真实请求重复填写 `review-template --required-item <TASK_ID>`，将明确要做的后续项目纳入本次；不让客户选择技术ID。已经实际执行更新时必须纳入对应更新复查；客户明确要求故障验收时必须纳入相应故障／恢复项，不能仍留后续来回避未完成。总报告与生命周期事件模板是不同层：后者仍用 `--required-event` 选择事件。每个条目字段：
 
 | 字段 | 填写规则 |
 | --- | --- |
@@ -63,7 +71,7 @@
 <PYTHON> <TOOL> plan --current <当前配置> --candidate <候选配置> --format yaml --out <尚不存在的私有计划目录>
 ```
 
-支持 `json`、`yaml`、`shadowrocket`；`auto` 按 `.json/.yaml/.yml/.conf` 判断。候选由 Codex 根据已核对的客户目标和实际版本准备。工具只分析和记录，不提供 apply 命令，不触发订阅刷新或核心重载。
+支持 `json`、`yaml`、`shadowrocket`；`auto` 按 `.json/.yaml/.yml/.conf` 判断。候选由 Codex 根据已核对的客户目标和实际版本准备。`plan` 只分析和记录，不写入或触发订阅刷新／核心重载；受限文本写入另用 recovery-*，应用导入与系统设置仍按原生入口处理。
 
 生成：
 
@@ -100,16 +108,20 @@
 
 ## AI 专属代理默认策略
 
-自动配置模式按 [Claude / OpenAI 专属规则](ai-dedicated-routing.md) 先生成单节点候选（`ai-route`）与差异，再由客户机 Codex 应用已批准方案。AI 失败不改走 DIRECT，目标 UDP 显式拒绝，其他国内直连／国外代理及原配置保持。`ai-audit` 比较读回后的静态策略；DNS、客户端接管和故障效果另验。
+自动配置模式按 [当前完整策略](domestic-video-udp.md) 与 [专属组验收](service-routing-checks.md)，使用 --policy domestic-v4 先生成同节点候选（`ai-route`）与差异，再由客户机 Codex 应用已批准方案。AI 失败不改走 DIRECT，目标 UDP 显式拒绝，其他国内直连／国外代理及原配置保持。`ai-audit` 比较读回后的静态策略；DNS、客户端接管和故障效果另验。
 
 ## 生命周期工具
 
 新增 baseline / recheck / network-plan / network-check / preflight，详见 [参数、网络许可与验收边界](lifecycle-checks.md)。只有 network-check 和 preflight 在显式 --allow-network 后执行主动请求；只有 preflight --launch 在新鲜必需检查通过后请求启动。原 collect/plan/verify 仍不联网或应用设置。
 
-## v0.7 默认入口
+## 当前默认入口
 
-按 [五步流程](five-step-setup.md) 和 [统一 IPv4 策略](unified-ipv4.md) 操作。ai-route/ai-audit/baseline 默认 unified-v4；direct-review 分类直连例外；contact-scan/action-check 检查隐含请求和服务动作；ipv6-check 读回精确接口，dns-ready v2 要求关闭状态。应用动作仍由客户机 Codex 按批准范围执行。
+只按 [五步流程](five-step-setup.md) 操作；自动模式明确使用 `--policy domestic-v4`，完整AI／IPv6／UDP／视频／教程扩展策略不变。DIRECT、隐含请求、UDP层级、依赖和完整候选／差异／恢复材料都在批准前准备；action-check 和网络核验后实际动作仍由客户机 Codex 按批准范围执行。
 
 ## 可靠回滚与生命周期事件
 
-`recovery-*` 与 `lifecycle-template`／`lifecycle-accept` 的参数、绑定、Mac/Windows 差异和实际验收边界统一见 [可靠回滚与生命周期验收](recovery-and-acceptance.md)。这些报告只使用已完成／未完成；模板默认未完成，不替代具体授权或自动故障实验。
+`recovery-*` 与 `lifecycle-template`／`lifecycle-accept` 的参数、绑定、Mac/Windows 差异和实际验收边界统一见 [可靠回滚与生命周期验收](recovery-and-acceptance.md)。这些报告只使用已完成／未完成；模板默认仅 normal_use 为本次必需，另外七类事件仍列后续复查，未实测保持未完成，不替代具体授权或自动故障实验。明确选本轮事件可重复 --required-event，旧全必需记录不降级。
+
+## 保存进度与恢复会话
+
+`workflow-save` 必须传 `--scope-file <本轮范围说明.md>`；由 Codex 记录实际产品／入口、必保业务、指定节点、保留项、本轮必需／后续验收和未知问题，客户不填模板。绑定文件的路径与SHA-256，继续说明与私有索引首先指向它；恢复先读范围，材料改变／缺失则未完成并重新核对，不能恢复授权或默认扩围。`workflow-save`／`workflow-resume` 的完整参数和示例见 [私有进度与继续](workflow-progress.md)。记录本轮五步阶段、准确下一步、等待对象和指定材料摘要，生成离线继续说明；恢复只核对，不应用、启动或联网。配置／目标／材料变化先审阅，保存记录不恢复授权或旧DNS核验，继续AI前始终重新核验当前网络。

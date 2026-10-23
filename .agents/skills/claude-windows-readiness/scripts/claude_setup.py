@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.12.0'
+VERSION = '0.13.0'
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -634,20 +634,68 @@ def safe_review_text(value):
     return value
 
 
-def review_template(raw, collection_digest):
+FOLLOWUP_TASKS = ('ai_failure', 'lifecycle', 'update_recheck')
+
+
+def review_context(review):
+    if review is None or review.get('schema') == 'claude-setup-review/1':
+        return 'individual', [], []
+    require(review.get('schema') == 'claude-setup-review/2', 'REVIEW_SCHEMA_REQUIRED')
+    mode, preserved = review.get('execution_mode'), review.get('preserved_items')
+    require(mode in ('automatic', 'individual'), 'REVIEW_MODE_REQUIRED')
+    known = {row[0] for row in REPORT_TASKS}
+    require(isinstance(preserved, list) and all(isinstance(x, str) and x in known for x in preserved)
+            and len(set(preserved)) == len(preserved), 'INVALID_PRESERVED_ITEMS')
+    require(mode != 'automatic' or 'system_language' in preserved, 'AUTOMATIC_LANGUAGE_PRESERVATION_REQUIRED')
+    followup = review.get('followup_items')
+    require(isinstance(followup, list) and all(isinstance(x, str) and x in FOLLOWUP_TASKS for x in followup)
+            and len(set(followup)) == len(followup), 'INVALID_FOLLOWUP_ITEMS')
+    return mode, preserved, followup
+
+
+def review_action(key, mode, preserved, decision='pending'):
+    if key in preserved:
+        return '保持本项原设置，核对实际结果后记录；保留设置不等于已验证。'
+    if mode == 'automatic':
+        if decision == 'approved':
+            return '按本轮已批准的具体方案继续并复测；新增范围另行说明。'
+        if decision == 'declined':
+            return '保持现状，记录尚未解决的影响；客户改变选择时再处理。'
+        if decision == 'not_required':
+            return '无需修改；完成本项实际核验后记录结果。'
+        return '先完成本项只读检查；确需修改的内容纳入一份具体方案集中确认。'
+    return next(row[3] for row in REPORT_TASKS if row[0] == key)
+
+
+def review_template(raw, collection_digest, mode='individual', preserved=None, required_items=None):
     data = validate_collection(raw)
     require(re.fullmatch(r'[0-9a-f]{64}', collection_digest or ''), 'COLLECTION_DIGEST_REQUIRED')
-    return {'schema': 'claude-setup-review/1', 'target_alias': data['target_alias'],
+    require(mode in ('automatic', 'individual'), 'REVIEW_MODE_REQUIRED')
+    preserved = list(preserved or [])
+    if mode == 'automatic' and 'system_language' not in preserved:
+        preserved.append('system_language')
+    required_items = list(required_items or [])
+    known = {row[0] for row in REPORT_TASKS}
+    require(all(isinstance(x, str) and x in known for x in required_items)
+            and len(set(required_items)) == len(required_items), 'INVALID_REQUIRED_ITEMS')
+    followup = [key for key in FOLLOWUP_TASKS if key not in required_items] if mode == 'automatic' else []
+    review_context({'schema': 'claude-setup-review/2', 'execution_mode': mode, 'preserved_items': preserved,
+                    'followup_items': followup})
+    return {'schema': 'claude-setup-review/2', 'target_alias': data['target_alias'],
+            'execution_mode': mode, 'preserved_items': preserved, 'followup_items': followup,
             'collection_sha256': collection_digest, 'items': [
                 {'id': key, 'applicable': True, 'scope_confirmed': False,
-                 'status': 'incomplete', 'change': 'none', 'decision': 'pending',
+                 'status': 'incomplete', 'change': 'none', 'decision': 'not_required' if key in preserved else 'pending',
                  'verified': False, 'verified_at': '', 'evidence': '',
-                 'reason': reason, 'next_step': action}
+                 'reason': '本轮保持原设置，尚未完成核验。' if key in preserved else
+                           '尚未发生或未安排本轮复查，保留后续核验。' if key in followup else reason,
+                 'next_step': '事件发生或客户选择演练后，再按当时范围准备方案与核验。' if key in followup else review_action(key, mode, preserved)}
                 for key, _, reason, action in REPORT_TASKS]}
 
 
 def validate_review(review, data, collection_digest):
-    require(isinstance(review, dict) and review.get('schema') == 'claude-setup-review/1', 'REVIEW_SCHEMA_REQUIRED')
+    require(isinstance(review, dict) and review.get('schema') in ('claude-setup-review/1', 'claude-setup-review/2'), 'REVIEW_SCHEMA_REQUIRED')
+    mode, preserved, followup = review_context(review)
     require(collection_digest and review.get('collection_sha256') == collection_digest, 'REVIEW_COLLECTION_MISMATCH')
     require(review.get('target_alias') == data['target_alias'], 'REVIEW_TARGET_MISMATCH')
     items = review.get('items')
@@ -658,6 +706,7 @@ def validate_review(review, data, collection_digest):
         require(isinstance(item, dict), 'INVALID_REVIEW_ITEM')
         key = item.get('id')
         require(isinstance(key, str) and key in known and key not in result, 'INVALID_OR_DUPLICATE_TASK')
+        require(key not in preserved or item.get('change', 'none') == 'none', 'PRESERVED_ITEM_CANNOT_CHANGE')
         require(type(item.get('applicable')) is bool, 'REVIEW_APPLICABILITY_REQUIRED')
         if not item['applicable']:
             require(item.get('scope_confirmed') is True, 'SCOPE_CONFIRMATION_REQUIRED')
@@ -687,23 +736,34 @@ def validate_review(review, data, collection_digest):
         else:
             decision_note = {'declined': '客户选择暂不修改。', 'pending': '客户决定尚未记录。',
                              'approved': '客户已同意所列具体修改。', 'not_required': '本项无需修改。'}[decision]
+            action = safe_review_text(item.get('next_step'))
+            defaults = {next(row[3] for row in REPORT_TASKS if row[0] == key),
+                        review_action(key, mode, preserved), review_action(key, 'automatic', [], 'pending')}
+            if key in preserved or (mode == 'automatic' and action in defaults):
+                action = review_action(key, mode, preserved, decision)
             result[key] = {'applicable': True, 'status': '未完成',
-                           'reason': decision_note + safe_review_text(item.get('reason')),
-                           'next_step': safe_review_text(item.get('next_step'))}
+                           'reason': ('' if key in followup and decision == 'pending' else decision_note) + safe_review_text(item.get('reason')),
+                           'next_step': action}
     return result
 
 
 def report_rows(raw, review=None, collection_digest=None):
     data, observations = collection_rows(raw)
     entries = validate_review(review, data, collection_digest) if review is not None else {}
+    mode, preserved, followup = review_context(review)
     rows, excluded = [], []
     for index, (key, title, reason, action) in enumerate(REPORT_TASKS):
         entry = entries.get(key)
         if entry and not entry['applicable']:
             excluded.append({'title': title, 'reason': entry['reason']})
             continue
-        row = {'id': key, 'title': title, 'status': '未完成', 'reason': reason,
-               'next_step': action, 'observation': observations[index][2]}
+        row = {'id': key, 'title': title, 'status': '未完成', 'reason': reason, 'required': key not in followup,
+               'next_step': review_action(key, mode, preserved), 'observation': observations[index][2]}
+        if key in preserved:
+            row['reason'] = '本轮保持原设置，尚未完成核验。'
+        elif key in followup:
+            row['reason'] = '尚未记录本项后续复查证据。'
+            row['next_step'] = '事件发生或客户选择演练后，再按当时范围准备方案与核验。'
         if entry:
             row.update({k: entry[k] for k in ('status', 'reason', 'next_step')})
         elif key == 'config' and data['config']:
@@ -713,6 +773,9 @@ def report_rows(raw, review=None, collection_digest=None):
         rows.append(row)
     rows.sort(key=lambda row: row['status'] == '已完成')
     data['excluded'] = excluded
+    data['execution_mode'] = mode
+    data['preserved_items'] = preserved
+    data['followup_items'] = followup
     return data, rows
 
 
@@ -724,16 +787,26 @@ def render_report(raw, output, review=None, collection_digest=None):
     summary = f"目标别名：{data['target_alias']} · 执行平台：{data['platform']} · 采集时间：{stamp} · 来源：{source_label}"
     if data['evidence'] == 'synthetic_fixture':
         summary = '合成示例（非设备实测） · ' + summary
-    completed = sum(row['status'] == '已完成' for row in rows)
-    progress = f'已完成 {completed} 项／共 {len(rows)} 项，未完成 {len(rows) - completed} 项'
-    caveat = '已完成表示该项按本次范围完成检查和必要处理，并有操作者填写的验证记录；不代表账号安全保证。单纯采集设置不会自动标为已完成。修改前应逐项询问客户。'
+    current_rows = [row for row in rows if row['required']]
+    followup_rows = [row for row in rows if not row['required']]
+    completed = sum(row['status'] == '已完成' for row in current_rows)
+    progress = f'已完成 {completed} 项／共 {len(current_rows)} 项，未完成 {len(current_rows) - completed} 项'
+    if followup_rows:
+        progress = '本次交付：' + progress
+    confirmation = ('自动模式：完整方案集中确认；同一已批准范围不重复询问。' if data['execution_mode'] == 'automatic'
+                    else '逐项模式：修改前确认具体方案；已有同项批准不重复询问。')
+    caveat = '已完成须有本项核验记录，不代表账号安全保证。' + confirmation
     md = '# Claude 环境检查报告\n\n' + progress + '\n\n' + summary + '\n\n' + caveat + '\n\n| 检查项 | 状态 | 结果／未完成原因 | 下一步 |\n| --- | --- | --- | --- |\n'
     def md_text(value):
         # Preserve plain-text notes; never turn imported Markdown into executable/linked markup.
         value = html.escape(str(value)).replace('\n', ' ').replace('\t', ' ')
         return re.sub(r'([\\`*_{}\[\]()#+.!|>~-])', r'\\\1', value)
-    for row in rows:
+    for row in current_rows:
         md += '| ' + ' | '.join(md_text(row[k]) for k in ('title', 'status', 'reason', 'next_step')) + ' |\n'
+    if followup_rows:
+        md += '\n## 后续复查\n\n以下项目不计入本次交付数量；未实测仍是未完成。\n\n| 检查项 | 状态 | 结果／未完成原因 | 下一步 |\n| --- | --- | --- | --- |\n'
+        for row in followup_rows:
+            md += '| ' + ' | '.join(md_text(row[k]) for k in ('title', 'status', 'reason', 'next_step')) + ' |\n'
     excluded = ''
     if data['excluded']:
         md += '\n不计入本次清单（已确认范围）：\n\n'
@@ -742,7 +815,11 @@ def render_report(raw, output, review=None, collection_digest=None):
         excluded = '<p>不计入本次清单（已确认范围）：</p><ul>' + ''.join('<li>' + html.escape(x['title'] + '：' + x['reason']) + '</li>' for x in data['excluded']) + '</ul>'
     md += '\n## 原始采集信息\n\n'
     md += '\n'.join('- ' + md_text(row['title'] + '：' + row['observation']) for row in rows) + '\n'
-    table = ''.join('<tr><td>' + html.escape(row['title']) + '</td><td class="' + ('done' if row['status'] == '已完成' else 'todo') + '">' + row['status'] + '</td><td>' + html.escape(row['reason']) + '</td><td>' + html.escape(row['next_step']) + '</td></tr>' for row in rows)
+    def table_rows(items):
+        return ''.join('<tr><td>' + html.escape(row['title']) + '</td><td class="' + ('done' if row['status'] == '已完成' else 'todo') + '">' + row['status'] + '</td><td>' + html.escape(row['reason']) + '</td><td>' + html.escape(row['next_step']) + '</td></tr>' for row in items)
+    table = table_rows(current_rows)
+    if followup_rows:
+        excluded = '<details><summary>后续复查（不计入本次交付数量）</summary><table><thead><tr><th>检查项</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + table_rows(followup_rows) + '</tbody></table></details>' + excluded
     details = '<details><summary>查看原始采集信息</summary><ul>' + ''.join('<li>' + html.escape(row['title'] + '：' + row['observation']) + '</li>' for row in rows) + '</ul></details>'
     page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>Claude 环境检查报告</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:1200px;margin:40px auto;padding:0 24px;color:#162334;background:#fafafa}h1{font-size:28px}.progress{font-size:22px;font-weight:650;padding:16px;background:#edf2f8;border-radius:8px}table{border-collapse:collapse;table-layout:fixed;width:100%;background:white}td,th{text-align:left;vertical-align:top;padding:14px;border:1px solid #dce1e8;overflow-wrap:anywhere}th{background:#edf2f8}th:nth-child(1){width:17%}th:nth-child(2){width:10%}th:nth-child(3){width:32%}th:nth-child(4){width:41%}.done{color:#176444;font-weight:650}.todo{color:#9a4e12;font-weight:650}p,details{color:#465569}details{margin-top:24px}summary{cursor:pointer}@media(max-width:700px){body{padding:0 10px;font-size:13px}td,th{padding:8px}}@media print{body{margin:0;font-size:11px}tr{break-inside:avoid}}</style><h1>Claude 环境检查报告</h1><p class="progress">' + html.escape(progress) + '</p><p>' + html.escape(summary) + '</p><p>' + html.escape(caveat) + '</p><table><thead><tr><th>检查项</th><th>状态</th><th>结果／未完成原因</th><th>下一步</th></tr></thead><tbody>' + table + '</tbody></table>' + excluded + details + '</html>'
     new_dir(output)
@@ -836,6 +913,9 @@ def main(argv=None):
     rt = sub.add_parser('review-template', help='Create an incomplete-by-default customer review checklist')
     rt.add_argument('--input', required=True)
     rt.add_argument('--output', required=True)
+    rt.add_argument('--mode', choices=('automatic', 'individual'), default='individual')
+    rt.add_argument('--preserve', action='append', choices=tuple(row[0] for row in REPORT_TASKS), default=[])
+    rt.add_argument('--required-item', action='append', choices=tuple(row[0] for row in REPORT_TASKS), default=[])
     p = sub.add_parser('plan', help='Prepare private original/candidate snapshots and diff; never apply')
     p.add_argument('--current', required=True)
     p.add_argument('--candidate', required=True)
@@ -940,14 +1020,18 @@ def main(argv=None):
     tc.add_argument('--out', required=True)
     import config_recovery
     import lifecycle_acceptance
+    import workflow_progress
     config_recovery.register_commands(sub)
     lifecycle_acceptance.register_commands(sub)
+    workflow_progress.register_commands(sub)
     args = parser.parse_args(argv)
     try:
         if args.command in config_recovery.COMMANDS:
             result = config_recovery.run(SimpleNamespace(**globals()), args)
         elif args.command in lifecycle_acceptance.COMMANDS:
             result = lifecycle_acceptance.run(SimpleNamespace(**globals()), args)
+        elif args.command in workflow_progress.COMMANDS:
+            result = workflow_progress.run(SimpleNamespace(**globals()), args)
         elif args.command == 'tutorial-check':
             import community_routing
             import claude_group
@@ -1039,7 +1123,7 @@ def main(argv=None):
             result = {'status': 'report_written', 'environment_verified': False}
         elif args.command == 'review-template':
             source = read_bytes(args.input)
-            write_new(args.output, encode(review_template(load_json(source), sha(source))))
+            write_new(args.output, encode(review_template(load_json(source), sha(source), args.mode, args.preserve, args.required_item)))
             result = {'status': 'review_template_written', 'system_changes_performed': False}
         elif args.command == 'plan':
             result = prepare_plan(args.current, args.candidate, args.format, args.out)
@@ -1048,9 +1132,9 @@ def main(argv=None):
             if args.output:
                 write_new(args.output, encode(result))
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-        if args.command == 'lifecycle-template':
+        if args.command in ('lifecycle-template', 'workflow-save'):
             return 0  # Template creation succeeded; its unperformed events remain incomplete.
-        if args.command in config_recovery.COMMANDS + lifecycle_acceptance.COMMANDS:
+        if args.command in config_recovery.COMMANDS + lifecycle_acceptance.COMMANDS + workflow_progress.COMMANDS:
             return 0 if result.get('required_checks_completed', False) else 2
         if args.command in ('network-check', 'recheck', 'preflight', 'contact-scan', 'action-check', 'ipv6-check', 'udp-check', 'connection-check', 'connection-plan', 'tutorial-check') and not result['required_checks_completed']:
             return 2

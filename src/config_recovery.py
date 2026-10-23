@@ -834,6 +834,9 @@ def _transaction(c, original, candidate, expected, folder, origin, action):
                 readback_checks['windows_security'] = _win_security_comparison(expected['metadata']['security'], current['metadata']['security'])
             except Exception:
                 readback_checks['windows_security'] = {'available': False}
+        if os.name == 'nt':
+            readback_checks['windows_attribute_flags'] = {'expected': expected['metadata'].get('attributes'),
+                                                        'actual': current['metadata'].get('attributes')}
         c.require(all(readback_checks[key] for key in ('content_matches', 'metadata_matches', 'stage_device_matches', 'stage_inode_matches')), 'RECOVERY_READBACK_MISMATCH')
         state = 'committed'
     except (Exception, KeyboardInterrupt) as exc:

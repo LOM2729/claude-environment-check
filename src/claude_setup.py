@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.14.0'
+VERSION = '0.14.1'
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',

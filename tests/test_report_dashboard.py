@@ -100,6 +100,49 @@ def forbid_side_effects():
 
 
 class DashboardBehaviorTests(unittest.TestCase):
+    def test_customer_questions_keep_original_check_in_folded_details(self):
+        data = row('系统与代理 DNS', id='system_dns')
+        doc = Document(self.render([data]))
+        self.assertTrue(doc.cells_with('DNS 是否泄露'))
+        original = [node for node in doc.root.elements('dd') if node.text == '系统与代理 DNS']
+        self.assertTrue(original)
+        self.assertTrue(any(node.tag == 'details' and 'open' not in node.attrs for node in original[0].ancestors()))
+        self.assertIn('未完成', doc.root.text)
+
+    def test_resolver_success_and_unchanged_settings_are_not_leak_tests(self):
+        import network_checks as network
+        data = network.row({'id': 'system_dns', 'type': 'dns', 'required': True},
+                           {'outcome': 'resolved', 'addresses': ['192.0.2.1']})
+        self.assertEqual(data['probe_type'], 'dns')
+        doc = Document(self.render([data]))
+        headings = [node.text for node in doc.root.elements('th') if node.attrs.get('scope') == 'row']
+        self.assertEqual(headings, ['DNS 能否解析网站地址'])
+        self.assertIn('不能说明 DNS 没有泄露', doc.root.text)
+        legacy = dict(data)
+        del legacy['probe_type']
+        legacy_doc = Document(self.render([legacy]))
+        self.assertEqual([node.text for node in legacy_doc.root.elements('th') if node.attrs.get('scope') == 'row'],
+                         ['DNS 能否解析网站地址'])
+        data = row('系统 DNS 配置复查', status='已完成', id='dns_drift')
+        doc = Document(self.render([data]))
+        headings = [node.text for node in doc.root.elements('th') if node.attrs.get('scope') == 'row']
+        self.assertEqual(headings, ['DNS 设置有没有变化'])
+        self.assertIn('不等于没有泄露', doc.root.text)
+
+    def test_egress_question_preserves_measured_scope_and_failed_comparison(self):
+        import network_checks as network
+        check = {'id': 'probe', 'type': 'egress', 'required': True, 'route': 'proxy', 'expected_ip': '192.0.2.1'}
+        for actual, status in (('192.0.2.1', '已完成'), ('192.0.2.2', '未完成')):
+            data = network.row(check, {'outcome': 'response', 'ip': actual})
+            doc = Document(self.render([data]))
+            self.assertTrue(doc.cells_with('出口是否一致'))
+            self.assertIn(status, doc.root.text)
+            self.assertNotIn(actual, doc.root.text)
+            if status == '已完成':
+                self.assertIn('只代表这条测试线路', doc.root.text)
+            else:
+                self.assertIn('还不能确认出口一致', doc.root.text)
+
     def render(self, rows=None, **kwargs):
         options = dict(title='合成离线检查', checked_at=OLD,
                        generated_at=GENERATED, rows=[row()] if rows is None else rows)

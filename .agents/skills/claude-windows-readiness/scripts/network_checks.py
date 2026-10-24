@@ -233,6 +233,7 @@ def row(item, observation):
         action = '保留本次证据，并按约定范围验证其他路径。' if complete else '在本地私有证据中核对出口和指定节点；确认目标后再检测，不自动接受新出口。'
     return {'id': item['id'], 'title': {'https': 'HTTPS 可达性', 'egress': '出口一致性', 'dns': '系统 DNS 解析', 'stun': '原生 UDP / STUN 出口'}[kind] + ' · ' + item['id'],
             'status': '已完成' if complete else '未完成', 'required': item['required'], 'reason': reason, 'next_step': action,
+            'probe_type': kind,
             'probe_path': item.get('route', 'native_udp' if kind == 'stun' else 'system_resolver'),
             'outcome': outcome if outcome in {'response','resolved','stun_response','timeout','network_error','tls_error','invalid_response','invalid_stun_response','no_answer','worker_failed','response_too_large'} else 'invalid_response'}
 

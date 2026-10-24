@@ -2,6 +2,67 @@
 from datetime import datetime
 from html import escape
 
+# Questions for customers; the source check and its evidence stay in details.
+CUSTOMER_TITLES = {
+    'system_proxy': '代理是否开启', 'system_dns': 'DNS 是否泄露',
+    'public_egress': '出口是否一致', 'ip_families': 'IPv6 是否按要求关闭',
+    'webrtc': '浏览器是否暴露额外出口', 'ai_policy': 'AI 专属代理规则是否正确',
+    'ai_failure': '代理断开后会不会直连', 'config': '新配置是否生效',
+    'client_function': 'Claude 和 Codex 能否正常使用', 'browser': '浏览器设置是否合适',
+    'system_time': '时间和时区是否正确', 'system_language': '系统语言是否保持原样',
+    'auth_environment': '登录和代理设置是否冲突', 'claude_command': 'Claude Code 能否正常使用',
+    'dns_records': 'DNS 特殊记录是否正常', 'lifecycle': '重启和更新后是否需要复查',
+    'update_recheck': '更新后是否复查', 'active_network': '实际联网是否正常',
+    'startup_check': '本次启动前是否检查',
+    'config_drift': '代理配置有没有变化', 'client_drift': '软件版本有没有变化',
+    'network_drift': '代理设置有没有变化', 'native_drift': '时间和语言有没有变化',
+    'dns_drift': 'DNS 设置有没有变化', 'browser_drift': '浏览器设置有没有变化',
+    'startup_scope': '本次检查是否准备齐全', 'network_pending': '联网情况是否已检查',
+    'launch_readiness': '打开软件前网络是否就绪', 'prelaunch_drift': '检查期间环境有没有变化',
+    'client_start': '软件是否正常打开', 'dns_readiness_gate': 'DNS 和代理是否准备好',
+}
+
+
+def _customer_words(row):
+    key = row.get('id')
+    title = CUSTOMER_TITLES.get(key, row['title']) if isinstance(key, str) else row['title']
+    reason, action = row['reason'], row['next_step']
+    kind, done = row.get('probe_type'), row['status'] == '已完成'
+    if kind is None and key == 'system_dns' and 'probe_path' in row and 'outcome' in row:
+        kind = 'dns'  # Older probe rows predate the explicit type field.
+    drift = {
+        'config_drift': ('代理配置与上次记录一致；是否真正生效还需确认。', '代理配置有变化或暂时读不到。', '让 Codex 对照当前配置核对变化。'),
+        'client_drift': ('软件文件与上次记录一致。', '软件文件有变化或暂时读不到。', '核对软件更新情况后再继续。'),
+        'dns_drift': ('DNS 设置与上次记录一致；这不等于没有泄露。', 'DNS 设置有变化，或还没读取完整。', '核对设置后，再检查 DNS 查询实际走的线路。'),
+        'network_drift': ('已读取的代理设置与上次一致；尚不能代替实际联网测试。', '代理设置有变化，或还没读取完整。', '核对变化后补做实际连接检查。'),
+        'native_drift': ('已读取的时间和语言设置与上次一致。', '时间或语言设置有变化，或还没读取完整。', '按客户需要核对，保留未要求修改的设置。'),
+        'startup_scope': ('本次要检查的代理线路和对照出口已准备好。', '检测范围或对照出口还没准备完整。', '由 Codex 补齐本次检查所需资料。'),
+    }
+    if isinstance(key, str) and key in drift:
+        good, pending, action = drift[key]
+        reason = good if done else pending
+    # A successful resolver query is NOT a DNS leak test. Static drift checks
+    # likewise retain their narrower question, even when the check completed.
+    if kind == 'dns':
+        title = 'DNS 能否解析网站地址'
+        if done:
+            reason = '本次能解析地址；这还不能说明 DNS 没有泄露。'
+            action = '继续核对 DNS 查询实际走的线路。'
+    elif kind == 'egress':
+        title = '出口是否一致'
+        reason = ('本次测试出口与指定出口一致；只代表这条测试线路。' if done else
+                  '还不能确认出口一致，需要核对指定出口和测试结果。')
+        action = '再核对实际使用的软件是否走同一出口。' if done else '由 Codex 核对本机记录后再确认。'
+    elif kind == 'stun':
+        title = 'UDP 出口是否符合预期'
+        if done:
+            reason = '本次 UDP 测试出口符合预期；不代表所有应用都已检查。'
+    elif kind == 'https':
+        title = '代理能否连接目标网站' if row.get('probe_path') == 'proxy' else '目标网站能否连接'
+        if done:
+            reason = '这条测试线路连接成功；登录和实际功能还需单独确认。'
+    return title, reason, action
+
 
 CSS = '''
 :root{color-scheme:light;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#182230;background:#fff}
@@ -57,6 +118,11 @@ def _rows(rows):
         if type(row.get('required', True)) is not bool:
             raise ValueError('DASHBOARD_SCOPE_REQUIRED')
         item = {key: _text(row.get(key)) for key in ('title', 'status', 'reason', 'next_step')}
+        title, reason, action = _customer_words(row)
+        item['technical'] = None
+        if (title, reason, action) != (row['title'], row['reason'], row['next_step']):
+            item['technical'] = (item['title'], item['reason'], item['next_step'])
+        item.update(title=_text(title), reason=_text(reason), next_step=_text(action))
         item['required'] = row.get('required', True)
         item['done'] = row['status'] == '已完成'
         item['observation'] = _text(row['observation']) if isinstance(row.get('observation'), str) and row['observation'].strip() else None
@@ -76,13 +142,18 @@ def _table(rows, label):
     body = []
     for row in rows:
         evidence = []
+        if row['technical']:
+            name, reason, action = row['technical']
+            evidence.extend(('<dt>原检查项</dt><dd>' + name + '</dd>',
+                             '<dt>详细依据</dt><dd>' + reason + '</dd>',
+                             '<dt>详细处理建议</dt><dd>' + action + '</dd>'))
         if row['observation'] is not None:
             evidence.append('<dt>已记录的采集信息</dt><dd>' + row['observation'] + '</dd>')
         if row['verified_at'] is not None:
             evidence.append('<dt>项目核验时间</dt><dd>' + row['verified_at'] + '</dd>')
         disclosure = '<details class="record"><summary>查看记录</summary><dl>' + ''.join(evidence) + '</dl></details>' if evidence else ''
         body.append('<tr><th scope="row">' + row['title'] + '</th><td><span class="status ' + ('done' if row['done'] else 'todo') + '">' + row['status'] + '</span></td><td><p><span class="label">原因／结果：</span>' + row['reason'] + '</p><p class="next"><span class="label">下一步：</span>' + row['next_step'] + '</p>' + disclosure + '</td></tr>')
-    return '<table><caption class="sr-only">' + _text(label) + '</caption><colgroup><col class="topic"><col class="state"><col class="explanation"></colgroup><thead><tr><th scope="col">检查项</th><th scope="col">状态</th><th scope="col">原因与下一步</th></tr></thead><tbody>' + ''.join(body) + '</tbody></table>'
+    return '<table><caption class="sr-only">' + _text(label) + '</caption><colgroup><col class="topic"><col class="state"><col class="explanation"></colgroup><thead><tr><th scope="col">你关心的问题</th><th scope="col">状态</th><th scope="col">结果与下一步</th></tr></thead><tbody>' + ''.join(body) + '</tbody></table>'
 
 
 def render(*, title, checked_at, rows, generated_at=None, time_label='检查时间',

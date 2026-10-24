@@ -53,6 +53,14 @@ def _customer_words(row):
         reason = ('本次测试出口与指定出口一致；只代表这条测试线路。' if done else
                   '还不能确认出口一致，需要核对指定出口和测试结果。')
         action = '再核对实际使用的软件是否走同一出口。' if done else '由 Codex 核对本机记录后再确认。'
+        if not done:
+            comparison = row.get('egress_comparison')
+            if comparison == 'mismatch':
+                reason, action = '本次测试出口与指定出口不一致。', '核对所选节点和分流规则后再测。'
+            elif comparison == 'no_reference':
+                reason, action = '已测到出口，但还没有指定的对照出口。', '先确认应该使用的出口，再重新比较。'
+            elif comparison == 'unavailable':
+                reason, action = '这次没有测到出口，暂时无法比较。', '检查代理连接和检测目标后再测。'
     elif kind == 'stun':
         title = 'UDP 出口是否符合预期'
         if done:

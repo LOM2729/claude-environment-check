@@ -207,6 +207,7 @@ def row(item, observation):
     kind = item['type']
     outcome = observation.get('outcome')
     complete = False
+    comparison = 'unavailable'
     reason = '探测未取得有效结果；超时或无响应不能证明流量已阻断。'
     action = '检查探测目标、解析、代理或网络后重测；保留未完成。'
     reason = {'timeout': '探测超时；无响应不能证明 UDP 被阻断或没有泄漏。',
@@ -229,13 +230,17 @@ def row(item, observation):
     elif kind in ('stun', 'egress') and observation.get('ip'):
         expected = item.get('expected_ip')
         complete = expected is not None and ipaddress.ip_address(expected) == ipaddress.ip_address(observation['ip'])
+        comparison = 'matched' if complete else 'mismatch' if expected is not None else 'no_reference'
         reason = '该探测目标的出口与已确认地址一致；不代表其他域名、出站组、应用或地址族。' if complete else '已取得出口，但尚无已确认的预期地址，或与预期不符。'
         action = '保留本次证据，并按约定范围验证其他路径。' if complete else '在本地私有证据中核对出口和指定节点；确认目标后再检测，不自动接受新出口。'
-    return {'id': item['id'], 'title': {'https': 'HTTPS 可达性', 'egress': '出口一致性', 'dns': '系统 DNS 解析', 'stun': '原生 UDP / STUN 出口'}[kind] + ' · ' + item['id'],
+    result = {'id': item['id'], 'title': {'https': 'HTTPS 可达性', 'egress': '出口一致性', 'dns': '系统 DNS 解析', 'stun': '原生 UDP / STUN 出口'}[kind] + ' · ' + item['id'],
             'status': '已完成' if complete else '未完成', 'required': item['required'], 'reason': reason, 'next_step': action,
             'probe_type': kind,
             'probe_path': item.get('route', 'native_udp' if kind == 'stun' else 'system_resolver'),
             'outcome': outcome if outcome in {'response','resolved','stun_response','timeout','network_error','tls_error','invalid_response','invalid_stun_response','no_answer','worker_failed','response_too_large'} else 'invalid_response'}
+    if kind in ('egress', 'stun'):
+        result['egress_comparison'] = comparison
+    return result
 
 
 def run_checks(c, plan, allow_network, readiness=None, config=None, browser=None):

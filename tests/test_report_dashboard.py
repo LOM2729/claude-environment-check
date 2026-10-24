@@ -141,7 +141,11 @@ class DashboardBehaviorTests(unittest.TestCase):
             if status == '已完成':
                 self.assertIn('只代表这条测试线路', doc.root.text)
             else:
-                self.assertIn('还不能确认出口一致', doc.root.text)
+                self.assertIn('本次测试出口与指定出口不一致', doc.root.text)
+        unknown = network.row(dict(check, expected_ip=None), {'outcome': 'response', 'ip': '192.0.2.1'})
+        self.assertIn('还没有指定的对照出口', Document(self.render([unknown])).root.text)
+        timed_out = network.row(check, {'outcome': 'timeout'})
+        self.assertIn('这次没有测到出口', Document(self.render([timed_out])).root.text)
 
     def render(self, rows=None, **kwargs):
         options = dict(title='合成离线检查', checked_at=OLD,

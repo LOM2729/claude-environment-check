@@ -122,3 +122,5 @@ python <Skill>/scripts/claude_setup.py preflight --baseline <基线目录> --con
 原 `review-template` / `report --review` 增加“更新后复查、主动网络验证、启动前检查”三项，默认未完成。Codex 按本次实际报告和客户机证据填写，未覆盖部分说明原因与下一步。历史报告不能恢复操作许可，私有材料不上传 GitHub。
 
 参考 [claude-switcher 的设计](https://github.com/YOURSJEYO/claude-switcher/tree/f38990d6861c760ed38eef88c33ad0fc190320de) 中的启动检查和复查思路；这是第三方实现参考，不是官方安全结论。本工具重新实现有边界的探测与报告，没有采用其“无响应即零暴露”、Fake-IP 即路由正确或定时关程序即零泄漏的判断。[STUN 标准 RFC 8489](https://www.rfc-editor.org/rfc/rfc8489.html) 是探测协议依据，不能证明账号安全或浏览器整体状态。
+
+生成的 `report.html` 采用统一 [离线检查面板](report-dashboard.md)，当前必需项展开、补充项折叠；重新打开不会刷新检查或启动应用。

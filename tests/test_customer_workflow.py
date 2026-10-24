@@ -143,7 +143,8 @@ class CustomerWorkflow(unittest.TestCase):
         self.assertEqual([r['status'] for r in report['rows'][1:]], ['未完成'] * 7)
         for name in ('report.md', 'report.html'):
             text = (self.root / 'lifecycle' / name).read_text(encoding='utf-8')
-            self.assertIn('本次交付：已完成 1 项／共 1 项，未完成 0 项', text)
+            self.assertIn('本次交付', text)
+            self.assertIn('已完成 1 项／共 1 项，未完成 0 项', text)
             self.assertIn('后续复查', text)
         required_later = copy.deepcopy(rows)
         required_later[-1]['required'] = True

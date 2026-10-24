@@ -424,9 +424,12 @@ class Lifecycle(unittest.TestCase):
         life.save_report(c, out, 'recheck', self.checks(), private=private)
         text = (out / 'report.html').read_text(encoding='utf-8')
         self.assertNotIn('PRIVATE_TEST_VALUE', text); self.assertNotIn('203.0.113.9', text)
-        self.assertIn('检查时间', text); self.assertIn('启动必需', text); self.assertIn('已完成 6 项', text)
+        self.assertIn('检查时间', text); self.assertIn('启动必需', text)
+        self.assertIn('已完成 5 项／共 5 项', text)
+        self.assertIn('补充检查 · 已完成 1 项／共 1 项', text)
         self.assertNotIn('<script', text); self.assertNotIn('https://', text)
         data = c.load_json((out / 'report.json').read_bytes())
+        self.assertEqual(sum(row['status'] == '已完成' for row in data['rows']), 6)
         self.assertLessEqual({x['status'] for x in data['rows']}, {'已完成', '未完成'})
         self.assertIn('PRIVATE_TEST_VALUE', (out / 'evidence.private.json').read_text(encoding='utf-8'))
 

@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.13.0'
+VERSION = '0.14.0'
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -766,6 +766,8 @@ def report_rows(raw, review=None, collection_digest=None):
             row['next_step'] = '事件发生或客户选择演练后，再按当时范围准备方案与核验。'
         if entry:
             row.update({k: entry[k] for k in ('status', 'reason', 'next_step')})
+            if entry.get('verified_at'):
+                row['verified_at'] = entry['verified_at']
         elif key == 'config' and data['config']:
             issues = data['config']
             if any((issues.get(k) or 0) > 0 for k in ('duplicate_names', 'cyclic_groups', 'rules_after_catchall', 'unknown_references')):
@@ -807,21 +809,20 @@ def render_report(raw, output, review=None, collection_digest=None):
         md += '\n## 后续复查\n\n以下项目不计入本次交付数量；未实测仍是未完成。\n\n| 检查项 | 状态 | 结果／未完成原因 | 下一步 |\n| --- | --- | --- | --- |\n'
         for row in followup_rows:
             md += '| ' + ' | '.join(md_text(row[k]) for k in ('title', 'status', 'reason', 'next_step')) + ' |\n'
-    excluded = ''
     if data['excluded']:
         md += '\n不计入本次清单（已确认范围）：\n\n'
         for item in data['excluded']:
             md += '- ' + md_text(item['title'] + '：' + item['reason']) + '\n'
-        excluded = '<p>不计入本次清单（已确认范围）：</p><ul>' + ''.join('<li>' + html.escape(x['title'] + '：' + x['reason']) + '</li>' for x in data['excluded']) + '</ul>'
     md += '\n## 原始采集信息\n\n'
     md += '\n'.join('- ' + md_text(row['title'] + '：' + row['observation']) for row in rows) + '\n'
-    def table_rows(items):
-        return ''.join('<tr><td>' + html.escape(row['title']) + '</td><td class="' + ('done' if row['status'] == '已完成' else 'todo') + '">' + row['status'] + '</td><td>' + html.escape(row['reason']) + '</td><td>' + html.escape(row['next_step']) + '</td></tr>' for row in items)
-    table = table_rows(current_rows)
-    if followup_rows:
-        excluded = '<details><summary>后续复查（不计入本次交付数量）</summary><table><thead><tr><th>检查项</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + table_rows(followup_rows) + '</tbody></table></details>' + excluded
-    details = '<details><summary>查看原始采集信息</summary><ul>' + ''.join('<li>' + html.escape(row['title'] + '：' + row['observation']) + '</li>' for row in rows) + '</ul></details>'
-    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>Claude 环境检查报告</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:1200px;margin:40px auto;padding:0 24px;color:#162334;background:#fafafa}h1{font-size:28px}.progress{font-size:22px;font-weight:650;padding:16px;background:#edf2f8;border-radius:8px}table{border-collapse:collapse;table-layout:fixed;width:100%;background:white}td,th{text-align:left;vertical-align:top;padding:14px;border:1px solid #dce1e8;overflow-wrap:anywhere}th{background:#edf2f8}th:nth-child(1){width:17%}th:nth-child(2){width:10%}th:nth-child(3){width:32%}th:nth-child(4){width:41%}.done{color:#176444;font-weight:650}.todo{color:#9a4e12;font-weight:650}p,details{color:#465569}details{margin-top:24px}summary{cursor:pointer}@media(max-width:700px){body{padding:0 10px;font-size:13px}td,th{padding:8px}}@media print{body{margin:0;font-size:11px}tr{break-inside:avoid}}</style><h1>Claude 环境检查报告</h1><p class="progress">' + html.escape(progress) + '</p><p>' + html.escape(summary) + '</p><p>' + html.escape(caveat) + '</p><table><thead><tr><th>检查项</th><th>状态</th><th>结果／未完成原因</th><th>下一步</th></tr></thead><tbody>' + table + '</tbody></table>' + excluded + details + '</html>'
+    import report_dashboard
+    page = report_dashboard.render(
+        title='环境检查', checked_at=data['collected_at'], generated_at=now(), rows=rows,
+        time_label='检查时间（采集记录）', current_label='本次交付' if followup_rows else '本次检查',
+        metadata=(('目标别名', data['target_alias']), ('执行平台', data['platform']), ('来源', source_label)),
+        notes=(caveat, '合成示例（非设备实测）' if data['evidence'] == 'synthetic_fixture' else
+               '采集时间不代替逐项核验时间；单纯采集设置不会自动标为已完成。'),
+        excluded=data['excluded'])
     new_dir(output)
     write_new(Path(output) / 'report.md', md.encode('utf-8'))
     write_new(Path(output) / 'report.html', page.encode('utf-8'))

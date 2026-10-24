@@ -48,3 +48,5 @@ Python 3.9+，YAML 需 PyYAML 6.0.3，优先复用已有运行时；确实缺依
 候选、文件匹配、应用载入、实际进程采用和端到端观察分别记录。生命周期工具只审阅供给证据，不自行制造事件；Mac／Windows 合成测试不等于客户网络实测。没有常驻监控、系统 Kill Switch 或账号防封保证。官方资料、源码参考和个人经验分开，见 [来源说明](.agents/skills/claude-mac-readiness/references/evidence-sources.md)。
 
 完整配置、凭据、差异、IP 与证据只留客户本机；每位客户新解压一份。发布包按文件白名单生成，不含客户文件、运行报告或未完成教程草稿。
+
+检查报告现使用 [离线面板](.agents/skills/claude-mac-readiness/references/report-dashboard.md)：显示检查时间，原因和下一步直接可见，详细记录与后续复查折叠。Mac／Windows 共用展示，不改变既有启动方式。

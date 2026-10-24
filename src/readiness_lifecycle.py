@@ -129,30 +129,33 @@ def save_report(c, output, kind, rows, extra=None, private=None, create=True):
     if kind.startswith('workflow-'):
         launch_text = '仅保存或核对续做材料；网络须重新核验，操作授权不从记录恢复。'
     lines = ['# 环境检查报告', '', summary, '', '检查时间：' + result['checked_at'], '', launch_text, '', f'| 检查项 | {required_label} | 状态 | 原因／结果 | 下一步 |', '| --- | --- | --- | --- | --- |']
-    escape_md = lambda value: str(value).replace('|', '\\|').replace('\n', ' ')
+    escape_md = lambda value: re.sub(r'([\\`*_{}\[\]()#+.!|>~-])', r'\\\1', html.escape(str(value)).replace('\n', ' '))
     for r in ordered:
         r = dict(r, required_label='是' if r['required'] else '否（补充检查）')
         lines.append('| ' + ' | '.join(escape_md(r[k]) for k in ('title', 'required_label', 'status', 'reason', 'next_step')) + ' |')
     lines += ['', '仅覆盖本次列出的检查和证据范围；不是持续断网保护，也不证明未观测的客户端采用同一路径。', f'标为非{required_label}的项目仍如实显示未完成；不能据此宣称全项验收通过。', '']
-    body = ''.join('<tr>' + ''.join('<td>' + html.escape(str(value)) + '</td>' for value in (r['title'], '是' if r['required'] else '否（补充检查）', r['status'], r['reason'], r['next_step'])) + '</tr>' for r in ordered)
-    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>环境检查报告</title><style>body{font:16px/1.6 system-ui;margin:32px;max-width:1100px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:12px;text-align:left}th{background:#eef2f6}</style><h1>环境检查报告</h1><p>' + html.escape(summary) + '</p><p>检查时间：' + html.escape(result['checked_at']) + '</p><p>' + html.escape(launch_text) + '</p><table><thead><tr><th>检查项</th><th>' + required_label + '</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + body + '</tbody></table><p>仅覆盖本次列出的检查和证据范围，不是持续断网保护。补充项目仍保留未完成结果。</p></html>'
     if kind == 'lifecycle-acceptance':
         summary = f"本次交付：已完成 {counts['required_completed']} 项／共 {len(required_rows)} 项，未完成 {counts['required_incomplete']} 项"
         followup_summary = f"后续复查：已完成 {counts['followup_completed']} 项，未完成 {counts['followup_incomplete']} 项"
         lines = ['# 生命周期验收', '', summary, '', '检查时间：' + result['checked_at'], '',
                  '仅判定本轮供给证据；未实测项目仍为未完成。']
-        tables = []
         for title, section in (('本次交付', required_rows), ('后续复查', followup_rows)):
             ordered_section = sorted(section, key=lambda r: r['status'] == '已完成')
             lines += ['', '## ' + title, '', '| 检查项 | 状态 | 原因／结果 | 下一步 |', '| --- | --- | --- | --- |']
-            body = ''
             for row in ordered_section:
                 values = [row[k] for k in ('title', 'status', 'reason', 'next_step')]
                 lines.append('| ' + ' | '.join(escape_md(value) for value in values) + ' |')
-                body += '<tr>' + ''.join('<td>' + html.escape(str(value)) + '</td>' for value in values) + '</tr>'
-            tables.append('<table><thead><tr><th>检查项</th><th>状态</th><th>原因／结果</th><th>下一步</th></tr></thead><tbody>' + body + '</tbody></table>')
         lines += ['', followup_summary + '。后续项目不计入本次交付数量；未实测不代表通过或持续保护。', '']
-        page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>生命周期验收</title><style>body{font:16px/1.6 system-ui;margin:32px;max-width:1100px}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ddd;padding:12px;text-align:left}th{background:#eef2f6}summary{cursor:pointer}details{margin-top:24px}</style><h1>生命周期验收</h1><p>' + html.escape(summary) + '</p><p>检查时间：' + html.escape(result['checked_at']) + '</p>' + tables[0] + '<details><summary>' + html.escape(followup_summary) + '</summary>' + tables[1] + '</details><p>仅判定本轮供给证据。后续项目不计入本次交付数量；未实测不代表通过或持续保护。</p></html>'
+    import report_dashboard
+    titles = {'preflight': '启动前检查', 'recheck': '更新后复查',
+              'lifecycle-acceptance': '生命周期验收', 'workflow-save': '进度保存',
+              'workflow-resume': '继续配置前核对'}
+    page = report_dashboard.render(
+        title=titles.get(kind, '环境检查'), checked_at=result['checked_at'], generated_at=c.now(), rows=rows,
+        current_label='本次交付' if kind == 'lifecycle-acceptance' else
+                      '启动必需检查' if kind in ('preflight', 'recheck') else '本次检查',
+        followup_label='后续复查' if kind == 'lifecycle-acceptance' else '补充检查',
+        notes=(launch_text, '仅覆盖本次检查和证据范围；不代表持续保护或所有客户端均已验收。'))
     c.write_new(folder / 'report.md', '\n'.join(lines).encode())
     c.write_new(folder / 'report.html', page.encode())
     if private is not None:

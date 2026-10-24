@@ -12,7 +12,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 COMMON_REFS = ('billing-checks.md', 'change-confirmation.md', 'customer-setup.md',
                'evidence-sources.md', 'execution-paths.md', 'guided-workflow.md',
-               'locale-and-language.md', 'proxy-import.md', 'score-check.md', 'automation.md', 'automatic-configuration.md', 'ai-dedicated-routing.md', 'lifecycle-checks.md', 'recovery-and-acceptance.md', 'workflow-progress.md', 'five-step-setup.md', 'unified-ipv4.md', 'domestic-video-udp.md', 'shadowrocket-domestic.md', 'service-routing-checks.md', 'tutorial-coverage.md', 'connection-reuse.md')
+               'locale-and-language.md', 'proxy-import.md', 'score-check.md', 'automation.md', 'automatic-configuration.md', 'ai-dedicated-routing.md', 'lifecycle-checks.md', 'recovery-and-acceptance.md', 'workflow-progress.md', 'report-dashboard.md', 'five-step-setup.md', 'unified-ipv4.md', 'domestic-video-udp.md', 'shadowrocket-domestic.md', 'service-routing-checks.md', 'tutorial-coverage.md', 'connection-reuse.md')
 ROOT_FILES = ('START-HERE.md', '启动提示词.txt', '自动配置启动提示词.txt', 'AGENTS.md', 'README.md', 'requirements.txt',
               'VERSION', '客户配置/放置说明.txt', '交付记录/记录说明.txt')
 
@@ -23,7 +23,7 @@ def files():
         base = f'.agents/skills/claude-{system}-readiness/'
         extras = ('article-claims.md', 'mac-checks.md', 'related-source-review.md') if system == 'mac' else ('claim-review.md', 'windows-checks.md')
         result += [base + x for x in ('SKILL.md', 'assets/customer-checklist.md', 'assets/report-template.md',
-                                     'scripts/claude_setup.py', 'scripts/config_recovery.py', 'scripts/lifecycle_acceptance.py', 'scripts/workflow_progress.py', 'scripts/ai_routing.py', 'scripts/claude_group.py', 'scripts/community_routing.py', 'scripts/community_snapshot.json', 'scripts/COMMUNITY-DATA-LICENSE.txt', 'scripts/connection_reuse.py', 'scripts/connection_workflow.py', 'scripts/ai_domains.json', 'scripts/network_checks.py', 'scripts/dns_readiness.py', 'scripts/shadow_domestic.py', 'scripts/domestic_policy.py', 'scripts/domestic_cn.list', 'scripts/domestic_video.list', 'scripts/domestic_sources.json', 'scripts/DOMESTIC-DATA-LICENSE.txt', 'scripts/unified_policy.py', 'scripts/contact_checks.py', 'scripts/ipv6_scope.py', 'scripts/check_ipv6_binding.ps1', 'scripts/readiness_lifecycle.py', 'scripts/collect_dns_identity.ps1', 'scripts/collect_windows.ps1', 'scripts/requirements.txt')]
+                                     'scripts/claude_setup.py', 'scripts/config_recovery.py', 'scripts/lifecycle_acceptance.py', 'scripts/workflow_progress.py', 'scripts/report_dashboard.py', 'scripts/ai_routing.py', 'scripts/claude_group.py', 'scripts/community_routing.py', 'scripts/community_snapshot.json', 'scripts/COMMUNITY-DATA-LICENSE.txt', 'scripts/connection_reuse.py', 'scripts/connection_workflow.py', 'scripts/ai_domains.json', 'scripts/network_checks.py', 'scripts/dns_readiness.py', 'scripts/shadow_domestic.py', 'scripts/domestic_policy.py', 'scripts/domestic_cn.list', 'scripts/domestic_video.list', 'scripts/domestic_sources.json', 'scripts/DOMESTIC-DATA-LICENSE.txt', 'scripts/unified_policy.py', 'scripts/contact_checks.py', 'scripts/ipv6_scope.py', 'scripts/check_ipv6_binding.ps1', 'scripts/readiness_lifecycle.py', 'scripts/collect_dns_identity.ps1', 'scripts/collect_windows.ps1', 'scripts/requirements.txt')]
         result.append(base + ('scripts/check-env.zsh' if system == 'mac' else 'scripts/check-env.ps1'))
         result += [base + 'references/' + x for x in COMMON_REFS + extras]
     return result
@@ -32,7 +32,7 @@ def files():
 def synchronize():
     for system in ('mac', 'windows'):
         scripts = ROOT / f'.agents/skills/claude-{system}-readiness/scripts'
-        for name in ('claude_setup.py', 'config_recovery.py', 'lifecycle_acceptance.py', 'workflow_progress.py', 'ai_routing.py', 'claude_group.py', 'community_routing.py', 'community_snapshot.json', 'COMMUNITY-DATA-LICENSE.txt', 'connection_reuse.py', 'connection_workflow.py', 'ai_domains.json', 'network_checks.py', 'dns_readiness.py', 'shadow_domestic.py', 'domestic_policy.py', 'domestic_cn.list', 'domestic_video.list', 'domestic_sources.json', 'DOMESTIC-DATA-LICENSE.txt', 'unified_policy.py', 'contact_checks.py', 'ipv6_scope.py', 'check_ipv6_binding.ps1', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
+        for name in ('claude_setup.py', 'config_recovery.py', 'lifecycle_acceptance.py', 'workflow_progress.py', 'report_dashboard.py', 'ai_routing.py', 'claude_group.py', 'community_routing.py', 'community_snapshot.json', 'COMMUNITY-DATA-LICENSE.txt', 'connection_reuse.py', 'connection_workflow.py', 'ai_domains.json', 'network_checks.py', 'dns_readiness.py', 'shadow_domestic.py', 'domestic_policy.py', 'domestic_cn.list', 'domestic_video.list', 'domestic_sources.json', 'DOMESTIC-DATA-LICENSE.txt', 'unified_policy.py', 'contact_checks.py', 'ipv6_scope.py', 'check_ipv6_binding.ps1', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
             shutil.copyfile(ROOT / 'src' / name, scripts / name)
         shutil.copyfile(ROOT / 'requirements.txt', scripts / 'requirements.txt')
 
@@ -54,7 +54,7 @@ def validate():
                     assert dest.relative_to(ROOT).as_posix() in allowed, (relative, target, 'not bundled')
     for system in ('mac', 'windows'):
         skill = ROOT / f'.agents/skills/claude-{system}-readiness'
-        for name in ('claude_setup.py', 'config_recovery.py', 'lifecycle_acceptance.py', 'workflow_progress.py', 'ai_routing.py', 'claude_group.py', 'community_routing.py', 'community_snapshot.json', 'COMMUNITY-DATA-LICENSE.txt', 'connection_reuse.py', 'connection_workflow.py', 'ai_domains.json', 'network_checks.py', 'dns_readiness.py', 'shadow_domestic.py', 'domestic_policy.py', 'domestic_cn.list', 'domestic_video.list', 'domestic_sources.json', 'DOMESTIC-DATA-LICENSE.txt', 'unified_policy.py', 'contact_checks.py', 'ipv6_scope.py', 'check_ipv6_binding.ps1', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
+        for name in ('claude_setup.py', 'config_recovery.py', 'lifecycle_acceptance.py', 'workflow_progress.py', 'report_dashboard.py', 'ai_routing.py', 'claude_group.py', 'community_routing.py', 'community_snapshot.json', 'COMMUNITY-DATA-LICENSE.txt', 'connection_reuse.py', 'connection_workflow.py', 'ai_domains.json', 'network_checks.py', 'dns_readiness.py', 'shadow_domestic.py', 'domestic_policy.py', 'domestic_cn.list', 'domestic_video.list', 'domestic_sources.json', 'DOMESTIC-DATA-LICENSE.txt', 'unified_policy.py', 'contact_checks.py', 'ipv6_scope.py', 'check_ipv6_binding.ps1', 'readiness_lifecycle.py', 'collect_dns_identity.ps1', 'collect_windows.ps1'):
             assert (ROOT / 'src' / name).read_bytes() == (skill / 'scripts' / name).read_bytes(), 'out-of-sync tools'
         assert (ROOT / 'requirements.txt').read_bytes() == (skill / 'scripts/requirements.txt').read_bytes()
         import yaml
@@ -79,7 +79,7 @@ def build():
             shutil.copyfile(ROOT / relative, target)
         info = {'name': 'Claude 环境检测', 'version': version,
                 'repository': 'https://github.com/LOM2729/claude-environment-check',
-                'capabilities': ['bound_workflow_checkpoint_and_resume', 'mode_aware_customer_reports', 'scoped_config_file_recovery', 'per_event_lifecycle_acceptance', 'baseline_drift_review', 'opt_in_network_probes', 'fresh_preflight_and_opt_in_launch', 'ai_proxy_only_candidate_and_audit', 'codex_batch_configuration_workflow', 'local_metadata_collection', 'offline_reports', 'private_config_diff', 'content_readback_verification'],
+                'capabilities': ['offline_binary_status_dashboard', 'bound_workflow_checkpoint_and_resume', 'mode_aware_customer_reports', 'scoped_config_file_recovery', 'per_event_lifecycle_acceptance', 'baseline_drift_review', 'opt_in_network_probes', 'fresh_preflight_and_opt_in_launch', 'ai_proxy_only_candidate_and_audit', 'codex_batch_configuration_workflow', 'local_metadata_collection', 'offline_reports', 'private_config_diff', 'content_readback_verification'],
                 'system_config_apply': False, 'active_network_probes': 'explicit_plan_and_opt_in_only',
                 'text_config_apply': 'explicit_exact_plan_only_no_client_reload',
                 'customer_machine_acceptance': 'requires_target_machine_verification'}

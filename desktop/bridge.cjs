@@ -15,7 +15,8 @@ function validate(action, payload) {
   if (action === 'export_candidate' && (typeof payload.plan_id !== 'string' || !/^[a-f0-9]{64}$/.test(payload.plan_id))) throw Error('请先准备方案');
 }
 function validSender(event, win) {
-  return !!win && event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame && event.senderFrame.url === 'app://ui/index.html';
+  return !!win && event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame &&
+    ['app://ui/index.html','app://ui/index.html#main'].includes(event.senderFrame.url);
 }
 function worker(command, prefix, workspace, action, payload) {
   return new Promise((resolve, reject) => {

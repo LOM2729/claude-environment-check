@@ -65,8 +65,18 @@ def read_bytes(path, maximum=MAX_FILE):
             data = stream.read(maximum + 1)
             after = os.fstat(stream.fileno())
         final = path.lstat()
-        fingerprint = lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
-        require(fingerprint(before) == fingerprint(after) == fingerprint(final), 'INPUT_CHANGED')
+        if os.name == 'nt':
+            # CPython's Windows path stat retains creation time in st_ctime,
+            # while fstat may expose metadata change time (cpython#157671).
+            # Compare common identity/content fields across every observation,
+            # and retain ctime checks separately within each API's time domain.
+            common = lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns)
+            require(common(before) == common(opened) == common(after) == common(final)
+                    and before.st_ctime_ns == final.st_ctime_ns
+                    and opened.st_ctime_ns == after.st_ctime_ns, 'INPUT_CHANGED')
+        else:
+            fingerprint = lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
+            require(fingerprint(before) == fingerprint(after) == fingerprint(final), 'INPUT_CHANGED')
         require(len(data) <= maximum, 'INPUT_TOO_LARGE')
         return data
     except SetupError:

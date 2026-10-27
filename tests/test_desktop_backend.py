@@ -83,8 +83,47 @@ class DesktopBackend(unittest.TestCase):
         return self.call('prepare', payload)
 
     def plan_path(self, state):
-        session = json.loads((self.workspace / 'session.private.json').read_text())
+        session = json.loads((self.workspace / 'session.private.json').read_text(encoding='utf-8'))
         return self.workspace / session['plan']['folder'] / state['plan']['candidate_name']
+
+    @unittest.skipUnless(os.name == 'nt', 'native Windows read identity regression and safe diagnostics')
+    def test_000_windows_session_and_source_read_fingerprints(self):
+        # Report only fixed stage names / error codes and mismatched stat fields.
+        # No path, content, SID, descriptor, or raw exception enters diagnostics.
+        b.recovery._private_dir(c, self.workspace, create=True)
+        self.source.write_bytes(c.encode(dict(BASE, mode='global')))
+        state = b.initial()
+        state.update(last_action='select_config', updated_at=c.now())
+        b.atomic_session(self.workspace, state)
+        results = {}
+        for label, path in (('source', self.source),
+                            ('session', self.workspace / 'session.private.json')):
+            before = path.lstat()
+            with path.open('rb') as stream:
+                opened = os.fstat(stream.fileno())
+                stream.read()
+                after = os.fstat(stream.fileno())
+            final = path.lstat()
+            fields = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
+            results[label + '_path_handle_differences'] = [key for key in fields if getattr(before, key) != getattr(opened, key)]
+            results[label + '_path_stable'] = all(getattr(before, key) == getattr(final, key) for key in fields)
+            results[label + '_handle_stable'] = all(getattr(opened, key) == getattr(after, key) for key in fields)
+        steps = {'source_read': lambda: c.read_bytes(self.source),
+                 'source_snapshot': lambda: b.recovery._snapshot(c, self.source),
+                 'session_read': lambda: c.read_bytes(self.workspace / 'session.private.json'),
+                 'session_load': lambda: b.load(self.workspace)}
+        for label, operation in steps.items():
+            try:
+                operation()
+                results[label] = 'ok'
+            except Exception as exc:
+                code = str(exc)
+                results[label] = code if isinstance(exc, (c.SetupError, b.DesktopError)) and b.re.fullmatch('[A-Z0-9_]{1,96}', code) else 'unexpected_error'
+        lock = b.acquire_lock(self.workspace)
+        os.close(lock)
+        results['lock_reusable'] = self.call('status', good=False)['ok']
+        self.assertTrue(all(results[name] == 'ok' for name in steps), json.dumps(results, sort_keys=True))
+        self.assertTrue(results['lock_reusable'], json.dumps(results, sort_keys=True))
 
     def test_status_does_not_collect_or_create_session(self):
         with mock.patch.object(c, 'collect', side_effect=AssertionError('collect forbidden')):
@@ -118,7 +157,7 @@ class DesktopBackend(unittest.TestCase):
         self.assertTrue(all(r['status'] == '未完成' for r in report['rows']))
         self.assertTrue(Path(report['state']['report_path']).is_file())
         raw = next(self.workspace.glob('collection-*/collection.json'))
-        self.assertEqual(json.loads(raw.read_text())['network_requests'], 0)
+        self.assertEqual(json.loads(raw.read_text(encoding='utf-8'))['network_requests'], 0)
 
     def test_repeated_prepare_has_new_folder_and_id(self):
         first = self.ready()['state']
@@ -148,7 +187,7 @@ class DesktopBackend(unittest.TestCase):
 
     def test_candidate_change_invalidates(self):
         state = self.ready()['state']
-        self.plan_path(state).write_text('{}')
+        self.plan_path(state).write_text('{}', encoding='utf-8')
         result = self.call('status', good=False)
         self.assertEqual(result['error'], 'PLAN_CHANGED')
         self.assertIsNone(result['state']['plan'])
@@ -156,10 +195,10 @@ class DesktopBackend(unittest.TestCase):
     def test_export_refuses_existing_destination(self):
         state = self.ready()['state']
         target = self.root / 'exists.json'
-        target.write_text('do not overwrite')
+        target.write_text('do not overwrite', encoding='utf-8')
         result = self.call('confirm_export', {'destination': str(target), 'plan_id': state['plan']['id']}, good=False)
         self.assertEqual(result['error'], 'EXPORT_UNSAFE')
-        self.assertEqual(target.read_text(), 'do not overwrite')
+        self.assertEqual(target.read_text(encoding='utf-8'), 'do not overwrite')
 
     def test_mismatch_does_not_claim_readback_success(self):
         state = self.ready()['state']
@@ -192,7 +231,7 @@ class DesktopBackend(unittest.TestCase):
 
     def test_shadowrocket_offline_candidate_requires_activation_review(self):
         shadow = self.root / 'source.conf'
-        shadow.write_text(SHADOW)
+        shadow.write_text(SHADOW, encoding='utf-8')
         self.select(shadow)
         self.call('collect')
         state = self.prepare()['state']
@@ -202,7 +241,7 @@ class DesktopBackend(unittest.TestCase):
         self.assertTrue(state['plan']['activation_blockers'])
         target = self.root / 'export.conf'
         self.call('confirm_export', {'destination': str(target), 'plan_id': state['plan']['id']})
-        self.assertTrue(target.read_text().startswith('[General]'))
+        self.assertTrue(target.read_text(encoding='utf-8').startswith('[General]'))
 
     def test_dynamic_provider_does_not_invent_nodes(self):
         self.source.write_bytes(c.encode({'proxy-providers': {'remote': {'type': 'http', 'url': 'https://example.test/config'}}}))
@@ -261,7 +300,7 @@ class DesktopBackend(unittest.TestCase):
         self.assertIn('Claude 桌面端', result['prompt'])
         self.assertIn('企业会议', result['prompt'])
         self.assertIn('指定节点：测试节点', result['prompt'])
-        scope = (Path(result['state']['handoff_path']).parent / 'scope.md').read_text()
+        scope = (Path(result['state']['handoff_path']).parent / 'scope.md').read_text(encoding='utf-8')
         self.assertIn('指定节点：测试节点', scope)
         self.assertEqual(self.call('status')['state']['requested_node'], '测试节点')
 
@@ -310,7 +349,7 @@ class DesktopBackend(unittest.TestCase):
              mock.patch.object(c, 'main', side_effect=AssertionError('handoff must not execute CLI')):
             result = self.call('handoff', {'kit_path': str(ROOT)})
         folder = Path(result['state']['handoff_path']).parent
-        manifest = json.loads((folder / 'desktop-engine.private.json').read_text())
+        manifest = json.loads((folder / 'desktop-engine.private.json').read_text(encoding='utf-8'))
         command = [sys.executable, str(Path(b.__file__).resolve())]
         self.assertEqual(manifest['engine_command'], command)
         self.assertEqual(manifest['cli_prefix'], command + ['--cli'])
@@ -330,7 +369,7 @@ class DesktopBackend(unittest.TestCase):
              mock.patch.object(c, 'main', side_effect=AssertionError('handoff must not execute CLI')):
             result = self.call('handoff', {'kit_path': str(ROOT)})
         folder = Path(result['state']['handoff_path']).parent
-        manifest = json.loads((folder / 'desktop-engine.private.json').read_text())
+        manifest = json.loads((folder / 'desktop-engine.private.json').read_text(encoding='utf-8'))
         self.assertEqual(manifest['engine_command'], [executable])
         self.assertEqual(manifest['cli_prefix'], [executable, '--cli'])
         self.assertEqual(manifest['kit_version'], c.VERSION)
@@ -348,7 +387,7 @@ class DesktopBackend(unittest.TestCase):
     def test_public_report_does_not_include_source_path_or_plan_details(self):
         self.ready()
         report = self.call('get_report')
-        text = Path(report['state']['report_path']).read_text()
+        text = Path(report['state']['report_path']).read_text(encoding='utf-8')
         self.assertNotIn(str(self.source), text)
         self.assertNotIn('测试节点', text)
         self.assertNotIn(SECRET, text)
@@ -357,7 +396,7 @@ class DesktopBackend(unittest.TestCase):
     def test_tampered_session_is_rejected_without_echo(self):
         self.ready()
         session = self.workspace / 'session.private.json'
-        raw = json.loads(session.read_text())
+        raw = json.loads(session.read_text(encoding='utf-8'))
         raw['config']['name'] = 'password=' + SECRET
         session.write_bytes(c.encode(raw))
         self.assertEqual(self.call('status', good=False)['error'], 'SESSION_INVALID')
@@ -422,7 +461,7 @@ class DesktopBackend(unittest.TestCase):
 
     def test_import_ignores_extra_paths_commands_and_never_runs_collect_or_cli(self):
         private_path = str(self.root / 'must-not-read.txt')
-        Path(private_path).write_text(SECRET)
+        Path(private_path).write_text(SECRET, encoding='utf-8')
         path, report = self.write_public_report(path=private_path, command='launch',
                                                evidence={'file': private_path}, token=SECRET)
         report['rows'][0]['raw_evidence'] = private_path
@@ -431,16 +470,16 @@ class DesktopBackend(unittest.TestCase):
             result = self.call('import_report', {'path': str(path)})
         self.assertNotIn(private_path, json.dumps(result))
         self.assertTrue(all(str(call.args[0]) != private_path for call in reads.call_args_list))
-        self.assertEqual(Path(private_path).read_text(), SECRET)
+        self.assertEqual(Path(private_path).read_text(encoding='utf-8'), SECRET)
 
     def test_import_binds_private_copy_and_can_reimport_after_tampering(self):
         path, report = self.write_public_report()
         self.call('import_report', {'path': str(path)})
         # The selected source is only imported once; later changes do not rewrite it.
-        path.write_text('{}')
+        path.write_text('{}', encoding='utf-8')
         self.assertTrue(self.call('status')['ok'])
         saved = next(self.workspace.glob('imported-report-*/original.private.json'))
-        saved.write_text('{}')
+        saved.write_text('{}', encoding='utf-8')
         self.assertEqual(self.call('status', good=False)['error'], 'REPORT_CHANGED')
         path.write_bytes(c.encode(report))
         self.assertTrue(self.call('import_report', {'path': str(path)})['ok'])
@@ -540,7 +579,7 @@ class DesktopBackend(unittest.TestCase):
         target = self.root / 'export.json'
         self.call('confirm_export', {'destination': str(target), 'plan_id': state['plan']['id']})
         self.call('verify_readback', {'path': str(target)})
-        target.write_text('{}')
+        target.write_text('{}', encoding='utf-8')
         result = self.call('status', good=False)
         self.assertEqual(result['error'], 'PLAN_CHANGED')
         self.assertIsNone(result['state']['plan'])
@@ -548,7 +587,7 @@ class DesktopBackend(unittest.TestCase):
     def test_report_tampering_never_returns_injected_rows(self):
         self.ready()
         review = next(self.workspace.glob('collection-*/review.json'))
-        content = json.loads(review.read_text())
+        content = json.loads(review.read_text(encoding='utf-8'))
         content['items'][0]['reason'] = SECRET
         review.write_bytes(c.encode(content))
         self.assertEqual(self.call('get_report', good=False)['error'], 'SESSION_INVALID')
@@ -568,7 +607,7 @@ class DesktopBackend(unittest.TestCase):
         except ImportError:
             self.skipTest('PyYAML not present in this interpreter')
         self.source = self.root / 'source.yaml'
-        self.source.write_text(yaml.safe_dump(BASE, allow_unicode=True))
+        self.source.write_text(yaml.safe_dump(BASE, allow_unicode=True), encoding='utf-8')
         state = self.ready()['state']
         self.assertEqual(state['config']['format'], 'yaml')
         target = self.root / 'export.yaml'

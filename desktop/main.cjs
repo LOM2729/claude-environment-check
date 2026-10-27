@@ -20,7 +20,8 @@ async function operate(action,payload) {
   }
   if(action==='export_candidate') {
     const current=await call('status');
-    if(!current.ok||!current.state.plan?.ready||current.state.plan.id!==payload.plan_id)throw Error('方案已变化，请重新准备');
+    if(!current.ok)return current;
+    if(!current.state.plan?.ready||current.state.plan.id!==payload.plan_id)return {ok:false,error:'PLAN_CHANGED',message:'方案已变化，请重新准备',state:current.state};
     const plan=current.state.plan;
     const confirm=await dialog.showMessageBox(win,{type:'question',title:'确认导出本次候选',message:'仅导出新的配置文件',detail:'原配置不会被覆盖，也不会自动导入、重启代理或更改系统设置。\n'+(plan.activation_ready===false?'应用行为仍有待核对项。导出后先交给 Codex 继续核验，不要直接启用。\n':'导入前仍需确认客户端设置和当前控制通道。\n')+JSON.stringify(plan.summary,null,2).slice(0,2500),buttons:['返回核对','确认并选择保存位置'],defaultId:0,cancelId:0,noLink:true});
     if(confirm.response!==1)return {...current,cancelled:true,message:'已取消导出。'};

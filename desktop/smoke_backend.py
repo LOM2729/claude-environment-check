@@ -43,4 +43,10 @@ with tempfile.TemporaryDirectory(prefix='desktop-frozen-smoke-') as temp:
     worker=EXE.parent/'_internal/network_checks.py'
     result=subprocess.run([str(EXE),str(worker),'--worker'],input='{}',capture_output=True,text=True,check=True,timeout=30)
     assert json.loads(result.stdout)['outcome']=='invalid_response'
+    scope=folder/'scope.md';scope.write_text('仅合成材料；不配置真实网络。',encoding='utf-8')
+    checkpoint=subprocess.run([str(EXE),'--cli','workflow-save','--config',str(config),'--scope-file',str(scope),
+        '--target-alias','synthetic','--platform','windows' if os.name=='nt' else 'macos','--stage','prepare',
+        '--next-step','核对本轮示例','--out',str(folder/'checkpoint')],capture_output=True,text=True,encoding='utf-8',
+        env={**os.environ,'PYTHONIOENCODING':'cp1252'},check=True,timeout=30)
+    assert json.loads(checkpoint.stdout)['status']=='已完成'
 print('Frozen backend: CLI version, JSON/YAML, snapshots, handoff and offline candidate passed; no network or system configuration.')

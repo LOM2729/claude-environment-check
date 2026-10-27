@@ -1,0 +1,44 @@
+name: Desktop build and verification
+on:
+  push:
+    paths: ['desktop/**', 'src/**', 'tools/build.py', 'VERSION', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: '--mac zip --arm64'
+            artifact: macos-arm64
+          - os: windows-latest
+            target: '--win zip --x64'
+            artifact: windows-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: python -m pip install -r desktop/requirements-build.txt
+      - run: npm ci --prefix desktop
+      - run: npm test --prefix desktop
+      - run: python -m unittest discover -s tests -p test_desktop_backend.py -v
+      - run: python desktop/build_backend.py
+      - run: python desktop/smoke_backend.py
+      - run: npx --prefix desktop electron-builder --projectDir desktop ${{ matrix.target }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.artifact }}-${{ github.sha }}
+          path: desktop/release/*.zip
+          if-no-files-found: error
+          retention-days: 14

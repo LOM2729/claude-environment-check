@@ -1,0 +1,60 @@
+{
+  "name": "claude-environment-desktop",
+  "version": "0.15.0",
+  "private": true,
+  "description": "Claude 环境检测桌面端",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "package": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0",
+    "jsdom": "30.1.3"
+  },
+  "build": {
+    "appId": "com.claudeenvironment.checker",
+    "productName": "Claude 环境检测",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "bridge.cjs",
+      "preload.cjs",
+      "ui/**",
+      "package.json",
+      "NOTICE.md",
+      "legal/**"
+    ],
+    "extraResources": [
+      {
+        "from": "backend-dist/claude-check-backend",
+        "to": "backend"
+      },
+      {
+        "from": "kit",
+        "to": "kit"
+      }
+    ],
+    "asar": true,
+    "mac": {
+      "identity": null,
+      "category": "public.app-category.utilities",
+      "target": [
+        "zip"
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        "zip"
+      ],
+      "signAndEditExecutable": true,
+      "icon": "assets/icon.ico"
+    },
+    "artifactName": "Claude-Environment-Desktop-${version}-${os}-${arch}.${ext}"
+  }
+}

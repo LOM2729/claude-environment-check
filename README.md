@@ -4,6 +4,10 @@
 
 **[下载最新客户包](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip)** · [校验文件](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip.sha256) · [使用说明](START-HERE.md)
 
+## 桌面端
+
+[下载桌面端](https://github.com/LOM2729/claude-environment-check/releases/latest)：macOS 13+ Apple Silicon 与 Windows x64，独立应用内置五步向导和检查引擎，无需客户安装 Python。支持选配置／节点、只读检查、确认导出新文件、读回核对、已有报告导入及 Codex 续做。实际导入、系统网络配置和联网实测仍按本机具体方案完成，不能把文件导出当作配置已生效。详见 [桌面使用与构建说明](https://github.com/LOM2729/claude-environment-check/blob/main/desktop/README.md)。
+
 ## 给客户的一句话
 
 请按 https://github.com/LOM2729/claude-environment-check 下载并校验最新版，按仓库五步自动配置：先准备完整方案并集中确认，网络核验后再打开 AI；保留系统语言，其他按现有用途处理，最后只给简短结果。

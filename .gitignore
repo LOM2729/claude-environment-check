@@ -9,3 +9,9 @@ __pycache__/
 !客户配置/放置说明.txt
 交付记录/*
 !交付记录/记录说明.txt
+
+desktop/node_modules/
+desktop/backend-dist/
+desktop/.build/
+desktop/kit/
+desktop/release/

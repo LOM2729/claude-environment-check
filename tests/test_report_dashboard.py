@@ -299,7 +299,12 @@ class ReportEntryPointTests(unittest.TestCase):
         self.assertIn('页面生成时间', doc.root.text)
         self.assertNotIn(SECRET, page)
         self.assertEqual(raw, before)
-        self.assertEqual({p.name for p in out.iterdir()}, {'report.html', 'report.md'})
+        self.assertEqual({p.name for p in out.iterdir()}, {'report.html', 'report.md', 'report.json'})
+        interchange = json.loads((out / 'report.json').read_text(encoding='utf-8'))
+        self.assertEqual(interchange['schema'], 'claude-readiness-run/1')
+        self.assertEqual(interchange['checked_at'], OLD)
+        self.assertEqual({r['status'] for r in interchange['rows']}, {'未完成'})
+        self.assertNotIn(SECRET, json.dumps(interchange))
 
     def test_lifecycle_kinds_share_renderer_preserve_json_and_keep_private_evidence_private(self):
         rows = [row('当前功能', '已完成'), row('未实测后续', required=False)]

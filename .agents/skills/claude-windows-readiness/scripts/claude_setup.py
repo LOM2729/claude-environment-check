@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.14.1'
+VERSION = '0.15.0'
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -826,6 +826,15 @@ def render_report(raw, output, review=None, collection_digest=None):
     new_dir(output)
     write_new(Path(output) / 'report.md', md.encode('utf-8'))
     write_new(Path(output) / 'report.html', page.encode('utf-8'))
+    # Shared, redacted interchange for the desktop viewer. Rendering is not a
+    # fresh device check, so retain the collection timestamp and actual rows.
+    write_new(Path(output) / 'report.json', encode({
+        'schema': 'claude-readiness-run/1', 'kind': 'collection-review',
+        'checked_at': data['collected_at'], 'generated_at': now(),
+        'rows': [{key: row[key] for key in ('id', 'title', 'status', 'reason', 'next_step', 'required')} for row in rows],
+        'system_settings_changed': False, 'runtime_adoption_verified': False,
+        'evidence_authenticity_verified': False,
+    }))
 
 
 def prepare_plan(current, candidate, fmt, output):

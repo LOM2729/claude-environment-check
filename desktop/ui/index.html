@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'">
+  <title>Claude 环境检测</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到当前步骤</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="应用导航">
+      <div class="brand"><strong>Claude 环境检测</strong></div>
+      <p class="nav-label">配置向导</p>
+      <nav aria-label="五步配置流程">
+        <ol class="steps">
+          <li><button type="button" data-view="prepare" aria-current="step"><span class="step-number">1</span><span><strong>准备</strong><small>选择配置与使用范围</small></span></button></li>
+          <li><button type="button" data-view="confirm" disabled><span class="step-number">2</span><span><strong>确认</strong><small>核对本次方案</small></span></button></li>
+          <li><button type="button" data-view="configure" disabled><span class="step-number">3</span><span><strong>配置</strong><small>手动导入并读回</small></span></button></li>
+          <li><button type="button" data-view="verify" disabled><span class="step-number">4</span><span><strong>验证</strong><small>查看结果与下一步</small></span></button></li>
+          <li><button type="button" data-view="deliver" disabled><span class="step-number">5</span><span><strong>交付</strong><small>保存记录与资料</small></span></button></li>
+        </ol>
+      </nav>
+      <div class="secondary-nav" aria-label="资料与帮助">
+        <button type="button" data-view="results">检查结果</button>
+        <button type="button" data-view="help">使用说明</button>
+        <button type="button" data-view="recovery">恢复资料</button>
+      </div>
+      <div class="sidebar-foot">材料保存在本机</div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar"><span id="breadcrumb">配置向导 / 准备</span><span class="mode-label">本地工作区</span></header>
+      <main id="main" tabindex="-1">
+        <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true">正在读取已保存的进度…</div>
+
+        <section id="view-prepare" class="view" aria-labelledby="title-prepare">
+          <div class="section-heading"><h1 id="title-prepare">准备配置</h1><p>选择现有配置、节点和需要使用的客户端。</p></div>
+          <div class="form-section">
+            <div class="field-heading"><h2>现有代理配置</h2><span class="field-note">支持 Clash / 小火箭导出文件</span></div>
+            <div class="file-picker"><div><strong id="config-name">还没有选择配置</strong><p id="config-detail">从代理客户端导出文本配置，再选择文件。</p></div><button type="button" class="button secondary" data-action="choose_config">选择配置文件</button></div>
+            <label class="field-label" for="node-select">本次使用的节点</label>
+            <select id="node-select" disabled><option value="">先选择配置文件</option></select>
+            <p class="hint">AI 与普通国外访问使用同一个指定节点。</p>
+          </div>
+          <div class="form-section">
+            <fieldset><legend>你会使用哪些客户端？<span class="legend-note">至少选择一项</span></legend>
+              <div class="choices clients">
+                <label><input type="checkbox" name="clients" value="browser"><span>浏览器</span></label>
+                <label><input type="checkbox" name="clients" value="claude_gui"><span>Claude 桌面版</span></label>
+                <label><input type="checkbox" name="clients" value="codex_gui"><span>Codex 桌面版</span></label>
+                <label><input type="checkbox" name="clients" value="claude_cli"><span>Claude Code 命令行</span></label>
+                <label><input type="checkbox" name="clients" value="codex_cli"><span>Codex 命令行</span></label>
+              </div>
+            </fieldset>
+          </div>
+          <div class="form-section compact">
+            <fieldset><legend>哪些业务需要保留？<span class="legend-note">可多选</span></legend>
+              <div class="choices keep">
+                <label><input type="checkbox" name="keep" value="视频"><span>国内视频</span></label>
+                <label><input type="checkbox" name="keep" value="会议"><span>视频会议</span></label>
+                <label><input type="checkbox" name="keep" value="游戏"><span>游戏</span></label>
+                <label><input type="checkbox" name="keep" value="企业VPN"><span>企业 VPN</span></label>
+                <label><input type="checkbox" name="keep" value="远控"><span>远程控制</span></label>
+              </div>
+            </fieldset>
+          </div>
+          <p class="hint">本步只检查本机与文件，不修改网络或启动 AI 软件。</p>
+          <p class="inline-error" data-error-for="prepare" role="alert" hidden></p>
+          <div class="actions"><button type="button" class="button secondary" data-action="collect">开始只读检查</button><button type="button" class="button primary" data-action="prepare" disabled>准备方案</button></div>
+          <p id="prepare-guidance" class="hint action-hint">选择配置、节点和客户端后，即可准备方案。</p>
+        </section>
+
+        <section id="view-confirm" class="view" aria-labelledby="title-confirm" hidden>
+          <div class="section-heading"><h1 id="title-confirm">确认方案</h1><p>导出生成新文件，不会自动导入客户端。</p></div>
+          <div class="plan-heading"><span class="status-badge pending" id="plan-status">未完成</span><span id="plan-name">尚未准备方案</span></div>
+          <p id="plan-summary" class="summary-text">先返回准备，选择配置并生成方案。</p>
+          <div class="notice" id="plan-activation"><strong>还不能直接启用候选配置</strong><p id="activation-reason">应用额外行为仍需核对。先复制提示词，让 Codex 继续核实本机情况。</p></div>
+          <dl class="plan-details">
+            <div><dt>指定节点</dt><dd id="plan-node">未选择</dd></div>
+            <div><dt>系统语言</dt><dd>保留显示语言、输入法与键盘；时区、浏览器语言无明确目标也保留。</dd></div>
+            <div><dt>IPv6 策略</dt><dd>候选采用 IPv4 策略。选定联网接口的 IPv6 仍需核实范围、单独配置和读回。</dd></div>
+            <div><dt>国内视频与 UDP</dt><dd>保留 AI 优先保护；国内视频直连在其余 UDP 拒绝之前。</dd></div>
+            <div><dt>必保业务</dt><dd id="plan-keep">未选择额外业务</dd></div>
+            <div><dt>备份与恢复</dt><dd>本轮输入、候选、差异与恢复说明留在私有工作区。系统设置、客户端内部配置及运行状态的备份仍需继续核实。</dd></div>
+          </dl>
+          <p class="inline-error" data-error-for="confirm" role="alert" hidden></p>
+          <div class="actions wrap"><button type="button" class="text-button" data-view="prepare">返回准备</button><button type="button" class="button secondary" data-action="handoff">复制给 Codex 继续配置</button><button type="button" class="button primary" data-action="export_candidate" disabled>确认并导出配置</button></div>
+        </section>
+
+        <section id="view-configure" class="view" aria-labelledby="title-configure" hidden>
+          <div class="section-heading"><h1 id="title-configure">导入与核对</h1><p>按已确认的方案手动导入，再选择客户端导出的文件核对。</p></div>
+          <div class="notice"><strong id="configure-activation-title">候选已准备，尚不能直接启用</strong><p id="configure-activation-reason">应用额外行为仍需核对。先复制提示词，让 Codex 继续核实本机情况。</p></div>
+          <ol class="instruction-list">
+            <li><span>1</span><div><h2>保留原配置和恢复资料</h2><p>先打开材料目录，核对差异和恢复说明。不要覆盖唯一的原始配置。</p></div></li>
+            <li><span>2</span><div><h2>继续完成网络配置</h2><p>将续做提示词交给 Codex，核实本机情况和具体方案。确认后，再从客户端的导入入口选择新文件。</p></div></li>
+            <li><span>3</span><div><h2>从客户端重新导出</h2><p>导入后导出实际配置，回到这里选择文件核对。客户端若要求重启，请先保存进度，再自行操作。</p></div></li>
+          </ol>
+          <details class="details"><summary>文件核对的范围</summary><p>文件匹配不代表网络已生效。DNS、代理路径、IPv6 和实际客户端仍需逐项验证；网络验证完成后再使用 AI。</p></details>
+          <p class="inline-error" data-error-for="configure" role="alert" hidden></p>
+          <div class="actions wrap"><button type="button" class="button secondary" data-action="choose_readback">已导入，选择导出文件核对</button><button type="button" class="button primary" data-action="handoff">复制给 Codex 继续配置</button></div>
+        </section>
+
+        <section id="view-verify" class="view" aria-labelledby="title-verify" hidden>
+          <div class="section-heading"><h1 id="title-verify">检查结果</h1><p>文件匹配只证明内容一致。网络与客户端的未完成项见下方。</p></div>
+          <div class="checks-list" data-checks></div>
+          <p class="inline-error" data-error-for="verify" role="alert" hidden></p>
+          <div class="actions wrap"><button type="button" class="button secondary" data-action="choose_readback">重新选择导出文件</button><button type="button" class="button primary" data-action="handoff">复制给 Codex 继续验证</button><button type="button" class="text-button" data-view="deliver">查看交付记录</button></div>
+        </section>
+
+        <section id="view-deliver" class="view" aria-labelledby="title-deliver" hidden>
+          <div class="section-heading"><h1 id="title-deliver">交付记录</h1></div>
+          <div class="result-summary"><p>已完成 <span id="done-count">0</span> 项 · 未完成 <span id="pending-count">0</span> 项</p></div>
+          <p id="delivery-summary" class="hint">尚无检查记录。先完成本地准备。</p>
+          <div class="checks-list" data-checks></div>
+          <p class="hint">完整配置、差异、检查记录与恢复资料留在本机。请勿把含订阅凭据的材料发到公开聊天。</p>
+          <p class="inline-error" data-error-for="deliver" role="alert" hidden></p>
+          <div class="actions"><button type="button" class="button secondary" data-action="reveal_workspace">打开材料目录</button><button type="button" class="button primary" data-action="handoff">复制续做提示词</button></div>
+        </section>
+
+        <section id="view-results" class="view" aria-labelledby="title-results" hidden>
+          <div class="section-heading"><h1 id="title-results">检查结果</h1><p id="checked-at">尚无已保存的检查时间。</p></div>
+          <div class="checks-list" data-checks></div>
+          <p class="hint">本页展示已保存结果。刷新进度不会重新扫描或联网。</p>
+          <p class="inline-error" data-error-for="results" role="alert" hidden></p>
+          <div class="actions wrap"><button type="button" class="button secondary" data-action="choose_report">导入检查报告</button><button type="button" class="button secondary" data-action="status">刷新已保存进度</button></div>
+        </section>
+
+        <section id="view-help" class="view" aria-labelledby="title-help" hidden>
+          <div class="section-heading"><h1 id="title-help">使用说明</h1><p>应用用于准备配置文件、核对内容和保存检查记录。</p></div>
+          <div class="help-block"><h2>我需要准备什么？</h2><p>已有代理客户端的完整导出配置，以及一个明确要使用的节点。仅有订阅链接或节点片段时，请先从客户端导出完整配置。</p></div>
+          <div class="help-block"><h2>为什么导出后还有未完成？</h2><p>生成文件、导入配置、实际生效是不同的事。文件核对完成后，仍需验证 DNS、代理、IPv6 和选定客户端的真实使用。</p></div>
+          <div class="help-block"><h2>什么时候需要 Codex？</h2><p>需要核实系统接口、运行中的客户端或网络路径时，复制续做提示词交给 Codex。它会按当前材料继续，不把旧记录当作新的授权。</p></div>
+          <div class="help-block"><h2>需要重启怎么办？</h2><p>先保存进度与恢复说明，再由你手动重启。连接恢复后重新验证，不根据“点过按钮”就判定成功。</p></div>
+          <div class="help-block"><h2>应用会自动执行什么？</h2><p>打开应用只读取保存的进度，不自动检查或联网。应用不会修改当前网络、自动启动 AI、清理账号或修改指纹，也不会自动安装代理、创建账号、购买订阅。</p></div>
+          <p class="inline-error" data-error-for="help" role="alert" hidden></p>
+        </section>
+
+        <section id="view-recovery" class="view" aria-labelledby="title-recovery" hidden>
+          <div class="section-heading"><h1 id="title-recovery">恢复资料</h1><p>原始配置、生成材料与待办保存在本机私有目录。</p></div>
+          <div class="help-block"><h2>导入前</h2><p>保留客户端原始配置、选择状态和必要设置。仅备份导出文件，不能替代系统接口与软件内部状态的备份。</p></div>
+          <div class="help-block"><h2>连接异常时</h2><p>按本轮恢复说明手动恢复原配置。不要连续重启或重复覆盖文件；写入结果不明时，先核对现状。</p></div>
+          <div class="help-block"><h2>恢复连接后</h2><p>重新核对当前配置、DNS、代理路径与 IPv6，再继续未完成项。旧的网络验证结论不能直接复用。</p></div>
+          <p class="inline-error" data-error-for="recovery" role="alert" hidden></p>
+          <div class="actions"><button type="button" class="button secondary" data-action="reveal_workspace">打开材料目录</button><button type="button" class="button primary" data-action="handoff">复制续做提示词</button></div>
+        </section>
+      </main>
+      <footer class="workspace-foot"><span id="saved-state">等待读取进度</span></footer>
+    </div>
+  </div>
+</body>
+</html>

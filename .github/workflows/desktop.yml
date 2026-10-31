@@ -5,10 +5,20 @@ on:
     tags: ['v*']
     paths: ['desktop/**', 'src/**', 'tools/build.py', 'VERSION', '.github/workflows/desktop.yml']
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing draft release tag; use with artifact_run_id to retry attachment verification'
+        required: false
+        default: ''
+      artifact_run_id:
+        description: 'Existing run whose two desktop package jobs succeeded for the release commit'
+        required: false
+        default: ''
 permissions:
   contents: read
 jobs:
   package:
+    if: github.event_name != 'workflow_dispatch' || inputs.artifact_run_id == ''
     strategy:
       fail-fast: false
       matrix:
@@ -46,7 +56,10 @@ jobs:
           retention-days: 14
           compression-level: 0
   release-assets:
-    if: github.ref_type == 'tag'
+    if: >-
+      always() && ((github.ref_type == 'tag' && needs.package.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' &&
+      inputs.artifact_run_id != '' && needs.package.result == 'skipped'))
     needs: package
     runs-on: ubuntu-latest
     permissions:
@@ -55,9 +68,29 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      RELEASE_TAG: ${{ github.ref_name }}
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+      ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id || github.run_id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+      - name: Bind artifacts to the checked-out release commit and successful package jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "TARGET_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          python - <<'PY'
+          import json, os, subprocess
+          run_id = os.environ['ARTIFACT_RUN_ID']
+          assert run_id.isdecimal()
+          repo = os.environ['GH_REPO']
+          target = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          run = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/actions/runs/{run_id}']))
+          assert run['head_sha'] == target and run['path'] == '.github/workflows/desktop.yml'
+          jobs = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100']))['jobs']
+          packages = [j for j in jobs if j['name'].startswith('package (')]
+          assert len(packages) == 2 and all(j['conclusion'] == 'success' for j in packages)
+          PY
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -65,8 +98,10 @@ jobs:
       - run: python tools/build.py
       - uses: actions/download-artifact@v4
         with:
-          pattern: desktop-*-${{ github.sha }}
+          pattern: desktop-*-${{ env.TARGET_SHA }}
           path: release-desktop
+          run-id: ${{ env.ARTIFACT_RUN_ID }}
+          github-token: ${{ github.token }}
       - name: Verify embedded kits and prepare attachment hashes
         shell: bash
         run: |
@@ -92,7 +127,22 @@ jobs:
                   assert {n[len(prefix):] for n in archive.namelist()
                           if n.startswith(prefix) and not n.endswith('/')} == set(canonical)
                   for relative, data in canonical.items():
-                      assert archive.read(prefix + relative) == data, (path.name, relative)
+                      embedded = archive.read(prefix + relative)
+                      if relative == 'PACKAGE-INFO.json':
+                          assert json.loads(embedded) == json.loads(data), path.name
+                      elif relative != 'SHA256SUMS.txt':
+                          assert embedded == data, (path.name, relative)
+                  # Generated metadata can use platform-native newlines. Verify
+                  # its actual bytes against the embedded manifest, while all
+                  # source files above must still match the tagged source.
+                  hashes = {}
+                  for line in archive.read(prefix + 'SHA256SUMS.txt').decode().splitlines():
+                      digest, relative = line.split('  ', 1)
+                      assert relative not in hashes
+                      hashes[relative] = digest
+                  assert set(hashes) == set(canonical) - {'SHA256SUMS.txt'}
+                  for relative, digest in hashes.items():
+                      assert hashlib.sha256(archive.read(prefix + relative)).hexdigest() == digest
           files = desktop + [Path('dist/Claude-Setup-Kit.zip'),
                              Path('dist/Claude-Setup-Kit.zip.sha256')]
           manifest = {p.name: {'sha256': hashlib.sha256(p.read_bytes()).hexdigest(),
@@ -103,7 +153,7 @@ jobs:
           manifest[sums.name] = {'sha256': hashlib.sha256(sums.read_bytes()).hexdigest(),
                                  'bytes': sums.stat().st_size}
           Path('dist/release-validation.json').write_text(json.dumps({
-              'tag': os.environ['RELEASE_TAG'], 'commit': os.environ['GITHUB_SHA'],
+              'tag': os.environ['RELEASE_TAG'], 'commit': os.environ['TARGET_SHA'],
               'embedded_kits_match_source': True, 'assets': manifest}, indent=2) + '\n')
           PY
       - name: Attach verified files to existing draft only
@@ -114,7 +164,7 @@ jobs:
           gh release upload "$RELEASE_TAG" --clobber dist/Claude-Setup-Kit.zip dist/Claude-Setup-Kit.zip.sha256 dist/SHA256SUMS.txt release-desktop/*/*.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: release-validation-${{ github.sha }}
+          name: release-validation-${{ env.TARGET_SHA }}
           path: |
             dist/release-validation.json
             dist/SHA256SUMS.txt

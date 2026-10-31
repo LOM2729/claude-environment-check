@@ -600,9 +600,9 @@ def handoff(root, state, payload):
     keep = '、'.join(state['scope']['keep']) or '未指定，需核对'
     scope = ('# 本轮范围（只作上下文，不恢复授权）\n\n实际用途：' + clients + '\n必须保留：' + keep +
              '\n当前阶段：' + state['stage'] + '\n指定节点：' + (state['requested_node'] or '尚未选择') +
-             '\n保持系统语言、输入法、键盘、时区和浏览器语言；仅正常使用为本轮默认必需，其他生命周期事件未测未完成。\n')
+             '\n保持系统语言、输入法和键盘，浏览器语言无目标保留；完整配置按指定稳定出口提出具体时区方案，明确保留项优先；仅正常使用为本轮默认必需，其他生命周期事件未测未完成。\n')
     prompt = ('工具包位置：' + kit + '。本任务私有目录：' + str(root) + '。继续说明目录：' + str(folder) + '。\n请先读应用随包的 START-HERE.md、实际平台 Skill（.agents/skills/claude-mac-readiness/SKILL.md 或 '
-              '.agents/skills/claude-windows-readiness/SKILL.md）及其 references/five-step-setup.md。按唯一五步流程继续。'
+              '.agents/skills/claude-windows-readiness/SKILL.md）及其 references/five-step-setup.md。按默认快速路径继续，只处理本轮入口，具体方案一次确认后执行并集中复查；完整报告和额外演练按需，已有有效证据不重复核验。'
               + runtime_note +
               '读取本说明同目录的 desktop-engine.private.json，其中 kit_version 是本次工具包版本，engine_command 和 cli_prefix 由后端自身推导。'
               '本次使用该引擎参数数组附加 --cli 及原工具子命令，替代文档中的 python <Skill>/scripts/claude_setup.py；无需安装系统 Python。'

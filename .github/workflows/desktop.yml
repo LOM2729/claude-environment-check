@@ -1,6 +1,8 @@
 name: Desktop build and verification
 on:
   push:
+    branches: ['**']
+    tags: ['v*']
     paths: ['desktop/**', 'src/**', 'tools/build.py', 'VERSION', '.github/workflows/desktop.yml']
   workflow_dispatch:
 permissions:
@@ -43,3 +45,78 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
+  release-assets:
+    if: github.ref_type == 'tag'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python tools/build.py
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*-${{ github.sha }}
+          path: release-desktop
+      - name: Verify embedded kits and prepare attachment hashes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, zipfile
+          from pathlib import Path
+          version = Path('VERSION').read_text().strip()
+          assert os.environ['RELEASE_TAG'] == 'v' + version
+          desktop = sorted(Path('release-desktop').rglob('*.zip'))
+          expected = {f'Claude-Environment-Desktop-{version}-{target}.zip'
+                      for target in ('mac-arm64', 'win-x64')}
+          assert len(desktop) == 2 and {p.name for p in desktop} == expected
+          with zipfile.ZipFile('dist/Claude-Setup-Kit.zip') as kit:
+              canonical = {n.removeprefix('Claude-Setup-Kit/'): kit.read(n)
+                           for n in kit.namelist()}
+          for path in desktop:
+              with zipfile.ZipFile(path) as archive:
+                  assert archive.testzip() is None, path.name
+                  roots = [n[:-len('PACKAGE-INFO.json')] for n in archive.namelist()
+                           if n.endswith('/kit/PACKAGE-INFO.json')]
+                  assert len(roots) == 1, path.name
+                  prefix = roots[0]
+                  assert {n[len(prefix):] for n in archive.namelist()
+                          if n.startswith(prefix) and not n.endswith('/')} == set(canonical)
+                  for relative, data in canonical.items():
+                      assert archive.read(prefix + relative) == data, (path.name, relative)
+          files = desktop + [Path('dist/Claude-Setup-Kit.zip'),
+                             Path('dist/Claude-Setup-Kit.zip.sha256')]
+          manifest = {p.name: {'sha256': hashlib.sha256(p.read_bytes()).hexdigest(),
+                              'bytes': p.stat().st_size} for p in files}
+          sums = Path('dist/SHA256SUMS.txt')
+          sums.write_text(''.join(f'{manifest[name]["sha256"]}  {name}\n'
+                                  for name in sorted(manifest)))
+          manifest[sums.name] = {'sha256': hashlib.sha256(sums.read_bytes()).hexdigest(),
+                                 'bytes': sums.stat().st_size}
+          Path('dist/release-validation.json').write_text(json.dumps({
+              'tag': os.environ['RELEASE_TAG'], 'commit': os.environ['GITHUB_SHA'],
+              'embedded_kits_match_source': True, 'assets': manifest}, indent=2) + '\n')
+          PY
+      - name: Attach verified files to existing draft only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release upload "$RELEASE_TAG" --clobber dist/Claude-Setup-Kit.zip dist/Claude-Setup-Kit.zip.sha256 dist/SHA256SUMS.txt release-desktop/*/*.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-validation-${{ github.sha }}
+          path: |
+            dist/release-validation.json
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30

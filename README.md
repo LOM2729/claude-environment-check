@@ -20,7 +20,15 @@
 4. **使用 AI**：当前网络核验通过后，才启动／安装／登录实际需要的客户端并验证真实功能。
 5. **交付**：简短结果、未完成原因和下一步，私有记录留本机；需要中断时保存进度，恢复后从核对点继续。
 
-[五步细则](.agents/skills/claude-mac-readiness/references/five-step-setup.md) 是唯一执行顺序；长清单是内部核对表。客户不用填写技术参数或 JSON，已有配置和节点不重复问。系统语言保持，时区和浏览器语言没有明确目标也保留。
+[五步细则](.agents/skills/claude-mac-readiness/references/five-step-setup.md) 是唯一执行顺序；长清单是内部核对表。客户不用填写技术参数或 JSON，已有配置和节点不重复问。系统语言保持，完整配置默认把时区对齐指定稳定出口纳入方案，目标不清先补问；浏览器语言无明确目标保留。
+
+## 新增准备与排障模块
+
+完整配置默认将系统时区对齐指定稳定出口的具体时区，原值、自动选项、影响与恢复列入方案，批准后执行并读回；明确保留项及局部任务按用户范围处理。系统语言、输入法和键盘继续保留。
+
+按实际任务读取 [时区目标与验证](.agents/skills/claude-mac-readiness/references/timezone-policy.md)、[本机／VM／VPS 与出口规划](.agents/skills/claude-mac-readiness/references/deployment-routes.md)、[账号与订阅准备](.agents/skills/claude-mac-readiness/references/account-preparation.md)、[事故与清理规划](.agents/skills/claude-mac-readiness/references/incident-and-cleanup.md)。
+
+[Claude-Guardian 固定版本审阅](.agents/skills/claude-mac-readiness/references/guardian-integration.md)记录参考方法和检测判据的局限；未接入其执行脚本，也不把固定养号天数、第三方全绿或免封保证设为要求。
 
 ## 默认网络目标
 

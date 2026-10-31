@@ -1,6 +1,6 @@
 ---
 name: claude-windows-readiness
-description: Prepare and troubleshoot Claude environments on Windows, including update drift review, opt-in network probes, fresh startup checks, customer checklists and a batch configuration workflow that preserves system language, Clash configuration imports, time/language settings, authentication and DNS/network paths in native Windows versus WSL. Preview concrete setting changes and verify actual results. Use for customer setup, connection failures or environment audits; not ordinary chats or purchases.
+description: Prepare and troubleshoot Claude environments on Windows (including native Windows versus WSL), with local/VM/VPS route and egress planning, subscription preparation, timezone alignment, proxy/DNS checks, incident triage and explicitly requested cleanup planning. Preview concrete changes, preserve system language, and verify actual results. Use for Claude setup and related planning or failures; not ordinary chats, performing payments, or indiscriminate device resets.
 ---
 
 # Claude Windows 环境检查
@@ -9,13 +9,15 @@ description: Prepare and troubleshoot Claude environments on Windows, including 
 
 **配置任务只按 [五步流程](references/five-step-setup.md) 执行。** 先自动识别、少量补问，离线检查隐含请求／DIRECT／UDP／依赖，准备完整最终候选、差异和恢复材料；再一次具体确认 → 配置网络与非 AI 核验 → 实际 AI 功能 → 简短交付。其他参考与现场清单是核对模块，不另设操作顺序；八章仅在客户明确请求时展开。
 
-开场最多补三组无法读取的关键缺口：实际产品／入口用途、缺失的配置与节点选择、必须保留的业务。已知不问；版本、端口、路径和技术参数自己读，不让客户编辑 JSON。包内自动启动提示词采用 [自动模式](references/automatic-configuration.md)，系统语言、输入法和键盘保留；时区和浏览器语言未明确目标也保留。
+开场最多补三组无法读取的关键缺口：实际产品／入口用途、缺失的配置与节点选择、必须保留的业务。已知不问；版本、端口、路径和技术参数自己读，不让客户编辑 JSON。包内自动启动提示词采用 [自动模式](references/automatic-configuration.md)，系统语言、输入法和键盘保留；完整配置默认提出指定稳定出口的具体时区方案，目标不清先补问；浏览器语言无明确目标保留。
 
 默认 `domestic-v4`：完整 [AI专属组与路径](references/service-routing-checks.md)、[IPv6关闭](references/unified-ipv4.md)、[国内视频／域名与UDP](references/domestic-video-udp.md)、[教程覆盖](references/tutorial-coverage.md) 和 [连接设置](references/connection-reuse.md) 均保留。Claude专属组与基础组同一指定节点，AI保护优先；视频直连在其余UDP拒绝前。Mihomo生成YAML／JSON，小火箭按 [原生适配](references/shadowrocket-domestic.md) 生成、导入和读回，不修改其私有数据库。
 
 DNS／代理、精确接口IPv6读回、获准非AI路径验证和当前 `dns-ready` 是后续AI访问（含DNS查询）的前提；安装／诊断、登录、浏览器重启和恢复标签均后置。只有确定离线的本机检查可前置。保护正在运行的Codex／远控，不自行断开通道。
 
 需要中断时按 [进度保存与继续](references/workflow-progress.md) 留存私有材料和离线说明；仅确需重启时给客户具体动作、影响与恢复办法再问时机，客户手动完成，恢复后重新核验网络。按 [可靠回滚与生命周期验收](references/recovery-and-acceptance.md) 保护后续修改；默认仅正常使用为本次必需，其他七类事件列后续复查，未实测保持未完成，不主动制造事件。
+
+自动配置／完整搭建默认把**时区对齐指定稳定出口**纳入具体方案，按 [时区目标与验证](references/timezone-policy.md) 确定城市和时区 ID、保留原值、执行并读回；系统语言继续保留。局部任务和用户明确保留项按本轮范围处理。
 
 ## 选择范围
 
@@ -25,6 +27,9 @@ DNS／代理、精确接口IPv6读回、获准非AI路径验证和当前 `dns-re
 
 | 用户请求 | 加载与检查 |
 | --- | --- |
+| 本机／VM／VPS 选择、固定出口、自建代理或线路慢 | 读 [路线与出口规划](references/deployment-routes.md)，区分程序执行位置与出口；按需求进入部署或性能排障 |
+| 首次注册、订阅渠道、套餐或使用节奏 | 读 [账号与订阅准备](references/account-preparation.md)，核对当前官方条件、实际需求和原渠道状态 |
+| 403／429／529、身份核验、疑似凭据暴露或明确清理请求 | 读 [事故与清理规划](references/incident-and-cleanup.md)，先分流当前问题，清理仅按明确对象和目的展开 |
 | Net.Coffee 拓展阅读、Claude 单独分组、规则优先级、网页可用但CLI失败 | 读 [分组与拓展资料吸收](references/service-routing-checks.md)，按当前默认策略验收，官方依据与社区推测分开 |
 | 自动配置、一键配置、除系统语言外帮我配好 | 优先读 [自动配置模式](references/automatic-configuration.md)：系统语言保持不变，先准备具体方案，一次确认后连续执行与复测；不再每项重复询问 |
 | 更新后复查、主动网络验证、检查并启动客户端 | 读 [生命周期检查](references/lifecycle-checks.md)，保存本机基线、审阅探测范围、运行本轮检查；未完成的必需项阻止启动，超时不算零泄漏 |
@@ -39,10 +44,11 @@ DNS／代理、精确接口IPv6读回、获准非AI路径验证和当前 `dns-re
 | 已付费但计划/额度不符 | 读 [账号与账单状态](references/billing-checks.md)，区分购买渠道、历史付款与当前认证 |
 | 常规环境检查、首次配置 | 读检查参考，覆盖所用客户端、认证和正常连接；断线保护按需静态核对，故障演练另行确认 |
 | 照原 X 帖完整走一遍 | 仅此明确请求才读 [八章主题核对](references/guided-workflow.md)，执行仍按五步，已有账号不重走注册 |
-| 时区、区域或 Chrome 英语 | 读 [语言与时区模块](references/locale-and-language.md)，只处理用户要求的设置 |
+| 时区、区域或 Chrome 英语 | 时区按 [目标与验证](references/timezone-policy.md) 纳入完整配置方案；语言、地区及局部任务按用户目标 |
 | Clearpath 体检、检测分数、DNS/WebRTC/IPv6 提示 | 读 [浏览器体检与分数解读](references/score-check.md)，在目标设备实际使用的浏览器及配置中检查；Windows 浏览器结果不代替 WSL |
 | 核对“防封”经验、比较资料 | 读 [经验核对](references/claim-review.md)，分开官方规则、第三方经验与目标机结果 |
-| EianLu 原帖、Claude-Guardian 或官方与个人经验的区别 | 读 [已核对来源](references/evidence-sources.md)，固定来源版本并保留实现／实测边界 |
+| EianLu 原帖、官方与个人经验的区别 | 读 [已核对来源](references/evidence-sources.md)，固定来源版本并保留实现／实测边界 |
+| Claude-Guardian、新版能力或第三方网络报告 | 读 [Guardian 增量核对](references/guardian-integration.md)，按实际版本审查能力与证据；不把报告通过标签直接当作本机验收 |
 
 局部排障不自动扩成八章服务；常规检查不自动进入邮箱、结账页或修改语言/地区。
 

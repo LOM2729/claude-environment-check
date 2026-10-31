@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.15.0'
+VERSION = '0.16.0'
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -601,8 +601,8 @@ def collection_rows(raw):
 
 
 REPORT_TASKS = (
-    ('system_time', '时间与时区', '尚未核对时间准确性及客户需要的时区。', '核对现状并问客户是否需要调整；需要修改时说明目标、影响和恢复办法，确认后修改并复测。'),
-    ('system_language', '系统语言与地区', '尚未确认当前语言和地区格式是否符合客户需要。', '展示当前设置，询问是否保留；若要调整，按客户选定目标修改后检查显示和格式。'),
+    ('system_time', '时间与时区', '尚未核对时间准确性及本轮目标时区。', '自动配置或完整搭建默认按指定稳定出口提出具体城市和时区；明确保留项优先，目标不清先补问。原值、自动选项和恢复纳入方案，沿用有效批准执行并读回；局部任务按用户范围处理。'),
+    ('system_language', '系统语言与地区', '尚未确认当前语言和地区格式是否符合客户需要。', '系统语言、输入法及键盘默认保留并核对；地区格式仅按明确目标处理。已有有效批准不重复询问，必要修改后读回显示和格式。'),
     ('system_proxy', '代理与接管', '只读取了代理开关，尚未验证实际接管范围。', '确认客户需要的分流范围；调整系统代理或 TUN 前逐项询问，随后验证目标程序路径。'),
     ('system_dns', '系统与代理 DNS', '只读取了 DNS 设置，实际解析路径尚未验证。', '核对系统、代理和浏览器解析责任；需要调整哪一层先问客户，获准后复测。'),
     ('ip_families', 'IPv4／IPv6', '接口信息不能证明实际出口和 IPv6 行为。', '在获准范围分别验证地址族与代理各段，确需调整 IPv6 时先说明范围并询问。'),

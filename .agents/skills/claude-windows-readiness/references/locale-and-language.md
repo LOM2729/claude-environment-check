@@ -1,15 +1,15 @@
-# Windows 时区、区域与 Chrome 英语：可选模块
+# Windows 时区对齐与可选语言、区域设置
 
-本包固定保留系统显示语言、输入法和键盘。时区与浏览器语言没有明确目标也保留；本模块仅在客户已有明确体验目标时使用，不能按出口地区自动改值。浏览器重启仍后置于网络核验。
+本包固定保留系统显示语言、输入法和键盘。完整配置的时区按 [出口对齐方案](timezone-policy.md) 纳入具体方案，目标不清先补问，不从国家或节点名称猜城市；局部任务及明确保留项按用户范围处理，浏览器语言无目标保留。浏览器重启仍后置于网络核验。
 
 自动配置顺序以 [五步流程](five-step-setup.md) 为准。网络及选定接口 IPv6 未核验前，不打开/安装/登录 AI，不运行未证明离线的 CLI 诊断，不重启浏览器恢复标签。代理校验/导入/启用/重载前先检查测速、health-check、资源下载及附加请求。纯本机时间/语言字段检查可并行。
 
-完整客户搭建服务先只读记录；局部任务按需使用，先核实用户是否要求修改。自动校时、时区及自动时区、国家或地区、区域格式、Windows 显示语言、浏览器首选语言和菜单语言是不同设置；修改前按 [逐项确认协议](change-confirmation.md)预览并复用已有明确批准。手动选择时区通常保留自动设置时间。设置变化不证明实际使用地点，也不保证账号不会受限制。
+自动配置／完整搭建默认按 [时区策略](timezone-policy.md) 对齐指定稳定出口；局部任务与明确保留项遵循用户范围。先只读记录原值，系统语言保持。自动校时、时区及自动时区、国家或地区、区域格式、Windows 显示语言、浏览器首选语言和菜单语言是不同设置；修改前按 [逐项确认协议](change-confirmation.md)预览并复用已有明确批准。手动选择时区通常保留自动设置时间。设置变化不证明实际使用地点，也不保证账号不会受限制。
 
 ## Windows 时区
 
 1. 只读记录“设置 → 时间和语言 → 日期和时间”中的“自动设置时区”和当前时区，并用 PowerShell 的 Get-TimeZone 核对。不能因显示时间与某地相同就推断时区标识正确。
-2. 用户选定目标后，在“日期和时间”中关闭自动时区并从列表选择；也可在用户逐项确认后使用 Microsoft 文档支持的 Set-TimeZone，先用 Get-TimeZone -ListAvailable 查目标 ID，不盲填。由用户处理 Windows 管理员提示。[微软设置说明](https://support.microsoft.com/en-us/windows/experience/personalization/set-time-date-and-time-zone-settings-in-windows) · [Set-TimeZone 文档](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-timezone)
+2. 具体目标和影响已包含在有效批准方案后，在“日期和时间”中关闭自动时区并从列表选择；也可按该批准使用 Microsoft 文档支持的 Set-TimeZone，先用 Get-TimeZone -ListAvailable 查目标 ID，不盲填。由用户处理 Windows 管理员提示。[微软设置说明](https://support.microsoft.com/en-us/windows/experience/personalization/set-time-date-and-time-zone-settings-in-windows) · [Set-TimeZone 文档](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-timezone)
 3. 修改后再运行 Get-TimeZone，检查日历与本地时间显示。回退时恢复原时区和“自动设置时区”原值。若之后改变区域或网络定位选项，复核是否被重置。
 
 ## Windows 区域和系统语言

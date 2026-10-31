@@ -55,7 +55,7 @@
 
 - WebRTC 泄露要在用户实际使用的浏览器里测，记录是否观察到真实公网 IP；关闭 STUN 或 WebRTC 可能影响音视频。IP 检测站的“风险分”是其启发式评分，不是 Anthropic 的封号概率。访问第三方检测站前告知站点和会传出的出口 IP，并取得该站点的确认；不要把原始 candidate 或完整 IP 写入报告。
 - 远程图片像素可让发件方知道邮件被打开；跟踪链接也可能记录点击。[Proton 的说明](https://proton.me/support/email-tracker-protection)介绍其拦截机制。[Gmail 的说明](https://support.google.com/mail/answer/145919)指出远程图片经 Google 代理加载，不能直接把“显示图片”推断为向发件方暴露真实 IP。邮箱选择不证明账号“权重”。
-- 浏览器语言、Mac 地区和时区主要影响用户界面与格式。只有用户明确要求时才改，并提醒其影响整台机器。操作与验证见 [语言与时区模块](locale-and-language.md)。不要为迎合某个出口 IP 自动伪装设备信息。
+- 自动配置／完整搭建的时区按 [默认出口对齐方案](timezone-policy.md) 执行；先明确具体目标和整机影响，保留系统语言。浏览器语言与 Mac 地区另按用户目标处理。操作与读回见 [语言与时区模块](locale-and-language.md)。
 
 ## 交付口径
 

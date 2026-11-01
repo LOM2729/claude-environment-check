@@ -1,6 +1,6 @@
 {
   "name": "claude-environment-desktop",
-  "version": "0.16.1",
+  "version": "0.16.2",
   "private": true,
   "description": "Claude 环境检测桌面端",
   "main": "main.cjs",

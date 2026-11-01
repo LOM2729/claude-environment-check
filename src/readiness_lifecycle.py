@@ -173,14 +173,21 @@ def save_report(c, output, kind, rows, extra=None, private=None, create=True):
     return public
 
 
-def create_baseline(c, config, fmt, original, node, group, executable, browser, output, policy='ai-only', direct_review=None):
+def create_baseline(c, config, fmt, original, node, group, executable, browser, output, policy='ai-only', direct_review=None,
+                    reconcile_existing=False):
+    c.require(isinstance(reconcile_existing, bool), 'BASELINE_RECONCILIATION_INVALID')
     fmt = c.config_format(config, fmt)
     current, before = c.read_bytes(config), c.read_bytes(original)
+    app_metadata = ai_routing.app_node(c, node) if getattr(c, 'app_node_binding', None) is not None else None
+    app_snapshot = c.encode(app_metadata) if app_metadata is not None else None
     if policy in ('domestic-v4', 'unified-v4'):
         import domestic_policy
         import unified_policy
-        unified_policy = domestic_policy if policy == 'domestic-v4' else unified_policy
-        audit = unified_policy.audit(c, before, current, fmt, node, group, direct_review)
+        if policy == 'domestic-v4':
+            audit = domestic_policy.audit(c, before, current, fmt, node, group, direct_review,
+                                          reconcile_existing=reconcile_existing)
+        else:
+            audit = unified_policy.audit(c, before, current, fmt, node, group, direct_review)
     else:
         audit = ai_routing.audit(c, before, current, fmt, node, group)
     c.require(audit['status'] == 'static_policy_matches', 'BASELINE_AI_POLICY_MISMATCH')
@@ -191,10 +198,19 @@ def create_baseline(c, config, fmt, original, node, group, executable, browser, 
               'format': fmt, 'policy': policy, 'direct_review': direct_review, 'config_sha256': c.sha(current), 'ai_original_sha256': c.sha(before),
               'node': node, 'group': group, 'client': client, 'native': native,
               'browser_path': str(Path(browser).absolute()) if browser else None, 'browser_sha256': browser_hash}
+    # These are static preparation inputs, never renewed observations, consent
+    # or evidence that the app currently adopts the configuration.
+    record['reconcile_existing'] = reconcile_existing if policy == 'domestic-v4' else False
+    record['runtime_adoption_verified'] = False
+    if app_snapshot is not None:
+        record['app_node_metadata_sha256'] = c.sha(app_snapshot)
+        record['app_node_context_kind'] = 'caller_supplied_static_declaration'
     c.new_dir(output)
     folder = Path(output)
     c.write_new(folder / 'config.bin', current)
     c.write_new(folder / 'ai-original.bin', before)
+    if app_snapshot is not None:
+        c.write_new(folder / 'app-node.private.json', app_snapshot)
     raw = c.encode(record)
     c.write_new(folder / 'baseline.json', raw)
     c.write_new(folder / 'baseline.sha256', (c.sha(raw) + '\n').encode())
@@ -212,9 +228,26 @@ def read_baseline(c, directory):
     c.require(isinstance(data.get('native'), dict) and isinstance(data['native'].get('values'), dict)
               and isinstance(data.get('client'), dict) and isinstance(data.get('node'), str)
               and isinstance(data.get('group'), str) and data.get('format') in ('yaml', 'json', 'shadowrocket'), 'BASELINE_SCHEMA_INVALID')
+    c.require(isinstance(data.get('reconcile_existing', False), bool), 'BASELINE_SCHEMA_INVALID')
     current = c.read_bytes(root / 'config.bin')
     original = c.read_bytes(root / 'ai-original.bin')
     c.require(c.sha(current) == data.get('config_sha256') and c.sha(original) == data.get('ai_original_sha256'), 'BASELINE_SNAPSHOT_MISMATCH')
+    if 'app_node_metadata_sha256' in data:
+        expected = data['app_node_metadata_sha256']
+        c.require(isinstance(expected, str) and re.fullmatch(r'[0-9a-f]{64}', expected), 'BASELINE_SCHEMA_INVALID')
+        snapshot = c.read_bytes(root / 'app-node.private.json')
+        c.require(c.sha(snapshot) == expected, 'BASELINE_APP_NODE_SNAPSHOT_MISMATCH')
+        metadata = c.load_json(snapshot)
+
+        class SnapshotContext:
+            # Validate saved bytes in isolation; never assign them to c or use
+            # the snapshot as a current app observation during recheck.
+            app_node_binding = metadata
+
+            def __getattr__(self, key):
+                return getattr(c, key)
+
+        ai_routing.app_node(SnapshotContext(), data['node'])
     return data, current, original
 
 
@@ -230,13 +263,30 @@ def recheck(c, baseline, config, executable, browser=None):
     rows.append(item('config_drift', '有效配置文件复查', same,
                      '与本机已确认基线一致；尚不证明运行中核心已载入。' if same else '配置文件变化、被移动或无法读取，需要核对，不能自动恢复旧值。',
                      '核对运行中配置及订阅更新持久化。' if same else '用原基线与当前文件生成私有差异；确认新增修改后建立新基线。'))
+    app_context_matches = True
+    if saved.get('app_node_metadata_sha256') is not None:
+        try:
+            metadata = ai_routing.app_node(c, saved['node'])
+            app_context_matches = metadata is not None and c.sha(c.encode(metadata)) == saved['app_node_metadata_sha256']
+        except c.SetupError:
+            app_context_matches = False
+        rows.append(item('app_node_context', '本轮应用内节点元数据', app_context_matches,
+                         '本轮显式提供的节点元数据与基线静态声明一致；不证明客户端实际采用或节点当前状态。'
+                         if app_context_matches else
+                         '本轮未提供有效节点元数据，或其声明与基线不同；不能把保存的快照当作本轮读回。',
+                         '另行核对应用实际采用及连接链；此项仅比较声明。' if app_context_matches else
+                         '从当前客户端重新只读核对指定节点，以 --app-node-reference 提供本轮私有元数据；如节点已变，审阅差异后重新准备候选并建立基线。'))
     try:
         c.require(now is not None, 'CURRENT_CONFIG_UNAVAILABLE')
+        c.require(app_context_matches, 'CURRENT_APP_NODE_CONTEXT_REQUIRED')
         if saved.get('policy', 'ai-only') in ('domestic-v4', 'unified-v4'):
             import domestic_policy
             import unified_policy
-            unified_policy = domestic_policy if saved['policy'] == 'domestic-v4' else unified_policy
-            audit = unified_policy.audit(c, original, now, saved['format'], saved['node'], saved['group'], saved.get('direct_review'))
+            if saved['policy'] == 'domestic-v4':
+                audit = domestic_policy.audit(c, original, now, saved['format'], saved['node'], saved['group'],
+                                              saved.get('direct_review'), reconcile_existing=saved.get('reconcile_existing', False))
+            else:
+                audit = unified_policy.audit(c, original, now, saved['format'], saved['node'], saved['group'], saved.get('direct_review'))
         else:
             audit = ai_routing.audit(c, original, now, saved['format'], saved['node'], saved['group'])
         valid = audit['status'] == 'static_policy_matches'

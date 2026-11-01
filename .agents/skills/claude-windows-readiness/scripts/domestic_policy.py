@@ -40,7 +40,49 @@ def managed_rule(obj, rule):
     return bool(key and obj.get('rule-providers', {}).get(key) == snapshot()[key])
 
 
-def build_semantics(c, original, fmt, node, group, direct_review=None):
+def reconciled_inputs(c, original, fmt, node, group, direct_review):
+    """Explicit offline migration; retain the bound original DIRECT decisions."""
+    unknown, decisions = unified.direct_decisions(c, original, fmt, direct_review)
+    c.require(not unknown or bool(decisions), 'UNIFIED_DIRECT_REVIEW_REQUIRED')
+    try:
+        claude_group.normalize(c, original, fmt, node, group, ai.catalog(c))
+    except c.SetupError:
+        pass
+    else:
+        # The ordinary builder already understands this block. Do not turn a
+        # routine repeat run into a second migration of canonical policy.
+        return original, direct_review, {
+            'schema': 'claude-group-reconciliation/1', 'status': 'already_compatible',
+            'source_semantic_sha256': c.sha(c.encode(original)), 'conflicts': [],
+            **{key: [] for key in ('removed_group_indices', 'rebound_rule_indices',
+                                   'aliased_rule_indices', 'replaced_udp_rule_indices',
+                                   'unreachable_reject_indices', 'replaced_global_udp_rule_indices')},
+            'runtime_verified': False, 'writes_performed': False}
+    names = [x.split('=', 1)[0].strip() for x in original.get('proxy group', [])] if fmt == 'shadowrocket' else []
+    aliases = {}
+    for rule in original.get('rule' if fmt == 'shadowrocket' else 'rules', []):
+        action = ai.target(rule)
+        matches = [n for n in names if n.casefold() == action.casefold()]
+        if action not in names and len(matches) == 1 and action != matches[0]:
+            aliases[action] = matches[0]
+        if action == 'PROXY' and fmt == 'shadowrocket' and ai.app_node(c, node) is not None:
+            aliases[action] = node
+    prepared, report = claude_group.reconcile(c, original, fmt, node, group, ai.catalog(c), action_aliases=aliases)
+    c.require(prepared is not None, report['conflicts'][0]['code'] if report['conflicts'] else 'CLAUDE_RECONCILE_FAILED')
+    remaining, _ = unified.direct_decisions(c, prepared, fmt)
+    c.require(set(remaining) == set(unknown), 'RECONCILE_DIRECT_SCOPE_CHANGED')
+    review = None
+    if remaining:
+        review = {'schema': 'claude-direct-review/1', 'config_semantic_sha256': c.sha(c.encode(prepared)),
+                  'entries': [{'rule': rule, 'decision': decisions[rule],
+                               'reason': 'Retained unchanged DIRECT decision from the bound pre-migration source.'}
+                              for rule in dict.fromkeys(remaining)]}
+    return prepared, review, report
+
+
+def build_semantics(c, original, fmt, node, group, direct_review=None, reconcile_existing=False):
+    if reconcile_existing:
+        original, direct_review, _ = reconciled_inputs(c, original, fmt, node, group, direct_review)
     if fmt == 'shadowrocket':
         import shadow_domestic
         return shadow_domestic.build(c, original, node, group, direct_review)
@@ -97,28 +139,39 @@ def build_semantics(c, original, fmt, node, group, direct_review=None):
     return claude_group.add(c, result, fmt, node, group, catalog)
 
 
-def audit(c, baseline, candidate, fmt, node, group=ai.GROUP, direct_review=None):
-    expected = build_semantics(c, c.parse_config(baseline, fmt), fmt, node, group, direct_review)
+def audit(c, baseline, candidate, fmt, node, group=ai.GROUP, direct_review=None, reconcile_existing=False):
+    original = c.parse_config(baseline, fmt)
+    reconciliation = None
+    if reconcile_existing:
+        original, direct_review, reconciliation = reconciled_inputs(c, original, fmt, node, group, direct_review)
+    expected = build_semantics(c, original, fmt, node, group, direct_review)
     match = expected == c.parse_config(candidate, fmt)
-    return {'schema': 'claude-setup-ai-audit/1', 'policy': POLICY,
+    result = {'schema': 'claude-setup-ai-audit/1', 'policy': POLICY,
             'status': 'static_policy_matches' if match else 'unexpected_policy_or_other_changes',
             'claude_dedicated_group': match,
             'community_routing': community.audit_scope(),
             'domestic_video_udp_order': match, 'unified_proxy_rules': match,
             'runtime_verified': False, 'system_udp_verified': False, 'application_loaded': 'not_verified'}
+    if reconciliation is not None:
+        result['reconciliation'] = reconciliation
+    binding = ai.app_node(c, node) if fmt == 'shadowrocket' else None
+    if binding is not None:
+        result.update(app_node_reference_declared=True, app_node_metadata_sha256=c.sha(c.encode(binding)),
+                      app_node_runtime_verified=False, candidate_requires_same_app_node=True)
+    return result
 
 
-def prepare(c, current, fmt, node, output, group=ai.GROUP, direct_review=None):
+def prepare(c, current, fmt, node, output, group=ai.GROUP, direct_review=None, reconcile_existing=False):
     baseline = c.read_bytes(current)
     fmt = c.config_format(current, fmt)
-    expected = build_semantics(c, c.parse_config(baseline, fmt), fmt, node, group, direct_review)
+    expected = build_semantics(c, c.parse_config(baseline, fmt), fmt, node, group, direct_review, reconcile_existing)
     if fmt == 'json':
         candidate = c.encode(expected)
     else:
         render = unified.render_shadow if fmt == 'shadowrocket' else unified.render_yaml
         candidate = render(c, c.decode(baseline), expected).encode()
     c.require(len(candidate) <= c.MAX_FILE, 'INPUT_TOO_LARGE')
-    review = audit(c, baseline, candidate, fmt, node, group, direct_review)
+    review = audit(c, baseline, candidate, fmt, node, group, direct_review, reconcile_existing)
     c.new_dir(output)
     folder = Path(output)
     path = folder / ('candidate.' + ('conf' if fmt == 'shadowrocket' else fmt))
@@ -127,8 +180,19 @@ def prepare(c, current, fmt, node, output, group=ai.GROUP, direct_review=None):
         c.prepare_plan(current, path, fmt, folder / 'plan')
         c.require(c.read_bytes(folder / 'plan/original.bin') == baseline, 'UNIFIED_BASELINE_CHANGED')
     c.write_new(folder / 'ai-audit.json', c.encode(review))
-    return {'status': 'ai_candidate_prepared', 'policy': POLICY, 'content_changed': candidate != baseline,
+    if getattr(c, 'app_node_binding', None) is not None:
+        c.write_new(folder / 'app-node-reference.private.json', c.encode(c.app_node_binding))
+    result = {'status': 'ai_candidate_prepared', 'policy': POLICY, 'content_changed': candidate != baseline,
             'apply_supported': False, 'runtime_verified': False}
+    if review.get('reconciliation'):
+        result['reconciliation'] = {key: len(review['reconciliation'][key]) for key in
+                                  ('removed_group_indices', 'rebound_rule_indices', 'aliased_rule_indices',
+                                   'replaced_udp_rule_indices', 'unreachable_reject_indices',
+                                   'replaced_global_udp_rule_indices')}
+    if review.get('app_node_reference_declared'):
+        result.update(app_node_reference_declared=True, app_node_runtime_verified=False,
+                      candidate_requires_same_app_node=True)
+    return result
 
 
 def udp_check(c, config, fmt):

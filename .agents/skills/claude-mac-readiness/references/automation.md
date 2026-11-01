@@ -127,3 +127,23 @@ Codex 根据本轮真实请求重复填写 `review-template --required-item <TAS
 `workflow-save` 必须传 `--scope-file <本轮范围说明.md>`；由 Codex 记录实际产品／入口、必保业务、指定节点、保留项、本轮必需／后续验收和未知问题，客户不填模板。绑定文件的路径与SHA-256，继续说明与私有索引首先指向它；恢复先读范围，材料改变／缺失则未完成并重新核对，不能恢复授权或默认扩围。`workflow-save`／`workflow-resume` 的完整参数和示例见 [私有进度与继续](workflow-progress.md)。记录本轮五步阶段、准确下一步、等待对象和指定材料摘要，生成离线继续说明；恢复只核对，不应用、启动或联网。配置／目标／材料变化先审阅，保存记录不恢复授权或旧DNS核验，继续AI前始终重新核验当前网络。
 
 生成的 `report.html` 采用统一 [离线检查面板](report-dashboard.md)，当前必需项展开、补充项折叠；重新打开不会刷新检查或启动应用。
+
+## 已有小火箭配置的快速准备
+
+这些选项仅生成／审计私有副本，不导入、切换、重载或重启客户端：
+
+```text
+python <TOOL> direct-review --config <原生导出.conf> --classify-known --output <新review.json>
+python <TOOL> ai-route --config <原生导出.conf> --format shadowrocket --node <实际首页节点> --group <实际基础组> --direct-review <review.json> --app-node-reference <节点观察.private.json> --reconcile-existing --out <新候选目录>
+python <TOOL> ai-audit --baseline <同一原生导出.conf> --config <候选.conf> --node <同一节点> --group <同一组> --direct-review <同一review.json> --app-node-reference <同一节点观察.private.json> --reconcile-existing
+```
+
+- `--classify-known` 只按随包且校验哈希的国内域名快照、明确本地命名空间和私有／回环／链路本地网段批量分类；不扩大 exact 到整个后缀，不将未知公网地址自动设为直连。默认命令保持原有待审语义。
+- 只有用户明确要保留本轮现有 DIRECT 例外时才追加 `--preserve-existing`，把剩余例外记录为“沿用原意图”。这不证明地址安全、不会自动批准应用；不能因为要求快速就替用户保留未知国外直连。
+- `--reconcile-existing` 是明确的候选迁移意图，默认校验仍严格。仅接受两个组固定到同一节点的结构，显式整理唯一的大小写别名、由首页节点观察支持的 PROXY 引用、已证实不可达的同谓词兜底拒绝和可严格识别的 UDP 保护；完整新保护块重新生成。组绑定变化、歧义／嵌套、可达的自定义拒绝或未知出站继续拒绝，不静默覆盖。
+- 节点仅在小火箭首页时，Codex 只读观察当前选中节点及其类型、实际地址族、端口、代理链和客户端版本，生成下述私有元数据；不要求客户填写 JSON，也不复制 UUID／密码。不从节点备注推断服务器地址族。不能确认无链或唯一节点时保留阻塞。
+- 元数据字段为 `schema=shadowrocket-app-node/1`、`name`、`type`、`server_family`（ipv4/hostname/ipv6）、`port`、`chain=none`、`client_version`、`observation_source=native_ui`。格式验证不是独立真机证明。候选保留应用内节点引用，不凭空添加 Proxy 凭据；换设备、节点或版本后重新核对。
+- 审计保留原始与整理后语义哈希、具体变更索引和节点观察摘要。PRIVATE DIRECT 审阅只能在原有 DIRECT 文本完全未变时重新绑定；不能借迁移补造新批准。
+- `tutorial-check` 可传相同 `--app-node-reference` 做声明范围内的静态核对；实际加载、进程采用、DNS／UDP／IPv6 和业务流量仍另行验收。未导入时保持运行未验证，绝不为计时而切换正在承载 Codex 的配置。
+
+基线与后续复查：`baseline` 可传同一 `--app-node-reference` 及明确的 `--reconcile-existing` 保存静态准备上下文。`recheck`／`preflight` 必须另行传入本轮观察的 `--app-node-reference`，缺失或变化保持未完成；保存快照不恢复当前证据或授权，也不证明客户端实际采用。旧基线保持兼容。

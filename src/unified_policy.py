@@ -2,6 +2,7 @@
 import copy
 import ipaddress
 import json
+from functools import lru_cache
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
@@ -27,6 +28,8 @@ def normalize(c, original, fmt, node, group, catalog):
         if fmt == 'shadowrocket':
             existing = [line for line in base.get('proxy group', []) if line.split('=', 1)[0].strip() == group]
             known = {line.split('=', 1)[0].strip() for line in base.get('proxy', [])}
+            if ai.app_node(c, node) is not None:
+                known.add(node)
             fields = [x.strip() for x in existing[0].split('=', 1)[1].split(',')] if len(existing) == 1 else []
             c.require(len(fields) == 2 and fields[0].lower() == 'select' and fields[1] in known, 'UNIFIED_EXISTING_GROUP_REVIEW_REQUIRED')
             base['proxy group'].remove(existing[0])
@@ -92,12 +95,86 @@ def direct_decisions(c, original, fmt, review=None):
     return unknown, decisions
 
 
-def direct_template(c, config, fmt):
+@lru_cache(maxsize=1)
+def _domestic_domain_index():
+    """Use the checksum-validated bundled snapshot, never remote rule providers."""
+    import domestic_policy
+    exact, suffixes = set(), set()
+    for provider in domestic_policy.snapshot().values():
+        for domain in provider['payload']:
+            (suffixes if domain.startswith('+.') else exact).add(domain.removeprefix('+.'))
+    return frozenset(exact), frozenset(suffixes)
+
+
+_LOCAL_NETWORKS = tuple(ipaddress.ip_network(value) for value in (
+    '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8', '169.254.0.0/16',
+    '::1/128', 'fc00::/7', 'fe80::/10',
+))
+_DIRECT_REASONS = {
+    'known_domestic': 'Covered by the bundled domestic domain snapshot; runtime not verified.',
+    'reserved_local': 'Covered by an explicit local namespace or local network range; runtime not verified.',
+    'pending_review': 'Not covered by the offline classification; explicit review is required.',
+    'preserved_existing': 'Explicitly preserve the baseline DIRECT intent; destination safety and runtime are not verified.',
+}
+
+
+def classify_direct_rule(rule):
+    """Classify only wholly covered DIRECT destinations, without DNS or live I/O.
+
+    Exact snapshot entries never authorize a suffix. Suffix matching walks the
+    hostname's labels, so work depends on hostname length, not snapshot size.
+    A keep decision describes offline coverage, not approval to apply settings.
+    """
+    classification = 'pending_review'
+    parts = [part.strip() for part in rule.split(',')] if isinstance(rule, str) else []
+    if len(parts) in (3, 4) and parts[2].upper() == 'DIRECT':
+        kind, value = parts[0].upper(), parts[1]
+        if len(parts) == 3 and kind in ('DOMAIN', 'DOMAIN-SUFFIX'):
+            host = value.lower().removesuffix('.')
+            if re.fullmatch(r'[a-z0-9_-]+(?:\.[a-z0-9_-]+)*', host):
+                if host in ('localhost', 'local') or host.endswith(('.localhost', '.local')):
+                    classification = 'reserved_local'
+                else:
+                    exact, suffixes = _domestic_domain_index()
+                    labels = host.split('.')
+                    if ((kind == 'DOMAIN' and host in exact)
+                            or any('.'.join(labels[index:]) in suffixes for index in range(len(labels)))):
+                        classification = 'known_domestic'
+        elif kind in ('IP-CIDR', 'IP-CIDR6') and (len(parts) == 3 or parts[3].lower() == 'no-resolve'):
+            try:
+                network = ipaddress.ip_network(value, strict=False)
+                family = 4 if kind == 'IP-CIDR' else 6
+                if network.version == family and any(
+                        network.version == local.version and network.subnet_of(local) for local in _LOCAL_NETWORKS):
+                    classification = 'reserved_local'
+            except ValueError:
+                pass
+    return {'classification': classification,
+            'decision': 'pending' if classification == 'pending_review' else 'keep',
+            'reason': _DIRECT_REASONS[classification]}
+
+
+def direct_template(c, config, fmt, *, classify_known=False, preserve_existing=False):
     fmt = c.config_format(config, fmt)
     original = c.parse_config(c.read_bytes(config), fmt)
     unknown, _ = direct_decisions(c, original, fmt)
-    return {'schema': 'claude-direct-review/1', 'config_semantic_sha256': c.sha(c.encode(original)),
-            'entries': [{'rule': rule, 'decision': 'pending', 'reason': ''} for rule in dict.fromkeys(unknown)]}
+    review = {'schema': 'claude-direct-review/1', 'config_semantic_sha256': c.sha(c.encode(original)),
+              'entries': [{'rule': rule, 'decision': 'pending', 'reason': ''} for rule in dict.fromkeys(unknown)]}
+    if not classify_known and not preserve_existing:
+        return review
+    counts = dict.fromkeys(_DIRECT_REASONS, 0)
+    for entry in review['entries']:
+        result = classify_direct_rule(entry['rule']) if classify_known else {
+            'classification': 'pending_review', 'decision': 'pending', 'reason': _DIRECT_REASONS['pending_review']}
+        if result['decision'] == 'pending' and preserve_existing:
+            result = {'classification': 'preserved_existing', 'decision': 'keep',
+                      'reason': _DIRECT_REASONS['preserved_existing']}
+        entry.update(result)
+        counts[result['classification']] += 1
+    review['summary'] = {'entry_count': len(review['entries']), **counts}
+    review['intent'] = {'classify_known': bool(classify_known), 'preserve_existing': bool(preserve_existing),
+                        'runtime_verified': False, 'action_approved': False}
+    return review
 
 
 def build_semantics(c, original, fmt, node, group, direct_review=None):
@@ -112,21 +189,29 @@ def build_semantics(c, original, fmt, node, group, direct_review=None):
     if fmt == 'shadowrocket':
         names = {line.split('=', 1)[0].strip() for line in result.get('proxy', []) + result.get(groupkey, [])}
         deny_members = {line.split('=', 1)[0].strip(): [x.strip() for x in line.split('=', 1)[1].split(',')[1:] if '=' not in x] for line in result.get(groupkey, [])}
-        definitions = {line.split('=', 1)[0].strip(): line.split('=', 1)[1].strip() for line in result['proxy']}
-        parts = definitions[node].split(',')
-        c.require(len(parts) >= 2, 'UNIFIED_NODE_SERVER_REQUIRED')
-        server = parts[1].strip()
+        definitions = {line.split('=', 1)[0].strip(): line.split('=', 1)[1].strip() for line in result.get('proxy', [])}
+        external = ai.app_node(c, node)
+        if node in definitions:
+            parts = definitions[node].split(',')
+            c.require(len(parts) >= 2, 'UNIFIED_NODE_SERVER_REQUIRED')
+            server = parts[1].strip()
+        else:
+            c.require(external is not None, 'UNIFIED_NODE_SERVER_REQUIRED')
+            c.require(external['server_family'] != 'ipv6', 'UNIFIED_IPV6_NODE_REVIEW_REQUIRED')
+            names.add(node)
+            server = None
     else:
         names = {p['name'] for p in result.get('proxies', []) + result.get(groupkey, [])}
         deny_members = {g['name']: g.get('proxies', []) for g in result.get(groupkey, [])}
         selected = next(p for p in result['proxies'] if p['name'] == node)
         server = selected.get('server')
-    c.require(isinstance(server, str) and server, 'UNIFIED_NODE_SERVER_REQUIRED')
-    try:
-        address = ipaddress.ip_address(server.strip('[]'))
-    except ValueError:
-        address = None
-    c.require(address is None or address.version == 4, 'UNIFIED_IPV6_NODE_REVIEW_REQUIRED')
+    if server is not None:
+        c.require(isinstance(server, str) and server, 'UNIFIED_NODE_SERVER_REQUIRED')
+        try:
+            address = ipaddress.ip_address(server.strip('[]'))
+        except ValueError:
+            address = None
+        c.require(address is None or address.version == 4, 'UNIFIED_IPV6_NODE_REVIEW_REQUIRED')
     denied = ai.deny_targets(c, deny_members)
     rules = []
     for rule in result[rulekey]:

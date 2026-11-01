@@ -355,7 +355,10 @@ def config_format(path, requested):
     return {'.json': 'json', '.yaml': 'yaml', '.yml': 'yaml', '.conf': 'shadowrocket'}[suffix]
 
 
-def config_summary(data, fmt):
+def config_summary(data, fmt, declared_app_nodes=()):
+    require(not declared_app_nodes or fmt == 'shadowrocket', 'APP_NODE_SHADOWROCKET_ONLY')
+    require(isinstance(declared_app_nodes, (tuple, list)) and all(
+        isinstance(n, str) and n and n == n.strip() for n in declared_app_nodes), 'APP_NODE_METADATA_INVALID')
     obj = parse_config(data, fmt)
     raw_groups = []
     rules = []
@@ -423,7 +426,7 @@ def config_summary(data, fmt):
     for group in raw_groups:
         require(isinstance(group.get('name'), str), 'INVALID_GROUP_DECLARATION')
         names.append(group['name'])
-    known = set(names) | BUILTINS
+    known = set(names) | BUILTINS | set(declared_app_nodes)
     unknown = 0
     edges = {}
     for group in raw_groups:
@@ -954,6 +957,8 @@ def main(argv=None):
         a.add_argument('--group', default='AI-ONLY')
         a.add_argument('--policy', choices=('domestic-v4', 'unified-v4', 'ai-only'), default='domestic-v4')
         a.add_argument('--direct-review')
+        a.add_argument('--app-node-reference', help='Explicit native UI node metadata for a Shadowrocket app-local reference; no credentials or runtime proof')
+        a.add_argument('--reconcile-existing', action='store_true', help='Explicit offline migration of existing same-node selectors; domestic-v4 only')
         if name == 'ai-route':
             a.add_argument('--out', required=True)
         else:
@@ -986,12 +991,14 @@ def main(argv=None):
         lc.add_argument('--executable', required=True)
         lc.add_argument('--browser-preferences')
         lc.add_argument('--out', required=True)
+        lc.add_argument('--app-node-reference', help='Current app-local node observation; saved metadata is not fresh runtime evidence')
         if command == 'baseline':
             lc.add_argument('--ai-original', required=True)
             lc.add_argument('--node', required=True)
             lc.add_argument('--group', default='AI-ONLY')
             lc.add_argument('--policy', choices=('domestic-v4', 'unified-v4', 'ai-only'), default='domestic-v4')
             lc.add_argument('--direct-review')
+            lc.add_argument('--reconcile-existing', action='store_true')
             lc.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
         else:
             lc.add_argument('--baseline', required=True)
@@ -1004,6 +1011,8 @@ def main(argv=None):
     drt.add_argument('--config', required=True)
     drt.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
     drt.add_argument('--output', required=True)
+    drt.add_argument('--classify-known', action='store_true', help='Classify only covered bundled domestic and reserved local destinations offline')
+    drt.add_argument('--preserve-existing', action='store_true', help='Explicitly retain remaining baseline DIRECT intent; not safety or apply approval')
     cs = sub.add_parser('contact-scan', help='Offline implicit-request scan before proxy activation')
     cs.add_argument('--config', required=True)
     cs.add_argument('--format', choices=('auto', 'json', 'yaml', 'shadowrocket'), default='auto')
@@ -1037,6 +1046,7 @@ def main(argv=None):
     tc.add_argument('--format', default='auto', choices=('auto', 'json', 'yaml', 'shadowrocket'))
     tc.add_argument('--node', required=True)
     tc.add_argument('--group', default='AI-ONLY')
+    tc.add_argument('--app-node-reference', help='Same explicit app-local node metadata used for the offline candidate')
     tc.add_argument('--out', required=True)
     import config_recovery
     import lifecycle_acceptance
@@ -1053,6 +1063,7 @@ def main(argv=None):
         elif args.command in workflow_progress.COMMANDS:
             result = workflow_progress.run(SimpleNamespace(**globals()), args)
         elif args.command == 'tutorial-check':
+            import ai_routing
             import community_routing
             import claude_group
             import readiness_lifecycle as lifecycle
@@ -1060,7 +1071,13 @@ def main(argv=None):
             claude_group.labels(context, args.node, args.group)
             source = read_bytes(args.config)
             fmt = config_format(args.config, args.format)
-            summary = config_summary(source, fmt)
+            declared = ()
+            if args.app_node_reference:
+                require(fmt == 'shadowrocket', 'APP_NODE_SHADOWROCKET_ONLY')
+                context.app_node_binding = load_json(read_bytes(args.app_node_reference, 65536))
+                ai_routing.app_node(context, args.node)
+                declared = (args.node,)
+            summary = config_summary(source, fmt, declared_app_nodes=declared)
             rows = community_routing.coverage(context, parse_config(source, fmt), fmt, args.node, args.group, summary=summary)
             result = lifecycle.save_report(context, args.out, args.command, rows,
                 extra={'source_sha256': sha(source), 'scope': community_routing.audit_scope(), 'runtime_verified': False})
@@ -1070,9 +1087,14 @@ def main(argv=None):
         elif args.command == 'direct-review':
             import unified_policy
             context = SimpleNamespace(**globals())
-            value = unified_policy.direct_template(context, args.config, args.format)
+            value = unified_policy.direct_template(context, args.config, args.format,
+                                                   classify_known=args.classify_known,
+                                                   preserve_existing=args.preserve_existing)
             write_new(args.output, encode(value))
-            result = {'status': 'private_direct_review_written', 'pending_rules': len(value['entries'])}
+            result = {'status': 'private_direct_review_written',
+                      'pending_rules': sum(e['decision'] == 'pending' for e in value['entries'])}
+            if 'summary' in value:
+                result.update(summary=value['summary'], runtime_verified=False, action_approved=False)
         elif args.command in ('contact-scan', 'action-check', 'ipv6-check', 'udp-check'):
             import contact_checks
             import ipv6_scope
@@ -1092,6 +1114,16 @@ def main(argv=None):
             import network_checks
             import readiness_lifecycle as lifecycle
             context = SimpleNamespace(**globals())
+            if getattr(args, 'app_node_reference', None):
+                import ai_routing
+                if args.command == 'baseline':
+                    node, fmt = args.node, config_format(args.config, args.format)
+                else:
+                    saved, _, _ = lifecycle.read_baseline(context, args.baseline)
+                    node, fmt = saved['node'], saved['format']
+                require(fmt == 'shadowrocket', 'APP_NODE_SHADOWROCKET_ONLY')
+                context.app_node_binding = load_json(read_bytes(args.app_node_reference, 65536))
+                ai_routing.app_node(context, node)
             if args.command == 'dns-ready':
                 import dns_readiness
                 result = dns_readiness.record(context, args.config, args.browser_preferences, args.output,
@@ -1108,8 +1140,12 @@ def main(argv=None):
                 result = lifecycle.save_report(context, args.out, 'network', rows,
                     {'plan_sha256': sha(encode(value))}, private, create=False)
             elif args.command == 'baseline':
+                require(not args.reconcile_existing or args.policy == 'domestic-v4',
+                        'RECONCILE_DOMESTIC_POLICY_REQUIRED')
                 result = lifecycle.create_baseline(context, args.config, args.format, args.ai_original,
-                    args.node, args.group, args.executable, args.browser_preferences, args.out, args.policy, load_json(read_bytes(args.direct_review)) if args.direct_review else None)
+                    args.node, args.group, args.executable, args.browser_preferences, args.out, args.policy,
+                    load_json(read_bytes(args.direct_review)) if args.direct_review else None,
+                    reconcile_existing=args.reconcile_existing)
             elif args.command == 'recheck':
                 rows, saved = lifecycle.recheck(context, args.baseline, args.config, args.executable, args.browser_preferences)
                 result = lifecycle.save_report(context, args.out, 'recheck', rows)
@@ -1121,10 +1157,18 @@ def main(argv=None):
         elif args.command in ('ai-route', 'ai-audit'):
             import ai_routing
             context = SimpleNamespace(**globals())
+            fmt = config_format(args.config, args.format)
+            if args.app_node_reference:
+                require(fmt == 'shadowrocket', 'APP_NODE_SHADOWROCKET_ONLY')
+                context.app_node_binding = load_json(read_bytes(args.app_node_reference, 65536))
+                ai_routing.app_node(context, args.node)
             import unified_policy
             import domestic_policy
             routing = {'domestic-v4': domestic_policy, 'unified-v4': unified_policy, 'ai-only': ai_routing}[args.policy]
             route_options = {'direct_review': load_json(read_bytes(args.direct_review)) if args.direct_review else None} if args.policy in ('domestic-v4', 'unified-v4') else {}
+            if args.reconcile_existing:
+                require(args.policy == 'domestic-v4', 'RECONCILE_DOMESTIC_POLICY_REQUIRED')
+                route_options['reconcile_existing'] = True
             if args.command == 'ai-route':
                 result = routing.prepare(context, args.config, args.format, args.node, args.out, args.group, **route_options)
             else:

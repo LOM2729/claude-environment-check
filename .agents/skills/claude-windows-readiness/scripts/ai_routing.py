@@ -56,6 +56,27 @@ def target(rule):
     return parts[-2] if parts[-1].lower() == 'no-resolve' and len(parts) > 1 else parts[-1]
 
 
+def app_node(c, node):
+    """Validate an explicit app-local declaration, never credentials or live proof."""
+    value = getattr(c, 'app_node_binding', None)
+    if value is None:
+        return None
+    keys = {'schema', 'name', 'type', 'server_family', 'port', 'chain',
+            'client_version', 'observation_source'}
+    c.require(isinstance(value, dict) and set(value) == keys
+              and value.get('schema') == 'shadowrocket-app-node/1', 'APP_NODE_METADATA_INVALID')
+    label(c, value.get('name'))
+    c.require(value['name'] == node, 'APP_NODE_NAME_MISMATCH')
+    c.require(isinstance(value.get('type'), str) and value['type'] in TRANSPORTS
+              and value.get('server_family') in ('ipv4', 'ipv6', 'hostname')
+              and type(value.get('port')) is int and 0 < value['port'] <= 65535
+              and value.get('chain') == 'none'
+              and isinstance(value.get('client_version'), str)
+              and re.fullmatch(r'\d+\.\d+\.\d+', value['client_version'])
+              and value.get('observation_source') == 'native_ui', 'APP_NODE_METADATA_INVALID')
+    return value
+
+
 def deny_targets(c, group_members):
     """Resolve explicit deny groups, rejecting mixed/recursive policies before insertion."""
     cache = {}
@@ -77,6 +98,8 @@ def deny_targets(c, group_members):
 
 def layout(c, obj, fmt, node, group, permit_group=False):
     """Require explicit, locally declared concrete node; no hidden selector/provider chain."""
+    c.require(getattr(c, 'app_node_binding', None) is None or fmt == 'shadowrocket',
+              'APP_NODE_SHADOWROCKET_ONLY')
     label(c, node); label(c, group)
     c.require(node != group, 'AI_GROUP_NODE_COLLISION')
     if fmt == 'shadowrocket':
@@ -95,10 +118,17 @@ def layout(c, obj, fmt, node, group, permit_group=False):
             name = name.strip()
             c.require(name not in definitions, 'AI_DUPLICATE_NODE')
             definitions[name] = value.strip()
-        c.require(node in definitions and node not in groups, 'AI_CONCRETE_NODE_NOT_FOUND')
-        value = definitions[node]
-        c.require(value.split(',')[0].strip().lower() in TRANSPORTS, 'AI_NODE_TRANSPORT_REVIEW_REQUIRED')
-        c.require(not re.search(r'(?i)(?:proxy-chain|underlying-proxy|dialer-proxy|detour|via)\s*=', value), 'AI_NODE_CHAIN_REVIEW_REQUIRED')
+        external = app_node(c, node)
+        c.require((node in definitions or external is not None) and node not in groups,
+                  'AI_CONCRETE_NODE_NOT_FOUND')
+        if node in definitions:
+            value = definitions[node]
+            c.require(value.split(',')[0].strip().lower() in TRANSPORTS, 'AI_NODE_TRANSPORT_REVIEW_REQUIRED')
+            c.require(not re.search(r'(?i)(?:proxy-chain|underlying-proxy|dialer-proxy|detour|via)\s*=', value), 'AI_NODE_CHAIN_REVIEW_REQUIRED')
+        else:
+            # Only the name is referenced in the candidate. Do not invent a
+            # Proxy definition or imply this caller's metadata was authenticated.
+            definitions[node] = None
         c.require(not obj.get('script'), 'AI_SCRIPT_REVIEW_REQUIRED')
         c.require(not any(re.match(r'\s*include\s*=', s, re.I) for s in obj.get('general', [])), 'AI_INCLUDE_REVIEW_REQUIRED')
         rules = obj.get('rule')

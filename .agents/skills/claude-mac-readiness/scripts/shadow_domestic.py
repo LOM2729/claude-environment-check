@@ -11,6 +11,12 @@ UDP_RULE = 'AND,((PROTOCOL,UDP),(PROTOCOL,UDP)),REJECT-NO-DROP'
 V6_RULE = 'IP-CIDR,::/0,REJECT,no-resolve'
 
 
+def unconditional_udp(rule):
+    compact = re.sub(r'\s+', '', rule).upper()
+    return compact in {UDP_RULE.upper(), 'PROTOCOL,UDP,REJECT', 'PROTOCOL,UDP,REJECT-DROP',
+                       'PROTOCOL,UDP,REJECT-NO-DROP', 'AND,((PROTOCOL,UDP)),REJECT'}
+
+
 @lru_cache(maxsize=1)
 def native_blocks():
     from domestic_policy import snapshot, VIDEO, CN
@@ -59,8 +65,7 @@ def build(c, original, node, group, direct_review=None):
         base['rule'] = [r for r in base['rule'] if r != V6_RULE]
     # Bare PROTOCOL is not emitted. Recognize old bare UDP rejects only to replace
     # them with a native logical rule; don't silently relocate arbitrary conditions.
-    base['rule'] = [r for r in base.get('rule', []) if r != UDP_RULE and r.replace(' ', '').lower() not in
-                    ('protocol,udp,reject', 'protocol,udp,reject-drop', 'protocol,udp,reject-no-drop')]
+    base['rule'] = [r for r in base.get('rule', []) if not unconditional_udp(r)]
     remaining, _ = unified.direct_decisions(c, base, 'shadowrocket')
     review = None
     if remaining:

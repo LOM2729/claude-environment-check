@@ -3,6 +3,7 @@ import copy
 import json
 from pathlib import Path
 import re
+import sys
 
 GROUP = 'AI-ONLY'
 REJECT_ACTIONS = {'REJECT', 'REJECT-DROP', 'REJECT-NO-DROP'}
@@ -15,7 +16,15 @@ FORBIDDEN_SUFFIXES = {'com', 'net', 'org', 'cloudflare.com', 'google.com', 'amaz
 
 
 def catalog(c):
-    data = c.load_json(c.read_bytes(Path(__file__).with_name('ai_domains.json'), 32768))
+    asset = Path(__file__).with_name('ai_domains.json')
+    if getattr(sys, 'frozen', False) and getattr(sys, '_MEIPASS', None):
+        # macOS app bundles link trusted data from Frameworks to Resources.
+        # Resolve only this fixed asset inside the bundle; user-input readers
+        # keep their existing no-symlink semantics.
+        root = Path(sys._MEIPASS).resolve().parent
+        asset = asset.resolve()
+        c.require(asset.is_relative_to(root), 'AI_CATALOG_OUTSIDE_BUNDLE')
+    data = c.load_json(c.read_bytes(asset, 32768))
     c.require(isinstance(data, dict) and data.get('schema') == 'claude-setup-ai-domains/1', 'AI_CATALOG_INVALID')
     c.require(isinstance(data.get('revision'), str) and re.fullmatch(r'[0-9.-]{1,32}', data['revision']), 'AI_CATALOG_INVALID')
     seen = set()
@@ -158,7 +167,11 @@ def layout(c, obj, fmt, node, group, permit_group=False):
         c.require(node in definitions and node not in groups, 'AI_CONCRETE_NODE_NOT_FOUND')
         value = definitions[node]
         c.require(value.get('type') in TRANSPORTS, 'AI_NODE_TRANSPORT_REVIEW_REQUIRED')
-        c.require(not any(k in value for k in ('dialer-proxy', 'detour', 'proxy-chain')), 'AI_NODE_CHAIN_REVIEW_REQUIRED')
+        if getattr(c, 'allow_validated_dialer_chain', False):
+            import chain_routing
+            chain_routing.validate(c, obj, node)
+        else:
+            c.require(not any(k in value for k in ('dialer-proxy', 'detour', 'proxy-chain')), 'AI_NODE_CHAIN_REVIEW_REQUIRED')
         rules = obj.get('rules')
     c.require(len(groups) == len(set(groups)), 'AI_DUPLICATE_GROUP')
     blocked = deny_targets(c, members)

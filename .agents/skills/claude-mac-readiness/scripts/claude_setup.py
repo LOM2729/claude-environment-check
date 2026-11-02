@@ -305,9 +305,10 @@ def parse_config(data, fmt):
             except ImportError:
                 raise SetupError('YAML_DEPENDENCY_MISSING') from None
             # Reject YAML aliases/anchors rather than expand shared or recursive structures.
-            for event in yaml.parse(text):
+            safe_loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+            for event in yaml.parse(text, Loader=safe_loader):
                 require(not isinstance(event, yaml.AliasEvent) and not getattr(event, 'anchor', None), 'YAML_ANCHORS_UNSUPPORTED')
-            class StrictLoader(yaml.SafeLoader):
+            class StrictLoader(safe_loader):
                 pass
             def mapping(loader, node):
                 pairs = []

@@ -1,0 +1,33 @@
+name: Lite native app build
+on:
+  push:
+    paths: ['lite/**', 'src/**', 'tests/test_lite*', '.github/workflows/lite.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r lite/requirements-build.txt
+      - run: python -m unittest discover -s tests -p "test_lite*.py" -v
+      - run: python lite/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lite-${{ matrix.os }}-${{ github.sha }}
+          path: |
+            lite/release/*.zip
+            lite/release/build-info-*.json
+            lite/release/smoke-result.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

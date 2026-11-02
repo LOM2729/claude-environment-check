@@ -1,0 +1,12 @@
+[
+  {
+    "file": "TCL-license.terms",
+    "source": "https://raw.githubusercontent.com/tcltk/tcl/main/license.terms",
+    "sha256": "c0a69a2bfd757361ec7e6143973b103c90409316b49e9c88db26ad6388e79f16"
+  },
+  {
+    "file": "TK-license.terms",
+    "source": "https://raw.githubusercontent.com/tcltk/tk/main/license.terms",
+    "sha256": "2cde822b93ca16ae535c954b7dfe658b4ad10df2a193628d1b358f1765e8b198"
+  }
+]

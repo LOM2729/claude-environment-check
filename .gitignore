@@ -15,3 +15,5 @@ desktop/backend-dist/
 desktop/.build/
 desktop/kit/
 desktop/release/
+lite/.build/
+lite/release/

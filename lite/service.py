@@ -125,7 +125,7 @@ class Service:
     def export(self, destination, manual_checks=None):
         c.require(self.prepared is not None and self.prepared.get('export_ready'), 'LITE_CANDIDATE_REQUIRED')
         checks = {key: (manual_checks or {}).get(key, '未记录') for key in SITES}
-        c.require(all(v in ('未记录', '人工核对未见异常', '人工发现问题') for v in checks.values()),
+        c.require(all(v in ('未记录', '人工核对未见异常', '人工发现问题', '人工请求协助') for v in checks.values()),
                   'LITE_MANUAL_RESULT_INVALID')
         self._check_source()
         path, chain = recovery._safe_path(c, destination, missing=True)

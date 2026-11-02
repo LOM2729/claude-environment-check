@@ -50,6 +50,13 @@ class LiteService(unittest.TestCase):
         with self.assertRaisesRegex(c.SetupError, 'LITE_SOURCE_CHANGED'):
             self.service.prepare('Exit', True)
 
+    def test_assistance_request_is_recorded_without_claiming_a_pass(self):
+        self.service.prepare('Exit', True)
+        receipt=self.service.export(self.root/'needs-help.yaml',{'DNS':'人工请求协助'})
+        self.assertEqual(receipt['manual_checks']['DNS'],'人工请求协助')
+        self.assertFalse(receipt['manual_results_independently_verified'])
+        self.assertFalse(receipt['runtime_verified'])
+
     def test_candidate_drift_and_invalid_manual_result_never_export(self):
         prepared = self.service.prepare('Exit', True)
         dest = self.root / 'new.yaml'

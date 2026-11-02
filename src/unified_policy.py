@@ -95,8 +95,8 @@ def direct_decisions(c, original, fmt, review=None):
     return unknown, decisions
 
 
-@lru_cache(maxsize=1)
-def _domestic_domain_index():
+@lru_cache(maxsize=4)
+def _domestic_domain_index_for(selected):
     """Use the checksum-validated bundled snapshot, never remote rule providers."""
     import domestic_policy
     exact, suffixes = set(), set()
@@ -104,6 +104,14 @@ def _domestic_domain_index():
         for domain in provider['payload']:
             (suffixes if domain.startswith('+.') else exact).add(domain.removeprefix('+.'))
     return frozenset(exact), frozenset(suffixes)
+
+
+def _domestic_domain_index():
+    import rule_data
+    return _domestic_domain_index_for(rule_data.current())
+
+
+_domestic_domain_index.cache_clear = _domestic_domain_index_for.cache_clear
 
 
 _LOCAL_NETWORKS = tuple(ipaddress.ip_network(value) for value in (

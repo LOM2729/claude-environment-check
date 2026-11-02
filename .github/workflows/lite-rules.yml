@@ -1,0 +1,81 @@
+name: Lite rules channel
+on:
+  workflow_run:
+    workflows: ['Cross-platform verification']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the rolling data channel (main only, after successful verification)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: lite-rules-channel
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - id: source
+        shell: bash
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -p 'test_lite_rule_updates.py' -v
+      - run: python lite/rules_pack.py --output Clash-Lite-Rules.json.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lite-rule-data-${{ steps.source.outputs.sha }}
+          path: Clash-Lite-Rules.json.gz
+          retention-days: 30
+  publish:
+    needs: prepare
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_run' || inputs.publish)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SOURCE_SHA: ${{ needs.prepare.outputs.sha }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: lite-rule-data-${{ needs.prepare.outputs.sha }}
+      - name: Verify successful source checks and reject an obsolete queued source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GH_REPO/commits/main" --jq .sha)" = "$SOURCE_SHA"
+          gh api "repos/$GH_REPO/actions/workflows/verify.yml/runs?head_sha=$SOURCE_SHA&status=success" --jq '.total_count' > check-count.txt
+          test "$(cat check-count.txt)" -ge 1
+      - name: Publish data only, keeping the main app release unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Data-only rules channel. Validated source: $SOURCE_SHA. No Python or Skill instructions are downloaded by clients. This rolling tag is a channel anchor; the current data revision is inside the pack." > notes.txt
+          if gh release view lite-rules >/dev/null 2>&1; then
+            test "$(gh release view lite-rules --json isDraft --jq .isDraft)" = false
+            test "$(gh release view lite-rules --json isPrerelease --jq .isPrerelease)" = false
+          else
+            gh release create lite-rules --target "$SOURCE_SHA" --title 'Lite rules data channel' --notes-file notes.txt --latest=false
+          fi
+          gh release upload lite-rules --clobber Clash-Lite-Rules.json.gz
+          gh release edit lite-rules --notes-file notes.txt --latest=false

@@ -12,10 +12,12 @@ from tkinter import ttk, filedialog, messagebox
 import webbrowser
 import json
 import re
+import threading
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lite.service import Service, SITES, error_message
+from lite import rule_updates
 
 
 def label_index(value, labels):
@@ -51,6 +53,9 @@ class Window:
         self.current_future = None
         self.files, self.nodes = [], []
         self.file_labels, self.node_labels = [], []
+        self.rule_events = queue.Queue()
+        self.rule_thread = None
+        self.rule_result = None
         root.title('Clash 配置助手')
         root.geometry(f"{min(720, root.winfo_screenwidth()-60)}x{min(700, root.winfo_screenheight()-100)}")
         root.minsize(650, 520)
@@ -95,6 +100,12 @@ class Window:
         ttk.Label(body, text='Clash 配置助手', style='Title.TLabel').pack(anchor='w')
         ttk.Label(body, text='沿用已有节点或代理链，另存配置副本。原配置和当前连接不变。',
                   style='Hint.TLabel').pack(anchor='w', pady=(5, 12))
+        rule_row = ttk.Frame(body); rule_row.pack(fill='x', pady=(0, 10))
+        self.rule_var = tk.StringVar(value='规则库：内置版本')
+        ttk.Label(rule_row, textvariable=self.rule_var, style='Hint.TLabel').pack(side='left')
+        ttk.Button(rule_row, text='检查规则更新', command=lambda: self.refresh_rules(True)).pack(side='right')
+        self.auto_rules = tk.BooleanVar(value=auto)
+        ttk.Checkbutton(rule_row, text='自动更新（GitHub）', variable=self.auto_rules).pack(side='right', padx=8)
 
         config = ttk.LabelFrame(body, text='1. 读取现有配置', padding=10)
         config.pack(fill='x')
@@ -169,6 +180,7 @@ class Window:
         help_menu.add_command(label='操作指引', command=self.guidance)
         help_menu.add_command(label='复制异常摘要', command=self.copy_summary,
                               accelerator='⌘D' if sys.platform == 'darwin' else 'Ctrl+D')
+        help_menu.add_command(label='检查规则更新', command=lambda: self.refresh_rules(True))
         menu.add_cascade(label='帮助', menu=help_menu)
         root.configure(menu=menu)
         root.bind('<Command-o>' if sys.platform == 'darwin' else '<Control-o>', lambda _: self.pick_file())
@@ -178,6 +190,47 @@ class Window:
             root.after(120, lambda: self.load(initial_config, probe_runtime=auto))
         elif auto:
             root.after(120, self.scan)
+        if auto:
+            try:self.init_rule_client()
+            except Exception:self.rule_var.set('规则库：内置版本（缓存不可用）')
+            root.after(500, self.refresh_rules)
+
+    def init_rule_client(self):
+        if self.service.rule_client is None:
+            self.service.rule_client = rule_updates.Client(self.service.root.parent / 'rule-cache')
+        selected = self.service.rule_client.current()
+        if selected:
+            self.rule_var.set(f'规则：{selected.revision}（缓存）')
+
+    def refresh_rules(self, force=False):
+        if self.closed:return
+        if not force:
+            self.root.after(rule_updates.INTERVAL * 1000, self.refresh_rules)
+            if not self.auto_rules.get():return
+        if self.rule_thread and self.rule_thread.is_alive():return
+        try:
+            self.init_rule_client()
+        except Exception:
+            self.rule_var.set('规则库：内置版本（更新缓存不可用）'); return
+        self.rule_var.set('规则：后台检查中…')
+        def refresh():
+            result = self.service.rule_client.refresh(force)
+            self.rule_events.put(result)
+        self.rule_thread = threading.Thread(target=refresh, daemon=True)
+        self.rule_thread.start()
+
+    def drain_rule_events(self):
+        events = getattr(self, 'rule_events', None)
+        if events is None:return
+        while True:
+            try:result = events.get_nowait()
+            except queue.Empty:return
+            self.rule_result = result
+            revision = result.get('revision')
+            label = str(revision) if revision is not None else '内置版本'
+            suffix = '（新）' if result['status'] == 'updated' else (
+                '（继续使用）' if result['status'] == 'kept_previous' else '（已校验）')
+            self.rule_var.set('规则：' + label + suffix)
 
     def work(self, function, complete):
         if self.busy:
@@ -211,6 +264,7 @@ class Window:
         if self.closed:
             return
         try:
+            self.drain_rule_events()
             while True:
                 future, complete = self.events.get_nowait()
                 self.busy = False; self.progress.stop()
@@ -357,6 +411,7 @@ class Window:
 
     def copy_summary(self):
         summary = self.service.support_summary(self.last_error_code)
+        summary['rule_update'] = self.rule_result
         summary['ui'] = {'busy': self.busy, 'queued_results': self.events.qsize(),
                          'poll_callbacks': self.poll_count,
                          'future_done': self.current_future.done() if self.current_future else None,
@@ -391,7 +446,8 @@ class Window:
         def done(value):
             receipt, result = value
             self.status_var.set('已生成：' + Path(receipt['output']).name + '。原配置未改；请自行导入后复测，尚未验证运行效果。' +
-                                (' 需沿用原客户端资源。' if result['same_client_required'] else ''))
+                                ' 规则：' + str(receipt['rules_revision']) +
+                                ('；需沿用原客户端资源。' if result['same_client_required'] else '。'))
         self.work(run, done)
 
     def close(self):

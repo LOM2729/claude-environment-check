@@ -16,6 +16,7 @@ FORBIDDEN_SUFFIXES = {'com', 'net', 'org', 'cloudflare.com', 'google.com', 'amaz
 
 
 def catalog(c):
+    import rule_data
     asset = Path(__file__).with_name('ai_domains.json')
     if getattr(sys, 'frozen', False) and getattr(sys, '_MEIPASS', None):
         # macOS app bundles link trusted data from Frameworks to Resources.
@@ -24,7 +25,8 @@ def catalog(c):
         root = Path(sys._MEIPASS).resolve().parent
         asset = asset.resolve()
         c.require(asset.is_relative_to(root), 'AI_CATALOG_OUTSIDE_BUNDLE')
-    data = c.load_json(c.read_bytes(asset, 32768))
+    replacement = rule_data.override('ai_domains.json')
+    data = c.load_json(c.read_bytes(asset, 32768) if replacement is None else replacement)
     c.require(isinstance(data, dict) and data.get('schema') == 'claude-setup-ai-domains/1', 'AI_CATALOG_INVALID')
     c.require(isinstance(data.get('revision'), str) and re.fullmatch(r'[0-9.-]{1,32}', data['revision']), 'AI_CATALOG_INVALID')
     seen = set()

@@ -5,6 +5,9 @@ import tempfile
 import tkinter
 import claude_setup as c
 from .service import Service
+from . import rule_updates
+import rule_data
+import ai_routing
 
 
 def run():
@@ -26,6 +29,16 @@ def run():
         assert result['export_ready'] and not receipt['runtime_verified']
         assert not receipt['proxy_or_system_changes']
         tcl = tkinter.Tcl()
+        # The frozen app must contain the data-update parser too. This check
+        # stays offline; it never contacts the channel or loads cached rules.
+        files = {name: (Path(ai_routing.__file__).resolve().parent / name).read_bytes()
+                 for name in rule_data.FILES}
+        data = {'schema': 'clash-lite-rules/1', 'abi': rule_updates.ABI, 'revision': 1,
+                'files': {name: raw.decode('utf-8') for name,raw in files.items()},
+                'sha256': {name: c.sha(raw) for name,raw in files.items()}}
+        import gzip
+        assert rule_updates.decode_pack(gzip.compress(c.encode(data))).revision == 1
         return {'ok': True, 'engine_version': c.VERSION, 'tcl_version': tcl.eval('info patchlevel'),
+                'hot_rule_parser_offline': True,
                 'chain_preserved': True, 'source_unchanged': True, 'yaml_generated': True,
                 'runtime_verified': False, 'proxy_or_system_changes': False}

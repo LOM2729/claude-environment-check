@@ -9,6 +9,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 import re
+import rule_data
 
 EXACT = ('anthropic.com.cdn.cloudflare.net', 'servd-anthropic-website.b-cdn.net',
          'anthropic.auth0.com', 'anthropic-com.ghost.io', 'cdn.usefathom.com')
@@ -16,9 +17,11 @@ SHARED = ('sentry.io', 'statsigapi.net', 'intercom.io', 'intercomcdn.com')
 KEYWORDS = ('datadog', 'sentry', 'sift')
 
 
-@lru_cache(maxsize=1)
-def snapshot():
-    data = json.loads(Path(__file__).with_name('community_snapshot.json').read_text(encoding='utf-8'))
+@lru_cache(maxsize=4)
+def _snapshot(selected):
+    raw = (Path(__file__).with_name('community_snapshot.json').read_bytes() if selected is None
+           else selected.files['community_snapshot.json'])
+    data = json.loads(raw)
     if data.get('schema') != 'claude-community-snapshot/1':
         raise ValueError('Unsupported community snapshot')
     for source in list(data['files'].values()) + [data['asn']]:
@@ -27,17 +30,29 @@ def snapshot():
     return data
 
 
-def expand(data, category, stack=()):
-    if category in stack:
+def snapshot():
+    return _snapshot(rule_data.current())
+
+
+snapshot.cache_clear = _snapshot.cache_clear
+
+
+def expand(data, category, stack=(), _budget=None):
+    if _budget is None:
+        _budget = [20000]
+    if category in stack or len(stack) >= 32:
         raise ValueError('Recursive community include')
     result = []
     for raw in data['files'][category]['text'].splitlines():
+        _budget[0] -= 1
+        if _budget[0] < 0:
+            raise ValueError('Community expansion limit exceeded')
         value = raw.split('#', 1)[0].strip()
         if not value:
             continue
         value = value.split()[0]  # Preserve membership; @cn is an attribute, not a filter.
         if value.startswith('include:'):
-            result.extend(expand(data, value.split(':', 1)[1], stack + (category,)))
+            result.extend(expand(data, value.split(':', 1)[1], stack + (category,), _budget))
             continue
         kind, host = ('DOMAIN', value[5:]) if value.startswith('full:') else ('DOMAIN-SUFFIX', value)
         if not re.fullmatch(r'[a-z0-9_-]+(?:\.[a-z0-9_-]+)+', host):

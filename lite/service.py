@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import uuid
+import rule_data
 
 import claude_setup as c
 import config_recovery as recovery
@@ -67,6 +68,7 @@ class Service:
         self.runtime = None
         self.selection = None
         self.prepared = None
+        self.rule_client = None
 
     def discover(self):
         return discovery.discover()
@@ -80,7 +82,8 @@ class Service:
             raw = discovery._read(path, c.MAX_FILE)
         except Exception:
             raise c.SetupError('INPUT_UNAVAILABLE') from None
-        info = config_engine.inspect_config(path)
+        with rule_data.using(self.rule_client.current() if self.rule_client else None):
+            info = config_engine.inspect_config(path)
         c.require(c.sha(raw) == info['source_sha256'], 'LITE_SOURCE_CHANGED')
         obj = c.parse_config(raw, c.config_format(path, 'auto'))
         runtime = runtime_probe.inspect_selection(obj) if probe_runtime else {
@@ -112,8 +115,9 @@ class Service:
         names = {n['name'] for n in self.inspection['nodes'] if n['selectable']}
         c.require(node in names, 'AI_CONCRETE_NODE_NOT_FOUND')
         output = self.root / ('candidate-' + uuid.uuid4().hex)
-        result = config_engine.prepare_candidate(self.source, node, output,
-                                                  preserve_existing_direct=preserve)
+        with rule_data.using(self.rule_client.current() if self.rule_client else None):
+            result = config_engine.prepare_candidate(self.source, node, output,
+                                                      preserve_existing_direct=preserve)
         self._check_source()
         self.selection, self.prepared = node, result
         return result
@@ -158,6 +162,7 @@ class Service:
         _, final_chain = recovery._safe_path(c, path)
         c.require(final_chain == chain and c.sha(c.read_bytes(path)) == c.sha(data), 'LITE_EXPORT_READBACK_FAILED')
         receipt = {'schema': 'lite-export/1', 'created_at': c.now(), 'output': str(path),
+                   'rules_revision': self.prepared['private_summary']['rules_revision'],
                    'candidate_sha256': c.sha(data), 'source_unchanged': True,
                    'manual_checks': checks, 'manual_results_independently_verified': False,
                    'runtime_verified': False, 'proxy_or_system_changes': False}
@@ -168,6 +173,8 @@ class Service:
         code = error_code if isinstance(error_code, str) and re.fullmatch(r'[A-Z][A-Z0-9_]{1,90}', error_code) else None
         info = self.inspection or {}
         return {'engine_version': c.VERSION, 'platform': sys.platform, 'error_code': code,
+                'rules_revision': self.rule_client.current().revision if self.rule_client and self.rule_client.current() else 'bundled',
+                'candidate_rules_revision': (self.prepared or {}).get('private_summary', {}).get('rules_revision'),
                 'config_loaded': self.source is not None, 'node_count': len(info.get('nodes', [])),
                 'chain_count': len(info.get('chains', [])),
                 'pending_direct_count': info.get('pending_direct_count'),

@@ -10,6 +10,7 @@ import ai_routing as ai
 import claude_group
 import community_routing as community
 import unified_policy as unified
+import rule_data
 
 POLICY = 'domestic-v4'
 VIDEO = 'KIT-CN-VIDEO'
@@ -19,13 +20,15 @@ CN_RULE = 'RULE-SET,' + CN + ',DIRECT'
 UDP_RULE = 'NETWORK,udp,REJECT'
 
 
-@lru_cache(maxsize=1)
-def snapshot():
+@lru_cache(maxsize=4)
+def _snapshot(selected):
     root = Path(__file__).parent
-    meta = json.loads((root / 'domestic_sources.json').read_text(encoding='utf-8'))
+    def read(name):
+        return (root / name).read_bytes() if selected is None else selected.files[name]
+    meta = json.loads(read('domestic_sources.json'))
     result = {}
     for key, filename in ((VIDEO, 'domestic_video.list'), (CN, 'domestic_cn.list')):
-        data = (root / filename).read_bytes()
+        data = read(filename)
         if hashlib.sha256(data).hexdigest() != meta['files'][filename]['sha256']:
             raise ValueError('Domestic snapshot checksum mismatch')
         lines = data.decode('utf-8').splitlines()
@@ -33,6 +36,13 @@ def snapshot():
             raise ValueError('Unsupported domestic domain pattern')
         result[key] = {'type': 'inline', 'behavior': 'domain', 'payload': lines}
     return result
+
+
+def snapshot():
+    return _snapshot(rule_data.current())
+
+
+snapshot.cache_clear = _snapshot.cache_clear
 
 
 def managed_rule(obj, rule):

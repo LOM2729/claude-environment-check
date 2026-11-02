@@ -15,6 +15,7 @@ import chain_routing
 import claude_setup as c
 import domestic_policy as domestic
 import unified_policy as unified
+import rule_data
 
 
 def _context():
@@ -181,6 +182,7 @@ def _build(obj, node, group, preserve):
 def _audit_result(raw, actual_bytes, obj, expected, actual, actual_group):
     match = actual == expected
     return {'schema': 'lite-static-audit/1', 'status': 'static_policy_matches' if match else 'unexpected_changes',
+            'rules_revision': rule_data.current().revision if rule_data.current() else 'bundled',
             'source_sha256': c.sha(raw), 'candidate_sha256': c.sha(actual_bytes),
             'original_nodes_preserved': actual.get('proxies') == obj.get('proxies'),
             'managed_group': actual_group,
@@ -239,6 +241,7 @@ def prepare_candidate(source_path, node, output_dir, preserve_existing_direct=Fa
     if regenerated:
         dependency_info['warnings'].append('CANDIDATE_YAML_FORMATTING_REGENERATED')
     summary = {'schema': 'lite-private-candidate/1', 'policy': 'domestic-v4-preserved-chain',
+               'rules_revision': rule_data.current().revision if rule_data.current() else 'bundled',
                'source_format': fmt, 'source_sha256': c.sha(original_bytes), 'candidate_sha256': c.sha(candidate),
                'selected_node': node, 'chain': chain_routing.validate(_context(), obj, node),
                'direct_review': review,

@@ -215,17 +215,24 @@ def discover(home=None, platform=None, environ=None):
                 warnings.add('SELECTION_METADATA_UNAVAILABLE')
         for folder in (root, root / 'profiles', root / 'Profiles'):
             fd = None
+            first_candidate = len(candidates)
             try:
-                _, info = _safe_path(folder, directory=True)
+                folder_chain, info = _safe_path(folder, directory=True)
                 identity = (info.st_dev, info.st_ino)
                 if identity in folders:
                     continue
                 folders.add(identity)
-                fd = _open_local(folder, directory=True)
-                if (os.fstat(fd).st_dev, os.fstat(fd).st_ino) != identity:
-                    raise _Unsafe()
                 # scandir(fd) avoids a directory replacement race on POSIX.
-                children = os.scandir(fd if os.scandir in os.supports_fd else folder)
+                # Windows cannot open directories with os.open. Its fallback
+                # validates the ancestor chain before/after enumeration, with
+                # every file independently checked by _read as well.
+                if os.scandir in os.supports_fd:
+                    fd = _open_local(folder, directory=True)
+                    if (os.fstat(fd).st_dev, os.fstat(fd).st_ino) != identity:
+                        raise _Unsafe()
+                    children = os.scandir(fd)
+                else:
+                    children = os.scandir(folder)
                 with children:
                     for item in children:
                         entries += 1
@@ -257,9 +264,12 @@ def discover(home=None, platform=None, environ=None):
                                          else 'UNREADABLE_OR_UNSUPPORTED_CONFIG_SKIPPED')
                         except (OSError, _Unsafe, RecursionError):
                             warnings.add('UNREADABLE_OR_UNSUPPORTED_CONFIG_SKIPPED')
+                if _safe_path(folder, directory=True)[0] != folder_chain:
+                    raise _Unsafe()
             except FileNotFoundError:
-                pass
+                del candidates[first_candidate:]
             except (OSError, _Unsafe):
+                del candidates[first_candidate:]
                 warnings.add('UNSAFE_LOCATION_SKIPPED')
             finally:
                 if fd is not None:

@@ -80,6 +80,17 @@ class DiscoveryTests(unittest.TestCase):
         self.assertFalse(row['active'])
         self.assertIsNone(row['selection_evidence'])
 
+    def test_directory_enumeration_without_fd_support(self):
+        selected = self.selected()
+        original = discovery._open_local
+        def open_file_only(path, directory=False):
+            self.assertFalse(directory, 'Windows os.open cannot open directories')
+            return original(path, directory=False)
+        with patch.object(os, 'supports_fd', set()), patch.object(discovery, '_open_local', open_file_only):
+            result = self.discover()
+        self.assertEqual(result['candidates'][0]['path'], str(selected))
+        self.assertTrue(result['candidates'][0]['active'])
+
     def test_two_clients_selected_require_user_choice(self):
         self.selected()
         self.selected('Library/Application Support/io.github.clash-verge-rev.clash-verge-rev')

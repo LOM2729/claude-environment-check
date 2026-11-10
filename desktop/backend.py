@@ -1,4 +1,4 @@
-"""Narrow offline JSON worker for the desktop shell; never activates a configuration.
+"""Narrow JSON worker for the desktop shell and its explicitly scoped tools.
 
 The shell supplies native-dialog paths and a private workspace. The saved session
 is evidence, never authority. CLI forwarding retains the existing CLI contracts.
@@ -24,6 +24,8 @@ import claude_setup as c
 import config_recovery as recovery
 import contact_checks
 import domestic_policy
+import guard_handoff
+import toolbox
 
 CLIENTS = {'browser': '网页浏览器', 'claude_gui': 'Claude 桌面端', 'codex_gui': 'Codex 桌面端',
            'claude_cli': 'Claude CLI', 'codex_cli': 'Codex CLI'}
@@ -645,6 +647,8 @@ def acquire_lock(root):
 
 
 def handle(root, action, payload):
+    if action == 'tool':
+        return handle_tool(root, payload)
     state, lock, directory = initial(), None, None
     try:
         need(isinstance(action, str) and action in FIELDS and isinstance(payload, dict), 'INVALID_REQUEST')
@@ -711,6 +715,58 @@ def handle(root, action, payload):
                 os.close(lock)
             except OSError:
                 pass
+
+
+TOOL_ERRORS = {
+    **MESSAGES,
+    'DESKTOP_TOOL_INPUT_INVALID': '专项工具请求无效，请检查选项。',
+    'DESKTOP_TOOL_TOKEN_INVALID': '请先生成或读取本轮方案。',
+    'DESKTOP_TOOL_STAGE_CHANGED': '资料已经变化，请读取最新记录。',
+    'DESKTOP_TOOL_NETWORK_APPROVAL_REQUIRED': '本轮需要确认联网检查。',
+    'DESKTOP_BROWSER_PLAN_CHANGED': '浏览器检测方案已过期或原配置已变化，请重新准备。',
+    'DESKTOP_BROWSER_SESSION_INVALID': '检测页无法安全打开，请停止本轮后重试。',
+    'CLEANUP_SAME_VOLUME_REQUIRED': '所选缓存和私有任务目录必须位于同一磁盘卷。',
+    'CLEANUP_PLAN_EXPIRED': '隔离方案已过期，请重新预览。',
+    'CLEANUP_TARGET_WRITER_RUNNING': '请退出客户端和占用缓存的后台进程，再重新核对。',
+    'NATIVE_CLIENT_GUI_RUNNING': '请先退出 Clash Verge Rev 图形客户端。',
+    'NATIVE_CLIENT_PLATFORM_UNSUPPORTED': '规则写入适配目前可在 macOS 使用。',
+}
+
+
+def handle_tool(root, payload):
+    lock = None
+    try:
+        need(type(payload) is dict and set(payload) == {'operation', 'input'}
+             and isinstance(payload['operation'], str), 'INVALID_REQUEST')
+        operation = payload['operation']
+        need(operation in toolbox.FIELDS, 'INVALID_REQUEST')
+        parent = recovery._private_dir(c, root, create=not Path(root).exists())
+        directory = recovery._private_dir(c, parent / 'tools', create=not (parent / 'tools').exists())
+        if operation != 'browser_serve':
+            try:
+                lock = acquire_lock(directory)
+            except OSError:
+                raise DesktopError('BUSY') from None
+
+        def selected_source():
+            state = load(parent)
+            need(state.get('source'), 'CONFIG_REQUIRED')
+            data, identity = snapshot(state['source']['path'])
+            need(c.sha(data) == state['source']['sha256'], 'SOURCE_CHANGED')
+            return Path(identity['path']), data
+
+        result = toolbox.dispatch(c, directory, operation, payload['input'], selected_source,
+                                  guard_handoff.runtime_prefix(c))
+        return {'ok': True, 'state': {}, 'tool': result}
+    except Exception as exc:
+        code = str(exc)
+        if not isinstance(exc, (DesktopError, c.SetupError)) or not re.fullmatch('[A-Z0-9_]{3,80}', code):
+            code = 'OPERATION_FAILED'
+        return {'ok': False, 'state': {}, 'error': code,
+                'message': TOOL_ERRORS.get(code, f'专项操作未完成（{code}）。请读取最新记录或保留材料核对。')}
+    finally:
+        if lock is not None:
+            os.close(lock)
 
 
 def main(argv=None):

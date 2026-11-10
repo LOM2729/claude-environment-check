@@ -1,6 +1,6 @@
 {
   "name": "claude-environment-desktop",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "private": true,
   "description": "Claude 环境检测桌面端",
   "main": "main.cjs",
@@ -23,6 +23,7 @@
     "files": [
       "main.cjs",
       "bridge.cjs",
+      "tools-main.cjs",
       "preload.cjs",
       "ui/**",
       "package.json",

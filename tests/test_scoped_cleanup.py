@@ -34,7 +34,7 @@ class FixtureHost(cleanup.NativeHost):
         pass  # This API-only fixture never stands for the user's actual home.
 
 
-@unittest.skipUnless(os.name == 'posix', 'Directory-handle engine is POSIX; no unsafe Windows fallback')
+@unittest.skipUnless(os.name == 'posix', 'POSIX directory-handle fixtures')
 class ScopedCleanup(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='clearpath-cleanup-fixture-')
@@ -225,10 +225,10 @@ class ScopedCleanup(unittest.TestCase):
 
     def test_prepared_journal_failure_keeps_roots_and_backs_up_before_move(self):
         original = cleanup._write
-        def fail_prepared(context, p, value):
+        def fail_prepared(context, p, value, **kwargs):
             if p.name.endswith('.prepared.json'):
                 raise OSError('synthetic durable journal failure')
-            return original(context, p, value)
+            return original(context, p, value, **kwargs)
         with patch.object(cleanup, '_write', side_effect=fail_prepared):
             operation, pin, result = self.isolate()
         self.assertEqual(result['attempted_roots'], 0)
@@ -339,7 +339,8 @@ class ScopedCleanup(unittest.TestCase):
 
 
 class UnsupportedCleanup(unittest.TestCase):
-    def test_windows_native_directory_mutation_stays_explicitly_unsupported(self):
+    @unittest.skipIf(os.name == 'nt', 'Mismatch fixture requires a non-Windows runtime')
+    def test_windows_platform_name_cannot_activate_native_adapter_on_posix(self):
         with patch.object(cleanup.platform, 'system', return_value='Windows'):
             with self.assertRaisesRegex(c.SetupError, 'PLATFORM_UNSUPPORTED'):
                 cleanup.NativeHost().supported(c)

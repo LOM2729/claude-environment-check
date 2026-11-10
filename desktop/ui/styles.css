@@ -165,3 +165,9 @@ legend { font-weight: 600; font-size: 14px; margin-bottom: 12px; padding: 0; }
   .sidebar-foot { padding-top: 16px; }
   .section-heading { margin-bottom: 20px; }
 }
+.tool-panel { margin-top: 20px; padding: 20px; border: 1px solid #d7e1e4; border-radius: 12px; background: #fff; }
+#view-tools label { display: block; margin-bottom: 6px; font-weight: 600; }
+#view-tools input, #view-tools select { width: min(100%, 360px); margin-bottom: 8px; }
+.tool-panel .actions { margin-top: 12px; }
+.tool-panel form, #intake-question { margin-top: 20px; }
+.tool-result { overflow-wrap: anywhere; margin: 14px 0; }

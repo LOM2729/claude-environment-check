@@ -9,12 +9,12 @@
 | 程序化访谈 | `intake-start / intake-answer / intake-assess` | 纯离线任务分流；保存事实、冲突和下一缺口，不恢复授权或执行操作 |
 | 浏览器WebRTC | `webrtc-plan / webrtc-serve / webrtc-report` | 在用户实际Profile中采集ICE；本机随机URL、页面点击后才发指定STUN请求 |
 | Skill更新核对 | `skill-update-check` | 只比较本平台Skill与固定GitHub提交，列出差异，不自动覆盖 |
-| Claude数据隔离 | `cleanup-inventory / cleanup-plan / cleanup-quarantine / cleanup-reconcile / cleanup-restore` | Mac限定根与POSIX隔离核心；Windows目录写入未开放，不把跨平台清单当原生能力 |
-| 原生规则适配 | `native-client-plan / native-client-apply / native-client-check / native-client-rollback` | Mac＋Clash Verge Rev 2.5.8的专属rules扩展；其他版本／平台明确不支持 |
+| Claude数据隔离 | `cleanup-inventory / cleanup-plan / cleanup-quarantine / cleanup-reconcile / cleanup-restore` | macOS 限定根及 Windows 本机固定 NTFS 卷上的限定根 |
+| 原生规则适配 | `native-client-plan / native-client-apply / native-client-check / native-client-rollback` | macOS 上 Clash Verge Rev 2.5.8、2.5.10 的专属 rules 扩展 |
 | 系统防护开关 | `guard-plan / guard-export / guard-inspect / guard-on / guard-confirm / guard-off / guard-status / guard-uninstall / guard-launch` | Mac PF、Windows原生防火墙、Linux nft；精确拥有范围和独立恢复，不默认启用 |
 | VM／VPS部署维护 | `remote-plan / remote-export / remote-apply / remote-confirm / remote-rollback / remote-status` | Debian／Ubuntu systemd目标：TUN、SSH／反向隧道、自愈与防火墙；在实际Linux目标执行，不从本机隐式SSH |
 
-新模块的真实设备／浏览器／管理员和重启验收仍待目标机完成；源码中的平台限制是硬边界，不能使用测试注入、修改平台标记或保存的授权字段绕过。当前桌面五步界面保留原流程，新增工具也可通过其内置后端的 `--cli` 入口交给Codex调用。
+桌面端从「专项工具」打开对应入口。数据隔离入口仅预览受支持的缓存，断线保护和 Linux 部署入口从已审阅计划生成交接包，由用户在实际目标运行。可通过内置后端的 `--cli` 继续使用具体命令。真实设备、浏览器、管理员操作和重启恢复仍待验收。
 
 Mac／Linux系统防护的独立恢复worker另需已核实可运行、root-owned的Python3.9+；Windows恢复使用系统PowerShell，不能把桌面内置引擎冒充外部恢复解释器。缺依赖先准备具体安装／恢复方案，不自动安装开发工具、不改系统Python或绕过执行策略。
 
@@ -57,7 +57,9 @@ Mac／Linux系统防护的独立恢复worker另需已核实可运行、root-owne
 
 提交时绑定已审阅计划摘要、当前目标与停写前提；进程观察只是防意外措施，不能强制阻止Node／未知写入者。部分失败先用 `cleanup-reconcile`对账，恢复只处理原位空缺且隔离材料未变的项目，不覆盖新数据；具体参数读对应命令 `--help`，不猜造字段。
 
-Clash原生适配先核已安装版本、活动profile、独占rules扩展、基础配置和当前字节，保留注释／未知内容。退出GUI后才写，不无谓停止后台核心／服务；通过已有精确文本事务备份、写入和回滚。`written_but_not_verified`只说明文件层结果，重新打开、应用载入和网络效果按原五步核验，其他版本不要修改输入标签冒充2.5.8。
+Windows 原生范围为用户资料内的有效 `CLAUDE_CONFIG_DIR`（默认 `~/.claude`）及当前用户的 `%APPDATA%\Claude`。原目录与私有备份须在同一固定 NTFS 卷。重定向至资料外的目录、MSIX 私有数据、重解析点、硬链接、备用数据流和不支持的权限布局需要单独核对。
+
+Clash 原生适配先核已安装版本、活动 profile、独占 rules 扩展、基础配置和当前字节，保留注释和未知内容。退出 GUI 后通过精确文本事务备份、写入和回滚。`written_but_not_verified` 记录文件层结果，重新打开后按原五步核对客户端载入及实际路由。2.5.10 的字段与规则合并顺序已对照上游固定提交，目标设备仍待验收。 [上游规则加载源码](https://github.com/clash-verge-rev/clash-verge-rev/blob/c83f7ad529c7c9cb3d2d54a0955ef8c1b22a411b/src-tauri/src/enhance/mod.rs#L167-L214)
 
 ### Codex准备的清理／规则请求
 

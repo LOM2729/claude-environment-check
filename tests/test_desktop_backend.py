@@ -278,6 +278,35 @@ class DesktopBackend(unittest.TestCase):
         with mock.patch.object(b.recovery, '_snapshot', side_effect=RuntimeError(SECRET)):
             self.assertEqual(self.call('select_config', {'path': str(self.source)}, good=False)['error'], 'CONFIG_UNSAFE')
 
+    def test_tool_intake_is_private_and_leaves_wizard_unchanged(self):
+        before = self.call('status')['state']
+        start = self.call('tool', {'operation': 'intake_start', 'input': {'task': 'compare'}})['tool']
+        self.assertEqual(start['question']['field'], 'platform')
+        step = {'token': start['token'], 'revision': start['revision'], 'value': 'windows'}
+        answer = self.call('tool', {'operation': 'intake_answer', 'input': step})['tool']
+        self.assertEqual(answer['question']['field'], 'priority')
+        old = self.call('tool', {'operation': 'intake_answer', 'input': step}, good=False)
+        self.assertEqual(old['error'], 'DESKTOP_TOOL_STAGE_CHANGED')
+        copy = self.call('tool', {'operation': 'intake_copy', 'input': {
+            'token': answer['token'], 'revision': answer['revision'], 'kit': str(ROOT)}})['tool']
+        self.assertIn('https://github.com/LOM2729/claude-environment-check', copy['clipboard_text'])
+        self.assertEqual(self.call('status')['state'], before)
+
+    def test_browser_tool_binds_config_and_requires_network_confirmation(self):
+        prepare = lambda approval, good=True: self.call('tool', {'operation': 'browser_prepare',
+                                                                  'input': {'approved': approval}}, good=good)
+        self.assertEqual(prepare(False, False)['error'], 'DESKTOP_TOOL_NETWORK_APPROVAL_REQUIRED')
+        self.assertEqual(prepare(True, False)['error'], 'CONFIG_REQUIRED')
+        self.call('select_config', {'path': str(self.source)})
+        binding = prepare(True)['tool']['token']
+        status = self.call('tool', {'operation': 'browser_status', 'input': {'token': binding}})['tool']
+        self.assertFalse(status['finished'])
+        self.assertNotIn('url', status)
+        self.source.write_bytes(c.encode(dict(BASE, mode='global')))
+        with mock.patch.object(b.toolbox.browser_webrtc, 'serve', side_effect=AssertionError('no browser server')):
+            changed = self.call('tool', {'operation': 'browser_serve', 'input': {'token': binding}}, good=False)
+        self.assertEqual(changed['error'], 'DESKTOP_BROWSER_PLAN_CHANGED')
+
     def test_handoff_contains_scope_and_no_restored_authority(self):
         self.ready()
         result = self.call('handoff', {'kit_path': str(ROOT)})

@@ -60,8 +60,7 @@ class NativeClient(unittest.TestCase):
         self.root.chmod(0o700)
         self.app = self.root / 'Clash Verge.app/Contents/Info.plist'
         self.app.parent.mkdir(mode=0o700, parents=True)
-        self.app.write_bytes(plistlib.dumps({'CFBundleShortVersionString': '2.5.8', 'CFBundleName': 'fixture',
-                                           'CFBundleIdentifier': 'io.github.clash-verge-rev.clash-verge-rev'}))
+        self.write_app_version('2.5.8')
         self.support = self.root / 'support'
         self.support.mkdir(mode=0o700)
         (self.support / 'profiles').mkdir(mode=0o700)
@@ -81,6 +80,11 @@ class NativeClient(unittest.TestCase):
 
     def tearDown(self):
         self.temp.cleanup()
+
+    def write_app_version(self, version):
+        self.app.write_bytes(plistlib.dumps({'CFBundleShortVersionString': version, 'CFBundleName': 'Clash Verge',
+                                           'CFBundleExecutable': 'clash-verge',
+                                           'CFBundleIdentifier': 'io.github.clash-verge-rev.clash-verge-rev'}))
 
     def write_index(self):
         self.index.write_text(json.dumps(self.index_data))  # JSON is a YAML subset.
@@ -111,6 +115,7 @@ class NativeClient(unittest.TestCase):
 
     def test_apply_and_protected_rollback_reuse_actual_text_transaction(self):
         folder, pin, receipt, applied = self.applied()
+        self.assertEqual(applied['native_adapter'], 'clash-verge-rev-2.5.8-rules')
         self.assertEqual(applied['byte_readback'] if 'byte_readback' in applied else applied['readback_checks']['content_matches'], True)
         self.assertEqual(applied['application_reload'], 'not_run')
         self.assertEqual(applied['effective_routing'], 'not_run')
@@ -122,11 +127,39 @@ class NativeClient(unittest.TestCase):
         self.assertEqual(self.target.read_bytes(), RAW)
         self.assertEqual(restored['application_reload'], 'not_run')
 
+    def test_2_5_10_template_plan_apply_check_and_restore(self):
+        self.write_app_version('2.5.10')
+        original = b'# Profile Enhancement Rules Template for Clash Verge\n\nprepend: []\n\nappend: []\n\ndelete: []\n'
+        self.target.write_bytes(original)
+        folder, pin, planned = self.plan()
+        self.assertEqual(planned['version'], '2.5.10')
+        plan = c.load_json((folder / 'native-plan.private.json').read_bytes())
+        self.assertEqual(plan['binding']['version'], '2.5.10')
+        expected = original.replace(b'prepend: []', b'prepend: ["DOMAIN,example.com,fixture-group"]')
+        self.assertEqual((folder / 'candidate.private.yaml').read_bytes(), expected)
+        self.assertEqual(self.target.read_bytes(), original)
+
+        receipt = self.root / 'apply'
+        applied = native.apply(c, folder, pin, receipt, True, True, self.host)
+        self.assertEqual(applied['status'], 'written_but_not_verified', applied)
+        self.assertEqual(applied['native_adapter'], 'clash-verge-rev-2.5.10-rules')
+        self.assertEqual(self.target.read_bytes(), expected)
+        checked = native.check(c, folder, pin, receipt, applied['receipt_sha256'], self.root / 'check', self.host)
+        self.assertEqual(checked['native_adapter'], 'clash-verge-rev-2.5.10-rules')
+        self.assertTrue(checked['native_source_binding_matches'])
+        self.assertEqual(checked['effective_routing'], 'not_verified')
+        restored = native.rollback(c, folder, pin, receipt, applied['receipt_sha256'], self.root / 'rollback', True, True, self.host)
+        self.assertEqual(restored['native_adapter'], 'clash-verge-rev-2.5.10-rules')
+        self.assertEqual(restored['recovery_state'], 'committed', restored)
+        self.assertEqual(self.target.read_bytes(), original)
+
     def test_wrong_version_has_no_candidate_or_output(self):
-        self.app.write_bytes(plistlib.dumps({'CFBundleShortVersionString': '2.5.9'}))
-        with self.assertRaisesRegex(c.SetupError, 'VERSION_UNSUPPORTED'):
-            native.prepare(c, self.request, self.root / 'plan', self.host)
-        self.assertFalse((self.root / 'plan').exists())
+        for version in ('2.5.9', '2.5.10-beta.1', '2.5.11'):
+            with self.subTest(version=version):
+                self.write_app_version(version)
+                with self.assertRaisesRegex(c.SetupError, 'VERSION_UNSUPPORTED'):
+                    native.prepare(c, self.request, self.root / 'plan', self.host)
+                self.assertFalse((self.root / 'plan').exists())
 
     def test_shared_extension_duplicate_uid_and_file_alias_are_rejected(self):
         original = copy.deepcopy(self.index_data)
@@ -195,6 +228,30 @@ class NativeClient(unittest.TestCase):
         with self.assertRaisesRegex(c.SetupError, 'SOURCE_CHANGED'):
             native.apply(c, folder, pin, self.root / 'apply', True, True, self.host)
         self.assertEqual(self.target.read_bytes(), RAW)
+
+    def test_2_5_10_linked_rules_drift_invalidates_review_before_write(self):
+        self.write_app_version('2.5.10')
+        folder, pin, _ = self.plan()
+        alternate = self.support / 'profiles/other-rules.yaml'
+        alternate.write_bytes(RAW)
+        self.index_data['items'].append({'uid': 'r2', 'type': 'rules', 'file': alternate.name})
+        self.index_data['items'][0]['option']['rules'] = 'r2'
+        self.write_index()
+
+        with self.assertRaisesRegex(c.SetupError, 'SOURCE_CHANGED'):
+            native.apply(c, folder, pin, self.root / 'apply', True, True, self.host)
+        self.assertEqual(self.target.read_bytes(), RAW)
+        self.assertEqual(alternate.read_bytes(), RAW)
+        self.assertFalse((self.root / 'apply').exists())
+
+    def test_installed_upgrade_invalidates_prior_plan(self):
+        folder, pin, _ = self.plan()
+        self.write_app_version('2.5.10')
+
+        with self.assertRaisesRegex(c.SetupError, 'SOURCE_CHANGED'):
+            native.apply(c, folder, pin, self.root / 'apply', True, True, self.host)
+        self.assertEqual(self.target.read_bytes(), RAW)
+        self.assertFalse((self.root / 'apply').exists())
 
     def test_wrong_plan_digest_and_target_edit_are_not_overwritten(self):
         folder, pin, _ = self.plan()

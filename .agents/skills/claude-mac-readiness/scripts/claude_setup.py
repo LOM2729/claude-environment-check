@@ -19,7 +19,7 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.17.0'
+VERSION = '0.18.0'
 FEATURE_MODULES = ('intake_flow', 'browser_webrtc', 'skill_updates', 'scoped_cleanup',
                    'native_client', 'system_guard', 'remote_setup')
 FEATURE_SUPPORT = {
@@ -29,9 +29,9 @@ FEATURE_SUPPORT = {
     'skill_updates': {'platforms': ['macos', 'windows', 'linux'],
                       'skill_targets': ['mac', 'windows'], 'automatic_install': False},
     'scoped_cleanup': {'inventory_platforms': ['macos', 'windows', 'linux'],
-                       'native_write_platforms': ['macos'], 'permanent_delete': False},
+                       'native_write_platforms': ['macos', 'windows'], 'permanent_delete': False},
     'native_client': {'native_platforms': ['macos'], 'product': 'clash-verge-rev',
-                      'versions': ['2.5.8'], 'scope': 'exclusive_rules_extension'},
+                      'versions': ['2.5.8', '2.5.10'], 'scope': 'exclusive_rules_extension'},
     'system_guard': {'native_platforms': ['macos', 'windows', 'linux'],
                     'policies': ['unified-v4', 'explicit-exceptions', 'inbound-management'],
                     'domestic_v4_native_compilation': False},

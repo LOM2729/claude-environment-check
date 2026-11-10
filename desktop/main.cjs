@@ -4,14 +4,17 @@ const path = require('node:path');
 const {fileURLToPath} = require('node:url');
 const fs = require('node:fs');
 const bridge = require('./bridge.cjs');
+const { createToolActions } = require('./tools-main.cjs');
 protocol.registerSchemesAsPrivileged([{scheme:'app',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
 let win, busy=false;
 const executable=()=> app.isPackaged ? [path.join(process.resourcesPath,'backend',process.platform==='win32'?'claude-check-backend.exe':'claude-check-backend'),[]] : [process.env.CLAUDE_KIT_PYTHON || 'python3',[path.join(__dirname,'backend.py')]];
 const root=()=>path.join(app.getPath('userData'),'workspace');
-async function call(action,payload={}) {
+const kit=()=>app.isPackaged?path.join(process.resourcesPath,'kit'):path.resolve(__dirname,'..');
+async function call(action,payload={},options) {
   const [command,prefix]=executable();
-  return bridge.worker(command,prefix,root(),action,payload);
+  return bridge.worker(command,prefix,root(),action,payload,options);
 }
+const tools = createToolActions({call,root,kit,window:()=>win,dialog,clipboard,shell});
 async function operate(action,payload) {
   if(action==='choose_config'||action==='choose_readback'||action==='choose_report') {
     const selected=await dialog.showOpenDialog(win,{title:action==='choose_report'?'选择已有检查报告 JSON':action==='choose_config'?'选择代理客户端导出的配置':'选择客户端实际导出的配置',properties:['openFile'],filters:[{name:'代理配置',extensions:action==='choose_report'?['json']:['yaml','yml','json','conf']}]});
@@ -31,7 +34,7 @@ async function operate(action,payload) {
     return call('confirm_export',{destination:picked.filePath,plan_id:payload.plan_id});
   }
   if(action==='handoff') {
-    const result=await call('handoff',{...payload,kit_path:app.isPackaged?path.join(process.resourcesPath,'kit'):path.resolve(__dirname,'..')});
+    const result=await call('handoff',{...payload,kit_path:kit()});
     if(result.ok&&typeof result.prompt==='string')clipboard.writeText(result.prompt);
     return result;
   }
@@ -61,6 +64,14 @@ if(primary)app.whenReady().then(async()=>{
     busy=true;
     try{return await operate(action,payload);}catch(error){return {ok:false,error:'DESKTOP_OPERATION_FAILED',message:error.message,state:{}};}finally{busy=false;}
   });
+  ipcMain.handle('desktop:tool',async(event,operation,input)=>{
+    if(!bridge.validSender(event,win))throw Error('不允许的请求来源');
+    bridge.validateTool(operation,input);
+    if(busy)return {ok:false,error:'BUSY',message:'上一项操作尚未结束',state:{}};
+    busy=true;
+    try{return await tools.operate(operation,input);}catch(error){return {ok:false,error:'DESKTOP_TOOL_FAILED',message:error.message,state:{}};}finally{busy=false;}
+  });
   await win.loadURL('app://ui/index.html');
 });
 app.on('window-all-closed',()=>app.quit());
+app.on('before-quit',tools.stop);

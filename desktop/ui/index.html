@@ -7,6 +7,7 @@
   <title>Claude 环境检测</title>
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
+  <script src="tools.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到当前步骤</a>
@@ -25,6 +26,7 @@
       </nav>
       <div class="secondary-nav" aria-label="资料与帮助">
         <button type="button" data-view="results">检查结果</button>
+        <button type="button" data-view="tools">专项工具</button>
         <button type="button" data-view="help">使用说明</button>
         <button type="button" data-view="recovery">恢复资料</button>
       </div>
@@ -136,6 +138,91 @@
           <div class="help-block"><h2>需要重启怎么办？</h2><p>先保存进度与恢复说明，再由你手动重启。连接恢复后重新验证，不根据“点过按钮”就判定成功。</p></div>
           <div class="help-block"><h2>应用会自动执行什么？</h2><p>打开应用只读取保存的进度，不自动检查或联网。应用不会修改当前网络、自动启动 AI、清理账号或修改指纹，也不会自动安装代理、创建账号、购买订阅。</p></div>
           <p class="inline-error" data-error-for="help" role="alert" hidden></p>
+        </section>
+
+        <section id="view-tools" class="view" aria-labelledby="title-tools" hidden>
+          <div class="section-heading"><h1 id="title-tools">专项工具</h1></div>
+          <label for="tool-selector">选择工具</label>
+          <select id="tool-selector">
+            <option value="intake">需求访谈</option><option value="browser">浏览器 WebRTC / IPv6 检测</option>
+            <option value="cleanup">Claude 缓存隔离与恢复</option><option value="native">Clash Verge Rev 域名规则</option>
+            <option value="guard">系统断线保护执行包</option><option value="remote">Linux 部署执行包</option>
+            <option value="update">Skill 更新核对</option>
+          </select>
+          <div class="tool-panel" data-tool-panel="intake">
+            <label for="intake-task">本轮事项</label>
+            <select id="intake-task"></select>
+            <div class="actions"><button class="button primary" data-tool="intake_start">开始访谈</button></div>
+            <div id="intake-question" hidden>
+              <label id="intake-prompt" for="intake-value"></label>
+              <select id="intake-value"></select>
+              <div class="actions"><button class="button secondary" data-tool="intake_answer">提交答案</button></div>
+            </div>
+            <div class="actions"><button class="button secondary" data-tool="intake_copy" disabled>复制给 Codex</button></div>
+          </div>
+          <div class="tool-panel" data-tool-panel="browser" hidden>
+            <p>先在「准备」中选定配置。启动后，复制临时链接到平时用的浏览器资料，再在检测页开始检测。</p>
+            <div class="actions wrap">
+              <button class="button primary" data-tool="browser_start">启动检测页</button>
+              <button class="button secondary" data-tool="browser_copy" disabled>复制临时链接</button>
+              <button class="button secondary" data-tool="browser_stop" disabled>停止</button>
+            </div>
+          </div>
+          <div class="tool-panel" data-tool-panel="cleanup" hidden>
+            <p>仅处理受支持的缓存目录。隔离后可从本机私有记录恢复。</p>
+            <label for="cleanup-kind">客户端</label>
+            <select id="cleanup-kind"><option value="cli">Claude Code</option><option value="desktop">Claude Desktop</option></select>
+            <div class="actions wrap">
+              <button class="button primary" data-tool="cleanup_plan">选择目录并预览</button>
+              <button class="button secondary" data-tool="cleanup_latest">读取最近记录</button>
+              <button class="button secondary" data-tool="cleanup_apply" disabled>隔离缓存</button>
+              <button class="button secondary" data-tool="cleanup_reconcile" disabled>核对隔离状态</button>
+              <button class="button secondary" data-tool="cleanup_restore" disabled>恢复缓存</button>
+            </div>
+          </div>
+          <div class="tool-panel" data-tool-panel="native" hidden>
+            <p>仅适用于受支持的 macOS 客户端版本。写入前先预览，重新打开客户端后再核对实际路由。</p>
+            <div class="actions wrap">
+              <button class="button primary" data-tool="native_inspect">读取本机策略组</button>
+              <button class="button secondary" data-tool="native_latest">读取最近记录</button>
+            </div>
+            <form id="native-rule">
+              <label for="native-kind">匹配范围</label>
+              <select id="native-kind"><option value="DOMAIN">指定域名</option><option value="DOMAIN-SUFFIX">域名与子域名</option></select>
+              <label for="native-domain">域名</label>
+              <input id="native-domain" type="text" autocomplete="off" placeholder="example.com" required maxlength="253" pattern="[a-zA-Z0-9.\-]+">
+              <label for="native-policy">策略组</label>
+              <select id="native-policy" required></select>
+              <div class="actions wrap">
+                <button type="submit" class="button primary" data-tool="native_plan" disabled>预览规则</button>
+                <button type="button" class="button secondary" data-tool="native_apply" disabled>备份并写入</button>
+                <button type="button" class="button secondary" data-tool="native_rollback" disabled>恢复原规则</button>
+              </div>
+            </form>
+          </div>
+          <div class="tool-panel" data-tool-panel="guard" hidden>
+            <p>选择已审阅的计划 JSON。执行包应在匹配的目标设备运行，执行前需备好独立恢复入口。</p>
+            <div class="actions wrap">
+              <button class="button secondary" data-tool="copy_plan_request" data-plan="guard">复制准备计划提示词</button>
+              <button class="button primary" data-tool="guard_export">选择计划并生成执行包</button>
+            </div>
+          </div>
+          <div class="tool-panel" data-tool-panel="remote" hidden>
+            <p>为匹配的 Debian / Ubuntu 目标生成离线执行包，由你在目标机按说明使用。</p>
+            <div class="actions wrap">
+              <button class="button secondary" data-tool="copy_plan_request" data-plan="remote">复制准备计划提示词</button>
+              <button class="button primary" data-tool="remote_export">选择计划并生成执行包</button>
+            </div>
+          </div>
+          <div class="tool-panel" data-tool-panel="update" hidden>
+            <p>将已安装的 Skill 与 GitHub 文件清单比较，保留现有文件。</p>
+            <div class="actions"><button class="button primary" data-tool="update_check">选择 Skill 目录并核对</button></div>
+          </div>
+          <div class="tool-result" aria-live="polite">
+            <p id="tool-message" hidden></p>
+            <ul id="tool-details" hidden></ul>
+          </div>
+          <button class="button secondary" data-tool="reveal_tool" disabled>打开最近的材料目录</button>
         </section>
 
         <section id="view-recovery" class="view" aria-labelledby="title-recovery" hidden>

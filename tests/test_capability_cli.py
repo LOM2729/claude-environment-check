@@ -39,7 +39,7 @@ class CapabilityCLI(unittest.TestCase):
         self.assertFalse(result['system_changes_performed'])
         self.assertTrue(all(x['native_acceptance'] == 'not_run' for x in result['features']))
         support = {x['module']: x['support'] for x in result['features']}
-        self.assertEqual(support['scoped_cleanup']['native_write_platforms'], ['macos'])
+        self.assertEqual(support['scoped_cleanup']['native_write_platforms'], ['macos', 'windows'])
         self.assertFalse(support['system_guard']['domestic_v4_native_compilation'])
         self.assertFalse(support['remote_setup']['implicit_ssh_execution'])
 

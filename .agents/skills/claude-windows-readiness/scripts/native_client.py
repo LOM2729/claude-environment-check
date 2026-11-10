@@ -1,7 +1,7 @@
-"""Fixed Clash Verge Rev 2.5.8 rules adapter; no UI/reload/core control.
+"""Fixed Clash Verge Rev rules adapter for explicitly supported macOS releases.
 
-Profile option/rules layout follows the product's v2.5.8 PrfItem schema:
-https://github.com/clash-verge-rev/clash-verge-rev/blob/v2.5.8/src-tauri/src/config/prfitem.rs
+Versions 2.5.8 and 2.5.10 share the linked PrfItem rules schema:
+https://github.com/clash-verge-rev/clash-verge-rev/blob/c83f7ad529c7c9cb3d2d54a0955ef8c1b22a411b/src-tauri/src/config/prfitem.rs
 The adapter creates exact-byte candidates and reuses our text transaction engine.
 It never treats a successful file write as application or route acceptance.
 """
@@ -18,6 +18,7 @@ import config_recovery as storage
 COMMANDS = ('native-client-plan', 'native-client-apply', 'native-client-check', 'native-client-rollback')
 MUTATING_COMMANDS = ('native-client-apply', 'native-client-rollback')
 SCHEMA = 'clearpath-native-client/1'
+SUPPORTED_VERSIONS = ('2.5.8', '2.5.10')
 APP_INFO = Path('/Applications/Clash Verge.app/Contents/Info.plist')
 SUPPORT = Path('Library/Application Support/io.github.clash-verge-rev.clash-verge-rev')
 MAX_DOCUMENT = 4 * 1024 * 1024
@@ -97,9 +98,10 @@ def _app_snapshot(c, path):
         parsed = plistlib.loads(raw)
     except Exception:
         raise c.SetupError('NATIVE_CLIENT_PLIST_INVALID') from None
-    c.require(type(parsed) is dict and parsed.get('CFBundleShortVersionString') == '2.5.8', 'NATIVE_CLIENT_VERSION_UNSUPPORTED')
+    version = parsed.get('CFBundleShortVersionString') if type(parsed) is dict else None
+    c.require(type(version) is str and version in SUPPORTED_VERSIONS, 'NATIVE_CLIENT_VERSION_UNSUPPORTED')
     c.require(parsed.get('CFBundleIdentifier') == 'io.github.clash-verge-rev.clash-verge-rev', 'NATIVE_CLIENT_PRODUCT_UNSUPPORTED')
-    return {'path': str(path), 'identity': storage._fingerprint(info), 'sha256': c.sha(raw)}
+    return version, {'path': str(path), 'identity': storage._fingerprint(info), 'sha256': c.sha(raw)}
 
 
 def capture(c, host=None):
@@ -107,7 +109,7 @@ def capture(c, host=None):
     host.supported(c)
     app, support = host.paths()
     support, _ = storage._safe_path(c, support, directory=True)
-    app_state = _app_snapshot(c, app)
+    version, app_state = _app_snapshot(c, app)
     index_path = support / 'profiles.yaml'
     index_raw, index_state = storage._snapshot(c, index_path)
     index = c.parse_config(index_raw, 'yaml')
@@ -146,7 +148,7 @@ def capture(c, host=None):
               all(type(x) is dict and type(x.get('name')) is str for x in groups + proxies), 'NATIVE_CLIENT_BASE_PROFILE_INVALID')
     names = [x['name'] for x in groups + proxies]
     c.require(len(set(names)) == len(names), 'NATIVE_CLIENT_POLICY_ALIAS_CONFLICT')
-    binding = {'platform_binding': host.binding(), 'product': 'clash-verge-rev', 'version': '2.5.8',
+    binding = {'platform_binding': host.binding(), 'product': 'clash-verge-rev', 'version': version,
                'current_uid': current, 'rules_uid': rules_uid, 'target_path': str(target),
                'sources': {'app': app_state, 'index': index_state, 'base': base_state},
                'later_chain_review_required': bool(options.get('merge') or options.get('script'))}
@@ -212,7 +214,7 @@ def prepare(c, request, output, host=None):
     raw = c.encode(value)
     storage._write(c, folder / 'native-plan.private.json', raw)
     return {'status': 'native_plan_written', 'exit_code': 0, 'plan_sha256': c.sha(raw),
-            'product': 'clash-verge-rev', 'version': '2.5.8', 'rules': len(request['rules']),
+            'product': 'clash-verge-rev', 'version': observed['binding']['version'], 'rules': len(request['rules']),
             'later_chain_review_required': observed['binding']['later_chain_review_required'],
             'config_file_changed': False, 'application_reload': 'not_run', 'network_requests': 0}
 
@@ -223,8 +225,12 @@ def _plan(c, folder, pin, host):
     raw = c.read_bytes(storage._safe_path(c, folder / 'native-plan.private.json')[0], MAX_DOCUMENT)
     c.require(c.sha(raw) == pin, 'NATIVE_CLIENT_PLAN_CHANGED')
     value = c.load_json(raw)
-    c.require(type(value) is dict and value.get('schema') == SCHEMA and value.get('kind') == 'plan' and
-              value.get('binding', {}).get('platform_binding') == host.binding(), 'NATIVE_CLIENT_PLAN_INVALID')
+    c.require(type(value) is dict and value.get('schema') == SCHEMA and value.get('kind') == 'plan',
+              'NATIVE_CLIENT_PLAN_INVALID')
+    binding = value.get('binding')
+    c.require(type(binding) is dict and binding.get('platform_binding') == host.binding() and
+              binding.get('product') == 'clash-verge-rev' and binding.get('version') in SUPPORTED_VERSIONS,
+              'NATIVE_CLIENT_PLAN_INVALID')
     c.require(c.sha(c.encode(value.get('request'))) == value.get('request_sha256') and
               value.get('request', {}).get('target_alias') == value.get('target_alias'), 'NATIVE_CLIENT_REQUEST_CHANGED')
     # The text plan's target is independently bound; no path from an imported
@@ -232,6 +238,10 @@ def _plan(c, folder, pin, host):
     _, text_plan = storage._artifact(c, folder / 'text-plan', 'plan.json', value['text_plan_sha256'], 'plan')
     c.require(text_plan['target']['path'] == value['binding']['target_path'], 'NATIVE_CLIENT_TEXT_PLAN_SCOPE_CHANGED')
     return folder, value
+
+
+def _adapter_name(plan):
+    return f"clash-verge-rev-{plan['binding']['version']}-rules"
 
 
 def _guarded_context(c, host, expected):
@@ -260,7 +270,7 @@ def apply(c, folder, pin, output, allow=False, stopped=False, host=None):
     c.require(candidate(c, observed, value['request']) == after, 'NATIVE_CLIENT_CANDIDATE_SCOPE_CHANGED')
     guarded, recheck = _guarded_context(c, host, value['binding'])
     result = host.apply_text(guarded, folder / 'text-plan', value['text_plan_sha256'], output)
-    result.update(native_adapter='clash-verge-rev-2.5.8-rules', application_reload='not_run',
+    result.update(native_adapter=_adapter_name(value), application_reload='not_run',
                   effective_routing='not_run', writer_exclusion='operator_stopped_and_detect_only',
                   exit_code=0 if result.get('required_checks_completed') else 2)
     if result.get('recovery_state') == 'committed':
@@ -282,7 +292,7 @@ def check(c, folder, pin, receipt, receipt_pin, output, host=None):
     c.require(intent['target']['path'] == value['binding']['target_path'] and intent.get('action') == 'apply' and
               intent.get('origin_sha256') == value['text_plan_sha256'], 'NATIVE_CLIENT_RECEIPT_SCOPE_CHANGED')
     result = storage.check(c, receipt, receipt_pin, output)
-    result.update(native_adapter='clash-verge-rev-2.5.8-rules', application_reload='not_verified',
+    result.update(native_adapter=_adapter_name(value), application_reload='not_verified',
                   effective_routing='not_verified', exit_code=0 if result.get('required_checks_completed') else 2)
     try:
         matches = capture(c, host)['binding'] == value['binding']
@@ -304,7 +314,7 @@ def rollback(c, folder, pin, receipt, receipt_pin, output, allow=False, stopped=
               intent.get('origin_sha256') == value['text_plan_sha256'], 'NATIVE_CLIENT_RECEIPT_SCOPE_CHANGED')
     guarded, recheck = _guarded_context(c, host, value['binding'])
     result = host.rollback_text(guarded, receipt, receipt_pin, output)
-    result.update(native_adapter='clash-verge-rev-2.5.8-rules', application_reload='not_run',
+    result.update(native_adapter=_adapter_name(value), application_reload='not_run',
                   effective_routing='not_run', exit_code=0 if result.get('required_checks_completed') else 2)
     try:
         recheck()

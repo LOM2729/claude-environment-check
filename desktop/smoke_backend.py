@@ -58,6 +58,8 @@ with tempfile.TemporaryDirectory(prefix='desktop-frozen-smoke-') as temp:
     intake=subprocess.run([str(EXE),'--cli','intake-start','--task','compare','--answers',str(facts),
                            '--output',str(folder/'intake.json')],capture_output=True,text=True,encoding='utf-8',check=True,timeout=30)
     assert json.loads(intake.stdout)['status']=='explanation_only'
+    tools_intake=call('tool',{'operation':'intake_start','input':{'task':'compare'}})['tool']
+    assert tools_intake['question']['field']=='platform'
     assert (EXE.parent/'_internal/browser_webrtc.html').is_file()
     guard_input=folder/'guard-input.json'
     guard_input.write_text(json.dumps({'schema':'clearpath-guard-input/1','scope':'fixture','platform':'windows',
@@ -85,4 +87,7 @@ with tempfile.TemporaryDirectory(prefix='desktop-frozen-smoke-') as temp:
     manifest=json.loads((folder/'manual-entry/launch-manifest.private.json').read_text(encoding='utf-8'))
     assert manifest['runtime']['mode']=='frozen' and manifest['authorization_saved'] is False
     assert not manifest['network_verified']
+    desktop_guard=call('tool',{'operation':'guard_export','input':{'path':str(native_plan)}})['tool']
+    desktop_manifest=json.loads((Path(desktop_guard['folder'])/'launch-manifest.private.json').read_text(encoding='utf-8'))
+    assert desktop_manifest['runtime']['mode']=='frozen' and desktop_manifest['authorization_saved'] is False
 print('Frozen backend: legacy workflow, seven feature imports, offline intake/guard plans and assets passed; no network or system configuration.')

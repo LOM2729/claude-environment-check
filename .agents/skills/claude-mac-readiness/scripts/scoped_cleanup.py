@@ -5,7 +5,7 @@ locations; the portable engine never follows links or erases quarantine/backup.
 Stopped-writer attestation and repeated process observations are accident barriers,
 not mandatory OS exclusion (in particular, Node-hosted CLI processes can be missed).
 """
-from contextlib import contextmanager
+from contextlib import ExitStack, closing, contextmanager, nullcontext
 import datetime as dt
 import hashlib
 import os
@@ -18,6 +18,7 @@ import time
 import uuid
 
 import config_recovery as storage
+import windows_cleanup as windows
 
 COMMANDS = ('cleanup-inventory', 'cleanup-plan', 'cleanup-quarantine',
             'cleanup-reconcile', 'cleanup-restore')
@@ -83,6 +84,17 @@ def _path(c, value, missing=False, directory=None):
     p = Path(value)
     c.require(p.is_absolute() and '..' not in p.parts and '\x00' not in str(p), 'CLEANUP_ABSOLUTE_PATH_REQUIRED')
     # Reuse the fixed-drive/reparse/ancestor-link checks of text transactions.
+    if os.name == 'nt':
+        windows.lexical_path(c, p)
+        if directory is None:
+            with windows.pinned_directory(c, p.parent):
+                try:
+                    directory = stat.S_ISDIR(p.lstat().st_mode)
+                except FileNotFoundError:
+                    directory = False
+                except OSError:
+                    raise c.SetupError('CLEANUP_WINDOWS_OBJECT_UNAVAILABLE') from None
+                return storage._safe_path(c, p, directory=directory, missing=missing)[0]
     if directory is None:
         try:
             directory = stat.S_ISDIR(p.lstat().st_mode)
@@ -93,6 +105,8 @@ def _path(c, value, missing=False, directory=None):
 
 def _parent(c, p):
     p = _path(c, p, directory=True)
+    if os.name == 'nt':
+        return windows.parent(c, p)
     s = p.lstat()
     return {'path': str(p), 'device': s.st_dev, 'inode': s.st_ino,
             'mode': stat.S_IMODE(s.st_mode), 'uid': getattr(s, 'st_uid', None)}
@@ -122,6 +136,8 @@ def _open_content(c, p, directory=False):
 
 
 def _read_content(c, p, expected):
+    if os.name == 'nt':
+        return windows.read(c, p, expected, MAX_BYTES)
     fd = _open_content(c, p)
     try:
         before = os.fstat(fd)
@@ -138,8 +154,6 @@ def _read_content(c, p, expected):
 
 def _names(c, p, expected, remaining):
     if os.name != 'posix':
-        # Native Windows writes stay closed until directory-handle traversal is
-        # implemented; do not substitute unsafe path recursion for this boundary.
         raise c.SetupError('CLEANUP_NATIVE_DIRECTORY_TRAVERSAL_UNAVAILABLE')
     fd = _open_content(c, p, directory=True)
     try:
@@ -160,6 +174,8 @@ def _scan(c, value, counter=None, depth=0):
     """Bounded snapshots include directory identities and every regular file hash."""
     root = _path(c, value)
     counter = counter if counter is not None else {'items': 0, 'bytes': 0}
+    if os.name == 'nt':
+        return windows.scan(c, root, counter, (MAX_ITEMS, MAX_BYTES, MAX_DEPTH), depth)
     entries = []
     root_device = root.lstat().st_dev
     def visit(p, relative, level):
@@ -213,18 +229,44 @@ def _content(snapshot):
              'sha256': x.get('sha256'), 'children': x.get('children')} for x in snapshot]
 
 
-def _write(c, p, value):
+def _pin_directory(c, p, expected=None):
+    return windows.pinned_directory(c, p, expected) if os.name == 'nt' else nullcontext()
+
+
+def _present(p):
+    try:
+        p.lstat()
+    except FileNotFoundError:
+        return False
+    return True
+
+
+def _private_dir(c, value, create=False):
+    p = _path(c, value, missing=create, directory=True)
+    with _pin_directory(c, p.parent if create else p):
+        return storage._private_dir(c, p, create=create)
+
+
+def _write_bytes(c, p, data):
+    if os.name == 'nt':
+        windows.write_new(c, p, data)
+    else:
+        storage._write(c, p, data)
+
+
+def _write(c, p, value, parent=None):
     data = value if isinstance(value, bytes) else c.encode(value)
     c.require(len(data) <= MAX_DOCUMENT, 'CLEANUP_DOCUMENT_BUDGET_EXCEEDED')
-    storage._write(c, p, data)
+    with _pin_directory(c, p.parent, parent):
+        _write_bytes(c, p, data)
     return c.sha(data)
 
 
 def _load(c, folder, name, pin):
     _pin(c, pin)
-    folder = storage._private_dir(c, folder)
+    folder = _private_dir(c, folder)
     path = _path(c, folder / name)
-    raw = c.read_bytes(path, MAX_DOCUMENT)
+    raw = windows.read(c, path, None, MAX_DOCUMENT) if os.name == 'nt' else c.read_bytes(path, MAX_DOCUMENT)
     c.require(c.sha(raw) == pin, 'CLEANUP_DOCUMENT_CHANGED')
     value = c.load_json(raw)
     c.require(type(value) is dict and value.get('schema') == SCHEMA, 'CLEANUP_DOCUMENT_INVALID')
@@ -237,27 +279,38 @@ class NativeHost:
         return storage._binding()
 
     def supported(self, c):
-        c.require(platform.system() == 'Darwin' and os.name == 'posix', 'CLEANUP_NATIVE_PLATFORM_UNSUPPORTED')
+        c.require((platform.system(), os.name) in (('Darwin', 'posix'), ('Windows', 'nt')),
+                  'CLEANUP_NATIVE_PLATFORM_UNSUPPORTED')
 
     def validate_scope(self, c, request):
         """Only the current selected CLI root and fixed Desktop locations mutate."""
         self.supported(c)
+        home = windows.known_folder(c, 'profile') if os.name == 'nt' else Path.home()
         configured = os.environ.get('CLAUDE_CONFIG_DIR')
-        expected = Path(configured).expanduser().absolute() if configured else Path.home() / '.claude'
+        expected = Path(configured).expanduser().absolute() if configured else home / '.claude'
         if request.get('config_root') is not None:
+            if os.name == 'nt':
+                c.require(home in expected.parents, 'CLEANUP_WINDOWS_CONFIG_OUTSIDE_PROFILE')
             c.require(Path(request['config_root']) == expected, 'CLEANUP_EFFECTIVE_CONFIG_ROOT_MISMATCH')
         if request.get('desktop_root') is not None:
-            allowed = (Path.home() / 'Library/Application Support/Claude', Path.home() / 'Library/Caches/Claude')
+            if os.name == 'nt':
+                roaming = windows.known_folder(c, 'roaming')
+                c.require(home in roaming.parents, 'CLEANUP_WINDOWS_ROAMING_OUTSIDE_PROFILE')
+                allowed = (roaming / 'Claude',)
+            else:
+                allowed = (home / 'Library/Application Support/Claude', home / 'Library/Caches/Claude')
             c.require(Path(request['desktop_root']) in allowed, 'CLEANUP_DESKTOP_ROOT_UNSUPPORTED')
 
     def guard(self, c):
         self.supported(c)
-        if platform.system() == 'Darwin':
-            command = ['/bin/ps', '-axo', 'comm=']
-        else:
-            system = os.environ.get('SystemRoot', r'C:\Windows')
-            c.require(re.fullmatch(r'[A-Za-z]:\\Windows', system, re.I), 'CLEANUP_SYSTEM_PATH_UNVERIFIED')
-            command = [system + r'\System32\tasklist.exe', '/FO', 'CSV', '/NH']
+        if os.name == 'nt':
+            with closing(windows.process_images(c)) as images:
+                for name in images:
+                    c.require(name.casefold() not in ('claude.exe', 'claude-code.exe', 'claudecode.exe',
+                                                     'claudedesktop.exe', 'claude-desktop.exe'),
+                              'CLEANUP_TARGET_WRITER_RUNNING')
+            return
+        command = ['/bin/ps', '-axo', 'comm=']
         try:
             done = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True,
                                   timeout=5, check=False, shell=False)
@@ -277,15 +330,26 @@ def _validate_request(c, request, allowed, existing=True):
     _alias(c, request.get('target_alias'))
     roots = request.get('roots')
     c.require(type(roots) is list and 1 <= len(roots) <= MAX_ROOTS, 'CLEANUP_ROOT_COUNT_INVALID')
+
+    def scope_path(value, directory=None, missing=False):
+        if os.name == 'nt' and not existing:
+            # A receipt can name a replaced or missing parent. Reconciliation
+            # verifies its identity before touching any selected child.
+            c.require(isinstance(value, (str, Path)), 'CLEANUP_ABSOLUTE_PATH_REQUIRED')
+            return windows.lexical_path(c, Path(value))
+        return _path(c, value, directory=directory, missing=missing)
+
     contexts = {}
     for key in ('config_root', 'desktop_root'):
         if request.get(key) is not None:
-            contexts[key] = _path(c, request[key], directory=True, missing=not existing)
+            contexts[key] = scope_path(request[key], directory=True, missing=not existing)
             c.require(contexts[key] != Path.home() and len(contexts[key].parts) > 2, 'CLEANUP_WHOLE_HOME_REJECTED')
-    protected = [_path(c, x, missing=True) for x in request.get('protected', [])]
-    c.require(type(request.get('protected', [])) is list and len(protected) <= 64, 'CLEANUP_PROTECTED_SCOPE_INVALID')
+    requested_protected = request.get('protected', [])
+    c.require(type(requested_protected) is list and len(requested_protected) <= 64, 'CLEANUP_PROTECTED_SCOPE_INVALID')
+    protected = [scope_path(x, missing=True) for x in requested_protected]
     # These are protection identities, not an invitation to scan the whole home.
-    protected += [Path.home() / '.codex', Path.home() / '.agents']
+    homes = (Path.home(), windows.known_folder(c, 'profile')) if os.name == 'nt' else (Path.home(),)
+    protected += [home / name for home in dict.fromkeys(homes) for name in ('.codex', '.agents')]
     selected = []
     for row in roots:
         c.require(type(row) is dict and set(row) == {'kind', 'path'} and row['kind'] in KINDS, 'CLEANUP_ROOT_KIND_INVALID')
@@ -293,7 +357,7 @@ def _validate_request(c, request, allowed, existing=True):
         c.require(category in allowed, 'CLEANUP_CATEGORY_NOT_SELECTED')
         context = contexts.get('config_root' if row['kind'].startswith('cli-') else 'desktop_root')
         c.require(context is not None, 'CLEANUP_CONTEXT_REQUIRED')
-        p = _path(c, row['path'], missing=not existing)
+        p = scope_path(row['path'], missing=not existing)
         c.require(any(p == context / suffix for suffix in suffixes), 'CLEANUP_ROOT_OUTSIDE_TYPED_SCOPE')
         c.require(not any(_overlap(p, x) for x in protected), 'CLEANUP_PROTECTED_PATH_OVERLAP')
         c.require(not any(_overlap(p, x['path_object']) for x in selected), 'CLEANUP_ROOT_OVERLAP')
@@ -320,7 +384,7 @@ def inventory(c, config_dir, desktop_dir, target_alias, output):
                 continue
             _path(c, p)
             found.append({'kind': kind, 'category': category, 'path': str(p), 'selected_by_default': category == 'cache'})
-    folder = storage._private_dir(c, output, create=True)
+    folder = _private_dir(c, output, create=True)
     pin = _write(c, folder / 'inventory.private.json', {'schema': SCHEMA, 'kind': 'inventory',
                  'target_alias': target_alias, 'entries': found, 'created_at': c.now(), 'authorization_saved': False})
     return {'status': 'inventory_written', 'exit_code': 0, 'candidate_count': len(found),
@@ -351,7 +415,7 @@ def plan(c, request, output, allowed=(), host=None):
              'authorization_saved': False, 'writers_exclusion': 'operator_attestation_and_detect_only',
              'node_hosted_cli_detection': 'not_guaranteed'}
     c.require(len(c.encode(value)) <= MAX_DOCUMENT, 'CLEANUP_DOCUMENT_BUDGET_EXCEEDED')
-    folder = storage._private_dir(c, output, create=True)
+    folder = _private_dir(c, output, create=True)
     pin = _write(c, folder / 'plan.private.json', value)
     return {'status': 'cleanup_plan_written', 'exit_code': 0, 'plan_sha256': pin,
             'selected_roots': len(roots), 'items': counter['items'], 'bytes': counter['bytes'],
@@ -379,6 +443,14 @@ def _load_plan(c, folder, pin, host):
 
 @contextmanager
 def _locks(c, roots):
+    if os.name == 'nt':
+        with ExitStack() as stack:
+            for row in sorted(roots, key=lambda r: r['path'].casefold()):
+                path = Path(row['path'])
+                key = hashlib.sha256(str(path).casefold().encode()).hexdigest()[:24]
+                stack.enter_context(windows.lock(c, path.parent / ('.clearpath-cleanup-' + key + '.lock'), row['parent']))
+            yield
+        return
     locks = []
     try:
         for row in sorted(roots, key=lambda r: r['path']):
@@ -403,35 +475,47 @@ def _locks(c, roots):
                 pass
 
 
-def _copy_backup(c, source, dest, expected):
-    c.require(not dest.exists(), 'CLEANUP_BACKUP_EXISTS')
-    for row in expected:
-        relative = row['relative']
-        target = dest if relative == '.' else dest / relative
-        origin = source if relative == '.' else source / relative
-        if row['type'] == 'directory':
-            target.mkdir(mode=0o700)
-        else:
-            raw = _read_content(c, origin, row['identity'])
-            c.require(c.sha(raw) == row['sha256'], 'CLEANUP_SOURCE_CHANGED')
-            storage._write(c, target, raw)
-    # Every backup is independent (not hardlinked), bounded and fully rehashed.
-    c.require(_content(_scan(c, dest)) == _content(expected), 'CLEANUP_BACKUP_INTEGRITY_MISMATCH')
+def _copy_backup(c, source, dest, expected, parent=None):
+    with _pin_directory(c, dest.parent, parent):
+        c.require(not _present(dest), 'CLEANUP_BACKUP_EXISTS')
+        for row in expected:
+            relative = row['relative']
+            target = dest if relative == '.' else dest / relative
+            origin = source if relative == '.' else source / relative
+            if row['type'] == 'directory':
+                if os.name == 'nt':
+                    _private_dir(c, target, create=True)
+                else:
+                    target.mkdir(mode=0o700)
+            else:
+                raw = _read_content(c, origin, row['identity'])
+                c.require(c.sha(raw) == row['sha256'], 'CLEANUP_SOURCE_CHANGED')
+                with _pin_directory(c, target.parent):
+                    _write_bytes(c, target, raw)
+        # Every backup is independent (not hardlinked), bounded and fully rehashed.
+        c.require(_content(_scan(c, dest)) == _content(expected), 'CLEANUP_BACKUP_INTEGRITY_MISMATCH')
 
 
 def _observations(c, operation):
     rows = []
     folder = _path(c, operation['operation_path'], directory=True)
+    storage_parents = operation.get('storage_parents', {})
+
+    def observed_snapshot(path, expected_parent):
+        with _pin_directory(c, path.parent, expected_parent):
+            return _scan(c, path) if _present(path) else None
+
     for item in operation['roots']:
         original, isolated = Path(item['path']), folder / 'quarantine' / str(item['index'])
         parent = _parent(c, original.parent)
         parent_matches = parent == item['parent']
         # A replacement directory at the same spelling is a different target;
         # do not even inspect its children under the old cleanup scope.
-        a = _scan(c, original) if parent_matches and (original.exists() or original.is_symlink()) else None
-        b = _scan(c, isolated) if isolated.exists() or isolated.is_symlink() else None
+        a = observed_snapshot(original, parent) if parent_matches else None
+        b = observed_snapshot(isolated, storage_parents.get('quarantine'))
         backup = folder / 'backup' / str(item['index'])
-        backup_ok = backup.exists() and _content(_scan(c, backup)) == _content(item['snapshot'])
+        backup_snapshot = observed_snapshot(backup, storage_parents.get('backup'))
+        backup_ok = backup_snapshot is not None and _content(backup_snapshot) == _content(item['snapshot'])
         if not parent_matches:
             state = 'parent_conflict'
         elif a is None and b is not None and _same_after_move(item['snapshot'], b):
@@ -448,7 +532,16 @@ def _observations(c, operation):
     return rows
 
 
-def quarantine(c, folder, pin, output, allow=False, stopped=False, host=None, mover=os.rename):
+def _move(c, source, target, expected, source_parent, target_parent, mover):
+    if mover is not None:
+        mover(source, target)  # API-only synthetic interruption hook.
+    elif os.name == 'nt':
+        windows.move(c, source, target, expected, source_parent, target_parent, (MAX_ITEMS, MAX_BYTES, MAX_DEPTH))
+    else:
+        os.rename(source, target)
+
+
+def quarantine(c, folder, pin, output, allow=False, stopped=False, host=None, mover=None):
     host = host or NativeHost()
     host.supported(c)
     c.require(allow and stopped, 'CLEANUP_CURRENT_WRITE_AND_STOPPED_CONFIRMATION_REQUIRED')
@@ -464,19 +557,27 @@ def quarantine(c, folder, pin, output, allow=False, stopped=False, host=None, mo
     output = _path(c, output, missing=True, directory=True)
     c.require(not any(_overlap(output, Path(row['path'])) for row in value['roots']) and
               not _overlap(output, folder), 'CLEANUP_OPERATION_OVERLAP')
-    c.require(all(Path(row['path']).lstat().st_dev == output.parent.stat().st_dev for row in value['roots']), 'CLEANUP_SAME_VOLUME_REQUIRED')
+    if os.name == 'nt':
+        volume = windows.volume(c, output.parent)
+        c.require(all(row['parent'].get('volume') == volume for row in value['roots']), 'CLEANUP_SAME_VOLUME_REQUIRED')
+    else:
+        c.require(all(Path(row['path']).lstat().st_dev == output.parent.stat().st_dev for row in value['roots']), 'CLEANUP_SAME_VOLUME_REQUIRED')
     host.guard(c)
     counter = {'items': 0, 'bytes': 0}
     for row in value['roots']:
         c.require(_parent(c, Path(row['path']).parent) == row['parent'] and _scan(c, row['path'], counter) == row['snapshot'], 'CLEANUP_SOURCE_CHANGED')
-    dest = storage._private_dir(c, output, create=True)
+    dest = _private_dir(c, output, create=True)
     for name in ('backup', 'quarantine', 'journal'):
-        storage._private_dir(c, dest / name, create=True)
+        _private_dir(c, dest / name, create=True)
     operation = {'schema': SCHEMA, 'kind': 'operation', 'id': uuid.uuid4().hex,
                  'created_at': c.now(), 'binding': host.binding(), 'target_alias': value['target_alias'],
                  'operation_path': str(dest), 'plan_path': str(folder), 'plan_sha256': pin,
                  'roots': value['roots'], 'authorization_saved': False}
-    operation_pin = _write(c, dest / 'operation.private.json', operation)
+    parents = {}
+    if os.name == 'nt':
+        parents = {name: _parent(c, dest / name) for name in ('.', 'backup', 'quarantine', 'journal')}
+        operation['storage_parents'] = parents
+    operation_pin = _write(c, dest / 'operation.private.json', operation, parent=parents.get('.'))
     attempted, done, stage, error = 0, 0, 'backup', None
     try:
         with _locks(c, value['roots']):
@@ -484,7 +585,7 @@ def quarantine(c, folder, pin, output, allow=False, stopped=False, host=None, mo
             for row in value['roots']:
                 host.guard(c)
                 c.require(_scan(c, row['path']) == row['snapshot'], 'CLEANUP_SOURCE_CHANGED')
-                _copy_backup(c, Path(row['path']), dest / 'backup' / str(row['index']), row['snapshot'])
+                _copy_backup(c, Path(row['path']), dest / 'backup' / str(row['index']), row['snapshot'], parents.get('backup'))
                 c.require(_scan(c, row['path']) == row['snapshot'], 'CLEANUP_SOURCE_CHANGED')
             for row in value['roots']:
                 host.guard(c)
@@ -493,20 +594,23 @@ def quarantine(c, folder, pin, output, allow=False, stopped=False, host=None, mo
                 target = dest / 'quarantine' / str(row['index'])
                 stage = 'prepared'
                 _write(c, dest / 'journal' / ('%04d.prepared.json' % row['index']),
-                       {'schema': SCHEMA, 'index': row['index'], 'operation_sha256': operation_pin, 'action': 'quarantine'})
+                       {'schema': SCHEMA, 'index': row['index'], 'operation_sha256': operation_pin, 'action': 'quarantine'},
+                       parent=parents.get('journal'))
                 stage = 'rename_attempted'
                 attempted += 1
-                c.require(not target.exists(), 'CLEANUP_QUARANTINE_CONFLICT')
-                mover(source, target)
+                with _pin_directory(c, target.parent, parents.get('quarantine')):
+                    c.require(not _present(target), 'CLEANUP_QUARANTINE_CONFLICT')
+                _move(c, source, target, row['snapshot'], row['parent'], parents.get('quarantine'), mover)
                 storage._sync_dir(source.parent)
                 storage._sync_dir(target.parent)
                 stage = 'readback'
                 moved = _scan(c, target)
-                c.require(not source.exists() and _same_after_move(row['snapshot'], moved), 'CLEANUP_MOVE_READBACK_FAILED')
+                c.require(not _present(source) and _same_after_move(row['snapshot'], moved), 'CLEANUP_MOVE_READBACK_FAILED')
                 host.guard(c)
                 _write(c, dest / 'journal' / ('%04d.done.json' % row['index']),
                        {'schema': SCHEMA, 'index': row['index'], 'operation_sha256': operation_pin,
-                        'action': 'quarantine', 'isolated_snapshot': moved})
+                        'action': 'quarantine', 'isolated_snapshot': moved},
+                       parent=parents.get('journal'))
                 done += 1
             stage = 'completed'
     except (Exception, KeyboardInterrupt) as exc:
@@ -519,7 +623,7 @@ def quarantine(c, folder, pin, output, allow=False, stopped=False, host=None, mo
               'writer_exclusion': 'operator_attestation_and_detect_only', 'node_hosted_cli_detection': 'not_guaranteed',
               'next_step': '保留私有备份与操作目录；需要恢复时先 cleanup-reconcile，再审阅精确恢复。'}
     try:
-        _write(c, dest / 'result.json', result)
+        _write(c, dest / 'result.json', result, parent=parents.get('.'))
     except Exception:
         result.update(status='partial_or_unconfirmed', exit_code=2, reason_code='CLEANUP_RESULT_WRITE_FAILED', changes_state='reconcile_required')
     return result
@@ -535,6 +639,13 @@ def _operation(c, folder, pin, host):
     c.require(plan_value['roots'] == operation.get('roots'), 'CLEANUP_OPERATION_PLAN_CHANGED')
     for name in ('backup', 'quarantine', 'journal'):
         _path(c, folder / name, directory=True)
+    if os.name == 'nt':
+        parents = operation.get('storage_parents')
+        c.require(type(parents) is dict and set(parents) == {'.', 'backup', 'quarantine', 'journal'},
+                  'CLEANUP_OPERATION_INVALID')
+        for name, expected in parents.items():
+            _private_dir(c, folder / name)
+            c.require(_parent(c, folder / name) == expected, 'CLEANUP_OPERATION_STORAGE_CHANGED')
     return folder, operation
 
 
@@ -549,7 +660,7 @@ def reconcile(c, folder, pin, output, host=None):
     output = _path(c, output, missing=True, directory=True)
     c.require(not _overlap(output, folder) and not _overlap(output, Path(operation['plan_path'])) and
               not any(_overlap(output, Path(x['path'])) for x in operation['roots']), 'CLEANUP_OBSERVATION_OUTPUT_OVERLAP')
-    dest = storage._private_dir(c, output, create=True)
+    dest = _private_dir(c, output, create=True)
     digest = _write(c, dest / 'observation.private.json', value)
     states = [x['state'] for x in observed]
     return {'status': 'observed', 'exit_code': 0 if all(x in ('isolated', 'original_present') for x in states) else 2,
@@ -560,7 +671,7 @@ def reconcile(c, folder, pin, output, host=None):
             'restoration_authorized': False}
 
 
-def restore(c, observation_folder, pin, output, allow=False, stopped=False, host=None, mover=os.rename):
+def restore(c, observation_folder, pin, output, allow=False, stopped=False, host=None, mover=None):
     host = host or NativeHost()
     host.supported(c)
     c.require(allow and stopped, 'CLEANUP_CURRENT_WRITE_AND_STOPPED_CONFIRMATION_REQUIRED')
@@ -574,7 +685,9 @@ def restore(c, observation_folder, pin, output, allow=False, stopped=False, host
     output = _path(c, output, missing=True, directory=True)
     c.require(not any(_overlap(output, Path(row['path'])) for row in operation['roots']) and
               not _overlap(output, folder) and not _overlap(output, Path(operation['plan_path'])), 'CLEANUP_RESTORE_OUTPUT_OVERLAP')
-    dest = storage._private_dir(c, output, create=True)
+    dest = _private_dir(c, output, create=True)
+    parents = operation.get('storage_parents', {})
+    journal_parent = _parent(c, dest) if os.name == 'nt' else None
     restore_id = uuid.uuid4().hex
     restored, attempted, error, stage = 0, 0, None, 'prepared'
     try:
@@ -585,24 +698,26 @@ def restore(c, observation_folder, pin, output, allow=False, stopped=False, host
                 host.guard(c)
                 source = folder / 'quarantine' / str(root['index'])
                 target = Path(root['path'])
-                c.require(not target.exists() and not target.is_symlink(), 'CLEANUP_RESTORE_DESTINATION_EXISTS')
+                with _pin_directory(c, target.parent, observed['original_parent']):
+                    c.require(not _present(target), 'CLEANUP_RESTORE_DESTINATION_EXISTS')
                 c.require(_parent(c, target.parent) == observed['original_parent'] and
                           _scan(c, source) == observed['isolated_snapshot'], 'CLEANUP_OBSERVATION_CHANGED')
                 c.require(_content(_scan(c, folder / 'backup' / str(root['index']))) == _content(root['snapshot']), 'CLEANUP_BACKUP_INTEGRITY_MISMATCH')
                 stage = 'prepared'
                 _write(c, dest / ('%04d.prepared.json' % root['index']),
                        {'schema': SCHEMA, 'action': 'restore', 'index': root['index'],
-                        'operation_sha256': record['operation_sha256'], 'observation_sha256': pin})
+                        'operation_sha256': record['operation_sha256'], 'observation_sha256': pin}, parent=journal_parent)
                 stage = 'rename_attempted'
                 attempted += 1
-                mover(source, target)
+                _move(c, source, target, observed['isolated_snapshot'], parents.get('quarantine'),
+                      observed['original_parent'], mover)
                 storage._sync_dir(source.parent)
                 storage._sync_dir(target.parent)
                 stage = 'readback'
-                c.require(not source.exists() and _same_after_move(observed['isolated_snapshot'], _scan(c, target)), 'CLEANUP_RESTORE_READBACK_FAILED')
+                c.require(not _present(source) and _same_after_move(observed['isolated_snapshot'], _scan(c, target)), 'CLEANUP_RESTORE_READBACK_FAILED')
                 host.guard(c)
                 _write(c, dest / ('%04d.done.json' % root['index']),
-                       {'schema': SCHEMA, 'action': 'restore', 'index': root['index'], 'restore_id': restore_id})
+                       {'schema': SCHEMA, 'action': 'restore', 'index': root['index'], 'restore_id': restore_id}, parent=journal_parent)
                 restored += 1
             stage = 'completed'
     except (Exception, KeyboardInterrupt) as exc:
@@ -614,7 +729,7 @@ def restore(c, observation_folder, pin, output, allow=False, stopped=False, host
               'permanent_deletion': False, 'network_requests': 0,
               'next_step': '保留双方材料；中断后用原操作重新对账，不能重放旧观察或覆盖新增数据。'}
     try:
-        _write(c, dest / 'result.json', result)
+        _write(c, dest / 'result.json', result, parent=journal_parent)
     except Exception:
         result.update(status='partial_or_unconfirmed', exit_code=2, reason_code='CLEANUP_RESULT_WRITE_FAILED', changes_state='reconcile_required')
     return result

@@ -4,8 +4,6 @@
 
 **[下载最新客户包](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip)** · [校验文件](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip.sha256) · [使用说明](START-HERE.md)
 
-0.17.0新增工具可从 [当前源码包](https://github.com/LOM2729/claude-environment-check/archive/refs/heads/main.zip) 使用；上面的latest Release链接仍以已发布版本为准，不代表本轮新安装包已经发布。
-
 ## 桌面端
 
 [下载桌面端](https://github.com/LOM2729/claude-environment-check/releases/latest)：macOS 13+ Apple Silicon 与 Windows x64，独立应用内置五步向导和检查引擎，无需客户安装 Python。支持选配置／节点、只读检查、确认导出新文件、读回核对、已有报告导入及 Codex 续做。实际导入、系统网络配置和联网实测仍按本机具体方案完成，不能把文件导出当作配置已生效。详见 [桌面使用与构建说明](https://github.com/LOM2729/claude-environment-check/blob/main/desktop/README.md)。
@@ -32,11 +30,11 @@
 
 [完整方法与未验证项](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/complete-environment-method.md)、[来源覆盖与阅读记录](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-coverage.md)统一归档，不在两平台客户包中重复分发。main 文档与已发布安装包分别维护；第三方方法不代表本包新增执行器。
 
-## 0.17.0 可选执行模块
+## 专项工具
 
-已补齐程序化访谈、浏览器WebRTC检测、逐文件更新核对、Mac数据隔离、固定版本Clash原生适配、系统防护开关，以及Linux VM／VPS部署维护；具体命令与平台边界见 [可选执行工具](.agents/skills/claude-mac-readiness/references/execution-capabilities.md)。入口仍按任务加载，不强制把这些功能一起运行。
+0.18.0 的桌面「专项工具」页提供需求访谈、浏览器 WebRTC 检测、Skill 更新核对、Claude 缓存隔离与恢复、Clash 域名规则，以及系统断线保护和 Linux 部署执行包。需要单独运行某个工具时可直接进入对应入口。具体命令与支持范围见 [可选执行工具](.agents/skills/claude-mac-readiness/references/execution-capabilities.md)。
 
-源码与隔离测试可交付；真实浏览器、管理员权限、防火墙、重启恢复和Windows／Linux目标机验收尚未完成。Mac／Linux系统防护的独立恢复另需已核可信Python，Windows使用系统PowerShell。Mac数据隔离和Clash 2.5.8适配不扩称Windows原生支持；桌面端新增工具通过内置后端CLI使用，现有五步界面保持原有操作范围。已发布安装包仍以对应Release版本为准。
+Windows 缓存隔离限本机固定 NTFS 卷和受支持的 Claude 目录。Clash 原生规则写入支持 macOS 版 2.5.8 与 2.5.10。实际浏览器样本、管理员权限下的防护与恢复、真实客户端目录和有效路由仍待目标设备验收。
 
 ## 新增准备与排障模块
 

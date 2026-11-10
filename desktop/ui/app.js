@@ -4,7 +4,7 @@
 // Missing values remain incomplete; navigating never changes workflow state.
 (() => {
   const stages = ['prepare', 'confirm', 'configure', 'verify', 'deliver'];
-  const labels = { prepare: '准备', confirm: '确认', configure: '配置', verify: '验证', deliver: '交付', results: '检查结果', help: '使用说明', recovery: '恢复资料' };
+  const labels = { prepare: '准备', confirm: '确认', configure: '配置', verify: '验证', deliver: '交付', results: '检查结果', help: '使用说明', recovery: '恢复资料', tools: '专项工具' };
   const allowedActions = new Set(['status', 'choose_config', 'choose_report', 'collect', 'prepare', 'export_candidate', 'choose_readback', 'handoff', 'reveal_workspace']);
   const actionMessages = { status: '正在读取已保存的进度…', choose_config: '请在文件窗口选择现有配置…', choose_report: '请选择本机已有的检查报告 JSON 文件…', collect: '正在进行本地只读检查…', prepare: '正在准备本轮方案…', export_candidate: '请确认方案并选择新文件的保存位置…', choose_readback: '请选择从实际客户端重新导出的配置…', handoff: '正在生成并复制续做提示词…', reveal_workspace: '正在打开本机材料目录…' };
   const successMessages = { status: '已读取保存的进度。未重新扫描或联网。', choose_config: '已读取配置，请选择本次使用的节点。', choose_report: '已导入历史报告，未执行当前环境检查。', collect: '本地只读检查已返回，请查看检查结果。', prepare: '方案已返回，请查看就绪状态与未完成项。', export_candidate: '导出操作已返回，请按提示继续。', choose_readback: '文件核对已返回，实际网络仍需单独验证。', handoff: '续做提示词已复制。请粘贴到 Codex 中继续。', reveal_workspace: '已打开材料目录。' };
@@ -70,7 +70,7 @@
   }
 
   function updateControls() {
-    all('button').forEach((button) => {
+    all('button[data-view], button[data-action]').forEach((button) => {
       let enabled = true;
       if (button.dataset.view) enabled = canView(button.dataset.view);
       const action = button.dataset.action;
@@ -79,7 +79,7 @@
       if (action === 'choose_readback') enabled = canConfigure();
       button.disabled = busy || !enabled;
     });
-    all('input').forEach((input) => { input.disabled = busy; });
+    all('#view-prepare input').forEach((input) => { input.disabled = busy; });
     $('#node-select').disabled = busy || nodeNames().length === 0;
     $('#main').setAttribute('aria-busy', String(busy));
     const ready = Boolean(config() && selectedNode && selectedClients.length);
@@ -263,7 +263,7 @@
 
   all('[data-view]').forEach((button) => button.addEventListener('click', () => { if (!busy) showView(button.dataset.view); }));
   all('[data-action]').forEach((button) => button.addEventListener('click', () => invoke(button.dataset.action)));
-  all('input').forEach((input) => input.addEventListener('change', syncDraft));
+  all('#view-prepare input').forEach((input) => input.addEventListener('change', syncDraft));
   $('#node-select').addEventListener('change', syncDraft);
   renderState({});
   invoke('status');

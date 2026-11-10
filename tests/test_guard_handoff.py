@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import claude_setup as c
+import config_recovery as storage
 import guard_handoff as handoff
 import system_guard as guard
 
@@ -48,7 +49,7 @@ class GuardHandoff(unittest.TestCase):
         self.prefix = [str(exe), '--cli']
         self.plan = guard.make_plan(spec())
         self.bundle = self.root / "bundle ' $HOME % !"
-        self.bundle.mkdir(mode=0o700)
+        self.bundle = storage._private_dir(c, self.bundle, create=True)
         (self.bundle / 'plan.json').write_bytes(c.encode(self.plan))
         self.pin = guard.digest(self.plan)
         self.clock = [10000.0]

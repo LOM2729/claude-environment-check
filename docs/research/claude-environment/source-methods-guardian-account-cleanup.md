@@ -101,7 +101,7 @@
 7. **SIMPLE恢复。** off移键，必要时无冲突恢复备份，不覆盖后改。源独立脚本没复用完整路径/并发事务保护，读回只重点查遥测键；不能因原子写就称全部设置保持，当前版本另验。
 8. **项目purge。** 原文列claude purge <项目路径> --dry-run预览，再本人决定实际purge；清项目对话/自动记忆/.claude.json项目项，不清shell-snapshots/backups。先核当前CLI帮助/版本/损失；它会运行Claude，不是纯离线检查或已验证可恢复删除。
 9. **卸载Desktop保CLI。** S06用App Cleaner详细视图按完整路径选目标，保留CLI入口、版本目录、.claude、.claude.json；额外Claude Code Haha、claude-code-desktop、URL Handler各判归属。Desktop vm_bundles/本地任务非纯缓存，先导出/备份。
-10. **浏览器集成。** NativeMessagingHosts、PWA、扩展分开；删消息清单影响桥接，不等于卸载扩展/清Cookie。网站数据优先原生单站点入口，见[浏览器清理](browser-cleanup.md)。
+10. **浏览器集成。** NativeMessagingHosts、PWA、扩展分开；删消息清单影响桥接，不等于卸载扩展/清Cookie。网站数据优先原生单站点入口，见[浏览器清理](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/browser-cleanup.md)。
 11. **验收与永久性。** 核多安装入口、原位置、进程/集成、CLI/项目保留；移出、废纸篓、删除备份、SSD安全擦除分别说，TM/APFS不自动纳入。S06历史Edge12条Cookie只属于那次，不代表当前所有Profile。
 
 **2026-11-10官方文档补核（根代理完成，未运行CLI）：** [bare模式](https://code.claude.com/docs/en/headless#start-faster-with-bare-mode)与[环境变量](https://code.claude.com/docs/en/env-vars)确认CLAUDE_CODE_SIMPLE等价bare，不读OAuth/Keychain；认证需ANTHROPIC_API_KEY或通过--settings提供apiKeyHelper；显式--add-dir的skills存在例外。**不要把bare称为“订阅轻量模式”。** [CLI参考](https://code.claude.com/docs/en/cli-reference)另有--safe-mode，保留正常认证、工具和权限，适合定位自定义配置故障；它与bare分开选择。

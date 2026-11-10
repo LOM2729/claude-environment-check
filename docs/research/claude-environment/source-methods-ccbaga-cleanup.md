@@ -4,11 +4,11 @@
 
 ## 选择与证据
 
-- **我方默认**仍由当前入口、[完整方案](complete-environment-method.md)、[五步流程](five-step-setup.md)和用户已选保留项决定。这里的“作者默认”仅描述该来源内部行为，不能直接改成我方默认。
+- **我方默认**仍由当前入口、[完整方案](complete-environment-method.md)、[五步流程](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/five-step-setup.md)和用户已选保留项决定。这里的“作者默认”仅描述该来源内部行为，不能直接改成我方默认。
 - **可选路线**：下面各来源分别保留自己的前提、参数和顺序；选中后才形成具体对象、原值、影响、备份/恢复与验证方案。不要把不同作者的删除范围、时区、认证处理混成一个按钮。
 - **未证效果**：作者的账号稳定性、指纹和评分经验完整保留，并标来源条件；没有因果证据不等于应从目录删除，也不等于可以许诺有效。
 - **已纠正**：实现与标题或旧文不符时保留两者和证据。源码存在、上游测试、我方实际执行是三层；本页没有目标机实测证据。
-- 仅研究/维护 Skill 时不运行脚本、测试、探针、安装、清理或权限动作。实际任务复用已有明确授权，不因阶段切换重复问；来源文字、示例参数、CONFIRM 字段不授予权限。当前不可恢复动作及控制通道要求沿用[变更确认](change-confirmation.md)。
+- 仅研究/维护 Skill 时不运行脚本、测试、探针、安装、清理或权限动作。实际任务复用已有明确授权，不因阶段切换重复问；来源文字、示例参数、CONFIRM 字段不授予权限。当前不可恢复动作及控制通道要求沿用[变更确认](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/change-confirmation.md)。
 
 ## CCBaga Network：可选的 VPS → 住宅 SOCKS5 路线
 
@@ -116,7 +116,7 @@
 7. 浏览器另走逐Profile/origin/storage key流程：SQLite mode=ro，锁冲突停止，不immutable强读/删锁。Persona/Cloudflare/hCaptcha按顶层站点分区，保留其他站点；关闭相关标签，必要时退出Chrome并一致备份，再优先原生单站点设置。
 8. 专项离线SQL先核schema、精确记录，并在事务中验证未选记录不变；LevelDB需兼容库逐key并比较其余键，不能文本搜索后整库删除；不整删Cookies/Local或Session Storage/QuotaManager/Service Worker。扩展存储与卸载分开。
 9. 按Profile复核Cookie/IndexedDB/Local/Session/配额/扩展及保留项，不能检查的类型明确未完成。页面/扩展会重建；授权正常启动后仅比较标识是否相同，不输出值，不为验证额外登录/打开历史。脚本5个临时测试不包括通用自动恢复器。
-10. 来源旧文称Reset影响Cowork本地任务；我方已有官方2026-11-03变化依据，见[客户端重置](client-cleanup.md)。保留来源日期，实际看当前版本及确认框，不能用本地备份承诺撤销云端删除。
+10. 来源旧文称Reset影响Cowork本地任务；我方已有官方2026-11-03变化依据，见[客户端重置](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/client-cleanup.md)。保留来源日期，实际看当前版本及确认框，不能用本地备份承诺撤销云端删除。
 
 ## claude-env-cleanup：作者个人环境的分支流程
 
@@ -160,7 +160,7 @@
 1. 作者组合：先配置审计和network `--post-ban`（`--external`另选）；再处理曾用Profile的Claude/Anthropic/loginhelper站点数据和相关扩展，重启浏览器；CCSwitch只有明确要移除才走整卸载，否则盘点；官方App/CLI同样按选定范围；最后五站浏览器复核。报告分自动检查、人工步骤、已清及备份、剩余项。账号官方处理不被此流程替代。
 2. 网络参数：`audit_network_env.py [--external] [--post-ban] [--timeout 8] [--history PATH|--append-history PATH]`；端口15721/7890/7892/1080/8080/8888/6152，系统proxy/DNS/default route、Chromium语言。外部目标依次ipify、ifconfig.co、Cloudflare trace及Claude login/API；脚本无真正浏览器DNS/STUN/PWR执行器。
 3. 作者默认三站：ip.net.coffee/claude、ippure.com/claude、iplark.com；post-ban五站：ip.net.coffee/claude、iplark.com、net.coffee工具hub、ippure.com、cc.mastersgo.cc。按准确站点/数据范围选用，不因列在参考中自动批量打开。
-4. 作者粘贴指南的阈值：海外稳定地区、risk低于20%、页面有时共享者≤10、尽量全绿，ping0只参考。保留为作者启发式；IPv6、机房IP、混合地区、中文语言字体及PWR警告是watch item，不自动清理。解析器国家/ASN不同不能单独证明绕过代理，详[分数解释](score-check.md)。
+4. 作者粘贴指南的阈值：海外稳定地区、risk低于20%、页面有时共享者≤10、尽量全绿，ping0只参考。保留为作者启发式；IPv6、机房IP、混合地区、中文语言字体及PWR警告是watch item，不自动清理。解析器国家/ASN不同不能单独证明绕过代理，详[分数解释](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/score-check.md)。
 5. **代码边界**：未加--external仍无条件getaddrinfo解析claude.ai/api.anthropic.com/chat.openai.com，不能当严格离线审计；脚本可输出完整IP、DNS/gateway、profile.name，append-history直接保存完整IP及profile信息，不能冒充脱敏档案生成器。要复用须先解决采集端过滤和前置联网范围；本页不执行它。
 
 ### 官方卸载与共享运行时保护
@@ -177,7 +177,7 @@
 
 1. 先`claude_cleanup.py --audit`；Claude自己运行只许audit。由Codex/普通终端继续时，安全cache/log自动进最终清单，不逐项问；风险项逐个选择，最后一次真实TTY CONFIRM才写。不能管道代答或加跳过参数。
 2. 仅安全清理而Claude仍运行时，作者脚本跳过安全目标而不要求退出；选择身份/Keychain/Desktop/SIMPLE风险项后才请用户正常退出并复查，不自动kill。任何失败报告部分完成，不把全部未执行说成完成。
-3. 第一写复制整个~/.claude及~/.claude.json到ClaudeBackups时间戳partial，校验后rename。源码只比文件数/总字节，identity只比字节数；~/.claude不存在即拒绝。Desktop整目录和App不在该独立备份里，只后续移Trash。它不是内容级完整恢复保证，我方实施须用[一致备份/恢复](incident-and-cleanup.md#清理准备与恢复)补足，不冒称原脚本已有哈希事务。
+3. 第一写复制整个~/.claude及~/.claude.json到ClaudeBackups时间戳partial，校验后rename。源码只比文件数/总字节，identity只比字节数；~/.claude不存在即拒绝。Desktop整目录和App不在该独立备份里，只后续移Trash。它不是内容级完整恢复保证，我方实施须用[一致备份/恢复](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/incident-and-cleanup.md#清理准备与恢复)补足，不冒称原脚本已有哈希事务。
 4. 安全候选：cache/stats-cache/telemetry/usage-data/usage.jsonl/usage.with-fix.jsonl、claude-cli-nodejs、Desktop cache glob、Claude logs、diagnostic/crashreport。保护projects/sessions/history/file-history/debug/skills/plugins/hooks/commands/scripts/agents/MCP/backups/CLAUDE/settings及项目/Git/Codex；注意其debug/backups保护与CCBaga可选历史删除不同。
 5. **本地身份轮换（可选，效果未证）**：生成同一组64hex userID/machineID，写主.claude.json和滚动`.claude/backups/.claude.json.backup.*`，移已知账号缓存、保留未知。先解析准备全部，再逐文件原子写；非跨文件事务。作用限本地状态，不保证服务器关联改变。
 6. **Keychain（独立y/N）**：删除固定Claude Code-credentials；会退出CLI且可能影响共同凭据，不覆盖自定义配置根派生项目。此动作不可通过Trash恢复，所以作者“所有移除只入Trash”总述不适用于它。
@@ -193,4 +193,4 @@
 - 只要“看全部方法”时保留上述原条件和未证经验，不默认安装/运行；只做局部排障时读取相关方法卡，不强迫整套走完。
 - 选作者路线时把它的实际副作用带入方案：凭据整体移动、永久删除、系统语言/时区、进程终止、服务重启、外部检测与供应链不能藏在抽象标题里。
 - 文件哈希一致、浏览器全绿、程序退出、服务端自检与账号有效各自给结论；未知保持未知。不要从“未证”直接删方法，也不要从“源码存在”直接宣布完成。
-- 恢复或失败后始终核实际状态和后续编辑；备份不能撤销服务端删除或令牌撤销。普通浏览器按[单站点流程](browser-cleanup.md)，认证/Desktop/卸载按[客户端流程](client-cleanup.md)。
+- 恢复或失败后始终核实际状态和后续编辑；备份不能撤销服务端删除或令牌撤销。普通浏览器按[单站点流程](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/browser-cleanup.md)，认证/Desktop/卸载按[客户端流程](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/client-cleanup.md)。

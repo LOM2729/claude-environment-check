@@ -1,6 +1,6 @@
 # 注册、订阅与使用准备
 
-Guardian、env-cleanup等互相不同的使用节奏和渠道方法完整保留在 [账号来源方法](source-methods-guardian-account-cleanup.md)及 [清理来源方法](source-methods-ccbaga-cleanup.md)，均分清来源经验与官方条件，不合成为账号安全门槛。
+Guardian、env-cleanup等互相不同的使用节奏和渠道方法完整保留在 [账号来源方法](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-account-cleanup.md)及 [清理来源方法](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-ccbaga-cleanup.md)，均分清来源经验与官方条件，不合成为账号安全门槛。
 
 用于用户明确询问首次注册、订阅渠道、套餐或使用节奏。普通网络故障直接进入 [事故分流](incident-and-cleanup.md)，已有付费与权益不符用 [账单检查](billing-checks.md)，不让用户重新走购买问卷。本文提供准备和比较；账号认证、身份核验及付款仍由用户在官方流程处理。
 
@@ -40,4 +40,3 @@ Guardian、env-cleanup等互相不同的使用节奏和渠道方法完整保留�
 4. 取消、退款、申诉是不同动作。按当期官方规则和真实事实处理，不给固定成功率或保证到账／回复天数。
 
 来源：[上游账号准备](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/account-onboarding.md)、[支付说明](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/accounts-and-payments.md)。本次采用核对方法，未采纳其未获验证的养号阈值、KYC 后弃号、购买教育邮箱或“退款稳定率高”结论。Claude 当前产品／地区／账单规则在实际咨询时从官方入口复核；网络环境通过不替代这些规则。
-

@@ -1,6 +1,6 @@
 # Claude-Guardian：增量核对与选择性接入
 
-完整来源方法、最新PF/Switch与清理恢复已补读，见 [来源覆盖](source-coverage.md)、[网络路线](source-methods-guardian-network.md)与 [事务/离线恢复](source-methods-guardian-runtime-recovery.md)。实际操作按 [五步任务分支](workflow-methods.md)，来源状态不等于本机通过。
+完整来源方法、最新PF/Switch与清理恢复已补读，见 [来源覆盖](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-coverage.md)、[网络路线](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-network.md)与 [事务/离线恢复](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-runtime-recovery.md)。实际操作按 [五步任务分支](workflow-methods.md)，来源状态不等于本机通过。
 
 核对日期：2026-10-31。用于用户提到 Claude-Guardian、第三方检测报告或需要进一步定位 DNS／防火墙故障时。普通配置不必整篇加载。这里是来源核对与操作指引，不新增执行器、网络探针或运行授权。路线／出口／线路看 [部署规划](deployment-routes.md)，注册订阅看 [准备模块](account-preparation.md)，故障与明确清理看 [事故模块](incident-and-cleanup.md)，时区看 [默认目标](timezone-policy.md)。
 

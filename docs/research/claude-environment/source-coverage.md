@@ -24,7 +24,7 @@
 | 要查看的内容 | 入口 | 本轮具体补齐 |
 | --- | --- | --- |
 | 默认、可选、未证、纠正如何分类 | [完整方法分类](complete-environment-method.md) | 保留已有用户默认；来源冲突不静默删去 |
-| Guardian IPv6/网络/系统防护 | [完整网络方法](source-methods-guardian-network.md)、[本地IPv6默认](unified-ipv4.md) | 多层IPv6、PF生命周期、Windows三档与已有Allow、Switch、DNS/UDP故障恢复 |
+| Guardian IPv6/网络/系统防护 | [完整网络方法](source-methods-guardian-network.md)、[本地IPv6默认](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/unified-ipv4.md) | 多层IPv6、PF生命周期、Windows三档与已有Allow、Switch、DNS/UDP故障恢复 |
 | Guardian VM/VPS/线路与管理 | [完整网络方法](source-methods-guardian-network.md) | 安装→配置→管理救援→防火墙→验收；Remote-SSH/noVNC/tmux、内存/OOM、SSH/Realm/BBR、自愈、S10两机条件 |
 | Guardian 浏览器/客户端/痕迹链 | [账号与清理方法](source-methods-guardian-account-cleanup.md) | 站点/Profile/凭据/历史/扩展/后台分别处理，SIMPLE/bare、purge、回退边界 |
 | Guardian 注册/手机/订阅/申诉 | [账号与清理方法](source-methods-guardian-account-cleanup.md) | 原条件、等待期、渠道、移动端与来源内部相反建议；均标效果证据 |

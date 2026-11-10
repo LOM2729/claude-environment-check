@@ -1,6 +1,6 @@
 # Claude 运行路线、出口来源与部署规划
 
-来源完整部署与选型方法见 [Guardian网络/VM/VPS](source-methods-guardian-network.md)、[CCBaga网络部署](source-methods-ccbaga-cleanup.md)和 [17份VPS报告](source-methods-vps-reports.md)。按 [统一任务分支](workflow-methods.md)选择用途和恢复范围，历史参数不作当前采购承诺。
+来源完整部署与选型方法见 [Guardian网络/VM/VPS](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-network.md)、[CCBaga网络部署](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-ccbaga-cleanup.md)和 [17份VPS报告](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-vps-reports.md)。按 [统一任务分支](workflow-methods.md)选择用途和恢复范围，历史参数不作当前采购承诺。
 
 只在用户比较路线、选择出口或明确需要 VM／VPS 部署时读取。已有设备和任务明确时沿用当前路线，不为普通修复重走问卷。比较方案先交付比较；实际安装、服务器访问和网络变更沿用本轮授权范围及恢复要求。
 
@@ -56,4 +56,3 @@ VPS 只作为代理服务器时，运行路线仍是本机或 VM。将远程桌�
 原值、前后结果和恢复动作进入本轮记录。内核、SSH、防火墙和持久服务变更需要可用救援；后台回滚任务存在不等于恢复已验证。
 
 来源：[上游路线](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/routes-and-platforms.md)、[出口来源](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/egress-ip-options.md)、[VM](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/vm-guidance.md)、[VPS](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/vps-guidance.md)、[线路优化](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/line-optimization.md)。以上为独立归纳的规划方法，未安装上游脚本。
-

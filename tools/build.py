@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 COMMON_REFS = ('guardian-integration.md', 'timezone-policy.md', 'deployment-routes.md', 'account-preparation.md', 'incident-and-cleanup.md', 'billing-checks.md', 'change-confirmation.md', 'customer-setup.md',
                'evidence-sources.md', 'execution-paths.md', 'guided-workflow.md',
                'locale-and-language.md', 'proxy-import.md', 'score-check.md', 'automation.md', 'automatic-configuration.md', 'ai-dedicated-routing.md', 'lifecycle-checks.md', 'recovery-and-acceptance.md', 'workflow-progress.md', 'report-dashboard.md', 'five-step-setup.md', 'unified-ipv4.md', 'domestic-video-udp.md', 'shadowrocket-domestic.md', 'service-routing-checks.md', 'tutorial-coverage.md', 'connection-reuse.md')
-COMMON_REFS += ('browser-cleanup.md', 'client-cleanup.md', 'ccbaga-methods.md', 'complete-environment-method.md', 'source-coverage.md', 'cchahaeasy-review.md', 'source-methods-ccbaga-cleanup.md', 'source-methods-ccbaga-native.md', 'source-methods-ccbaga-ui-maintenance.md', 'source-methods-guardian-account-cleanup.md', 'source-methods-guardian-network.md', 'source-methods-guardian-runtime-recovery.md', 'source-methods-vps-reports.md', 'source-read-manifest.json', 'source-complete-read-manifest.json', 'workflow-methods.md')
+COMMON_REFS += ('browser-cleanup.md', 'client-cleanup.md', 'workflow-methods.md', 'source-index.md')
 ROOT_FILES = ('START-HERE.md', '启动提示词.txt', '自动配置启动提示词.txt', 'AGENTS.md', 'README.md', 'requirements.txt',
               'VERSION', '客户配置/放置说明.txt', '交付记录/记录说明.txt')
 

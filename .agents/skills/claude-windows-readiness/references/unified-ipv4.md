@@ -1,6 +1,6 @@
 # 统一指定代理与关闭 IPv6
 
-完整六层IPv6证据、双栈可选路线及当前工具门槛见 [任务分支](workflow-methods.md#默认配置与可选路线)和 [Guardian网络方法](source-methods-guardian-network.md)。`dns-ready`只验既有IPv4-only路线，偏好IPv4、AAAA空或一次超时不等于系统阻断；双栈需另设验收，不能为了过门槛擅自关闭。
+完整六层IPv6证据、双栈可选路线及当前工具门槛见 [任务分支](five-step-setup.md#1-准备读取现状并形成候选)和 [Guardian网络方法](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-network.md)。`dns-ready`只验既有IPv4-only路线，偏好IPv4、AAAA空或一次超时不等于系统阻断；双栈需另设验收，不能为了过门槛擅自关闭。
 
 执行顺序只按 [五步流程](five-step-setup.md)，完整默认候选明确使用 `--policy domestic-v4`；下文 `unified-v4` 命令仅用于客户明确选择的兼容策略，不覆盖当前默认。
 

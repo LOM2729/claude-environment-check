@@ -24,13 +24,11 @@
 
 [五步细则](.agents/skills/claude-mac-readiness/references/five-step-setup.md) 是唯一执行顺序；长清单是内部核对表。客户不用填写技术参数或 JSON，已有配置和节点不重复问。系统语言保持，完整配置默认把时区对齐指定稳定出口纳入方案，目标不清先补问；浏览器语言无明确目标保留。
 
-## 完整流程与来源方法
+## 流程与按需资料
 
-按 [流程分支与来源映射](.agents/skills/claude-mac-readiness/references/workflow-methods.md)选择本轮任务：网络配置、定向清理、身份/程序维护或持续防护/远端路线。保留同一五步顺序，具体方法带条件、备份/恢复和验证；纯资料任务只改文档，纯离线清理不要求先改整机网络。
+日常从 [Mac Skill](.agents/skills/claude-mac-readiness/SKILL.md) 或 [Windows Skill](.agents/skills/claude-windows-readiness/SKILL.md)进入：完整配置读五步，局部任务只读对应专题。
 
-[默认/可选/未经验证/已纠正](.agents/skills/claude-mac-readiness/references/complete-environment-method.md) · [来源阅读范围](.agents/skills/claude-mac-readiness/references/source-coverage.md) · [Windows流程](.agents/skills/claude-windows-readiness/references/workflow-methods.md)
-
-当前main包含本次流程文档；已发布压缩包/桌面安装包仍以各自Release版本为准。收录第三方方法不代表本包新增常驻防护、身份迁移或清理执行器。
+[完整方法与未验证项](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/complete-environment-method.md)、[来源覆盖与阅读记录](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-coverage.md)统一归档，不在两平台客户包中重复分发。main 文档与已发布安装包分别维护；第三方方法不代表本包新增执行器。
 
 ## 新增准备与排障模块
 

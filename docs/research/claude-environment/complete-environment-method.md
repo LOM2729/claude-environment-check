@@ -36,20 +36,20 @@
 
 | 项目 | 既有默认 | 证据边界／详细入口 |
 | --- | --- | --- |
-| 使用位置 | 沿用现有本机和实际使用的客户端；区分 VM、WSL、SSH、容器、后台与出口位置 | 本机结果不代替远端，见 [执行位置](execution-paths.md) |
-| 原有业务 | 保留有效代理、订阅、指定节点、企业网、LAN、会议／视频／远控及用户例外 | 不为了统一模板删除例外，见 [五步流程](five-step-setup.md) |
+| 使用位置 | 沿用现有本机和实际使用的客户端；区分 VM、WSL、SSH、容器、后台与出口位置 | 本机结果不代替远端，见 [执行位置](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/execution-paths.md) |
+| 原有业务 | 保留有效代理、订阅、指定节点、企业网、LAN、会议／视频／远控及用户例外 | 不为了统一模板删除例外，见 [五步流程](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/five-step-setup.md) |
 | 固定出口 | 使用指定稳定节点，不自动测速择优、轮换、负载均衡或回落 DIRECT | 同名节点仍可能按目的地采用不同公网出口，实际链路待验 |
-| Claude 专属组 | Claude 组与基础组绑定同一具体节点 | 分组用于辨识，不代表使用不同出口；见 [服务路径](service-routing-checks.md) |
+| Claude 专属组 | Claude 组与基础组绑定同一具体节点 | 分组用于辨识，不代表使用不同出口；见 [服务路径](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/service-routing-checks.md) |
 | 规则优先级 | AI 保护 → IPv6／明确拒绝 → 国内视频 → 其余 UDP 拒绝 → 普通国内直连 → 国外指定节点 | 以最终运行配置与进程连接为准，不只看候选文本 |
 | 服务范围 | 第一方、内容／MCP、认证、CDN、安装更新与 Artifacts 共享依赖 | 按功能核验，不把共享域名全称为 Claude 核心必需 |
-| 社区补充匹配 | Sentry／Statsig／Datadog／Intercom、选定关键词、IP／ASN／geosite 快照 | 会影响其他应用；非永久完整清单，见 [教程覆盖](tutorial-coverage.md) |
+| 社区补充匹配 | Sentry／Statsig／Datadog／Intercom、选定关键词、IP／ASN／geosite 快照 | 会影响其他应用；非永久完整清单，见 [教程覆盖](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/tutorial-coverage.md) |
 | IPv6 | 完整配置默认关闭选定接口及相关代理层 IPv6，保留已批准依赖处理 | 系统、入口、节点外层、目标侧分别验，不是官方通用防封条件 |
-| UDP 与国内视频 | domestic-v4：AI 目标 UDP 拒绝；选定国内视频直连；其余 UDP 拒绝 | 视频名单含哔哩哔哩、抖音、爱奇艺、优酷的选定服务／CDN，不是所有国内平台；见 [UDP 策略](domestic-video-udp.md) |
-| DNS 与联网顺序 | 先配置／读回 DNS、代理及非 AI 路径，再启动、登录或访问 AI | 节点引导、系统、核心、浏览器分别核对；见 [生命周期](lifecycle-checks.md) |
-| 时间与语言 | 完整搭建把时区对齐指定稳定出口纳入方案；保留系统语言、输入法和键盘 | 时区、浏览器 Intl、UTC 校时独立核对；这是 [用户偏好](timezone-policy.md)，不是防封证明 |
-| 实际认证 | 分清订阅、Console/API、网关／云平台，以及环境变量、配置根和启动入口 | 变量存在不等于生效，见 [客户端模块](client-cleanup.md) |
-| 具体方案与恢复 | 准备原值、候选、影响、备份／恢复；需要确认时集中一次，已有批准不重复问 | [变更确认](change-confirmation.md)；维护 Skill 不触发设备操作 |
-| 控制通道 | 不自行重启会中断 Codex／远控的代理、核心、服务或机器 | 按 [手动交接](five-step-setup.md#客户手动重启与恢复) 保存进度与离线恢复 |
+| UDP 与国内视频 | domestic-v4：AI 目标 UDP 拒绝；选定国内视频直连；其余 UDP 拒绝 | 视频名单含哔哩哔哩、抖音、爱奇艺、优酷的选定服务／CDN，不是所有国内平台；见 [UDP 策略](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/domestic-video-udp.md) |
+| DNS 与联网顺序 | 先配置／读回 DNS、代理及非 AI 路径，再启动、登录或访问 AI | 节点引导、系统、核心、浏览器分别核对；见 [生命周期](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/lifecycle-checks.md) |
+| 时间与语言 | 完整搭建把时区对齐指定稳定出口纳入方案；保留系统语言、输入法和键盘 | 时区、浏览器 Intl、UTC 校时独立核对；这是 [用户偏好](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/timezone-policy.md)，不是防封证明 |
+| 实际认证 | 分清订阅、Console/API、网关／云平台，以及环境变量、配置根和启动入口 | 变量存在不等于生效，见 [客户端模块](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/client-cleanup.md) |
+| 具体方案与恢复 | 准备原值、候选、影响、备份／恢复；需要确认时集中一次，已有批准不重复问 | [变更确认](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/change-confirmation.md)；维护 Skill 不触发设备操作 |
+| 控制通道 | 不自行重启会中断 Codex／远控的代理、核心、服务或机器 | 按 [手动交接](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/five-step-setup.md#客户手动重启与恢复) 保存进度与离线恢复 |
 | 验收与交付 | 默认验证本轮实际入口的正常使用，按影响复用有效证据，报告未完成及原因 | 其他生命周期事件按需选择；当前正常不等于持续故障保护 |
 
 ## 可选方案
@@ -60,19 +60,19 @@
 
 | 可选方法 | 用途与范围 | 限制／入口 |
 | --- | --- | --- |
-| DNS 分层调整 | 系统 DNS、代理 DNS、浏览器 DoH、Fake-IP／真实 IP、节点 bootstrap、TCP／UDP 53 接管 | 各层独立取证，见 [DNS 分层](customer-setup.md#dns分层查不用一个开关代表全部) |
+| DNS 分层调整 | 系统 DNS、代理 DNS、浏览器 DoH、Fake-IP／真实 IP、节点 bootstrap、TCP／UDP 53 接管 | 各层独立取证，见 [DNS 分层](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/customer-setup.md#dns分层查不用一个开关代表全部) |
 | TYPE64／65 过滤 | 特定兼容性或解析问题；Mihomo 对应解析器参数、小火箭相关开关 | 非默认全关；需已知可返回记录的对照，不能混淆 DNS64 |
 | DNS64 调整 | IPv6-only／NAT64 兼容问题 | 先确认依赖，移动网络可能需要它 |
 | WebRTC／STUN／QUIC 限制 | 限制非代理 UDP 或特定媒体／HTTP3 路径 | 需评估通话／共享影响，禁 UDP443 不覆盖所有 WebRTC |
-| 旁路核查与修复 | NO_PROXY、PAC bypass、skip-proxy、bypass-tun、TUN 排除、Global／Direct 模式 | 仅修已定位问题，保留业务例外；见 [服务路径](service-routing-checks.md) |
-| 外层 TLS Chrome 指纹 | 适用节点协议与核心版本的握手参数 | 不改变 CLI 内层 TLS；效果待验，见 [连接设置](connection-reuse.md) |
+| 旁路核查与修复 | NO_PROXY、PAC bypass、skip-proxy、bypass-tun、TUN 排除、Global／Direct 模式 | 仅修已定位问题，保留业务例外；见 [服务路径](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/service-routing-checks.md) |
+| 外层 TLS Chrome 指纹 | 适用节点协议与核心版本的握手参数 | 不改变 CLI 内层 TLS；效果待验，见 [连接设置](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/connection-reuse.md) |
 | TCP keepalive | 保活与失效连接发现 | 与 HTTP 连接池／HTTP2／MUX／SMUX 分开，不默认全部开启 |
 | UDP NTP 校时例外 | 当前限制与实际校时需求冲突时准备精确方案 | 当前 UDP NTP 代理明确未完成，不能全局放开 UDP 或宣称隐藏时区 |
-| 分层对照排障 | 显式代理、保留 TLS 的地址对照、系统 DNS、正常 HTTPS；Windows WFP／5157 | 不采用关闭 TLS 校验的捷径，见 [Guardian 分层方法](guardian-integration.md) |
+| 分层对照排障 | 显式代理、保留 TLS 的地址对照、系统 DNS、正常 HTTPS；Windows WFP／5157 | 不采用关闭 TLS 校验的捷径，见 [Guardian 分层方法](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/guardian-integration.md) |
 | 持续出站防护 | LuLu、Windows 出站策略、macOS PF、Linux nftables／guard | 独立设计与恢复；不是当前工具已经提供的全机 Kill Switch |
 | 自动回滚任务 | 高影响网络变更的恢复辅助 | 存在不等于有效，上游旧规则恢复／持久化有缺口 |
 | 系统地区／语言／定位 | 用户明确需要时更改体验或权限设置 | 默认仍保留语言；时区、地区格式、校时、定位分开 |
-| 线路优化 | 中转、SSH 动态转发、透明转发、BBR／TCP 参数 | 先有同条件基线；不保证通用收益，见 [路线规划](deployment-routes.md) |
+| 线路优化 | 中转、SSH 动态转发、透明转发、BBR／TCP 参数 | 先有同条件基线；不保证通用收益，见 [路线规划](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/deployment-routes.md) |
 
 ### 浏览器、客户端与清理
 
@@ -80,13 +80,13 @@
 | --- | --- | --- |
 | 独立资料／临时对照 | 普通浏览器 Profile、无痕、临时禁用相关扩展 | 本地隔离或诊断，不保证指纹／远端身份隔离 |
 | 浏览器语言／时区／定位 | 分别调整网页首选语言、界面语言、Intl 时区及站点权限 | 改设置的机制与防封效果分开 |
-| 单站点数据清理 | Cookie、Local／Session Storage、IndexedDB、Service Worker／Cache Storage | 按资料、origin、分区和数据类型处理，见 [浏览器清理](browser-cleanup.md) |
+| 单站点数据清理 | Cookie、Local／Session Storage、IndexedDB、Service Worker／Cache Storage | 按资料、origin、分区和数据类型处理，见 [浏览器清理](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/browser-cleanup.md) |
 | PWA／扩展／本机桥接 | PWA 所属资料、扩展存储与权限、Native Messaging | 网页清理不等于卸载扩展；共享服务分区不能一并删 |
 | 全资料重置 | 密码、书签、历史、扩展、设置与网站登录 | 单独列出损失与恢复条件，不作为单站点故障的自动下一步 |
-| 账号与订阅准备 | 官方网页、Apple／Google Play、订阅与 API／云平台选择，原订单、权益、续费、恢复购买与支持 | 按真实用途和当前官方规则，已有账号不重注册；见 [账号准备](account-preparation.md)、[账单核对](billing-checks.md) |
+| 账号与订阅准备 | 官方网页、Apple／Google Play、订阅与 API／云平台选择，原订单、权益、续费、恢复购买与支持 | 按真实用途和当前官方规则，已有账号不重注册；见 [账号准备](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/account-preparation.md)、[账单核对](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/billing-checks.md) |
 | CLI 认证修复 | 环境覆盖、实际 CONFIG_DIR、Keychain／凭据文件、profile／provider、官方登录退出 | 退出可能影响 MCP／插件；本地删除不等于服务端撤销 |
 | CLI／Desktop 缓存 | 目标版本确认可再生的资源、图形、状态及必要诊断对象 | 不按 cache／debug／telemetry 名称批量判断可删 |
-| 用户历史／工作材料 | projects、sessions、history、file-history、plans、uploads、tasks、快照／反馈等 | 含真实工作成果，默认保护；见 [客户端清理](client-cleanup.md) |
+| 用户历史／工作材料 | projects、sessions、history、file-history、plans、uploads、tasks、快照／反馈等 | 含真实工作成果，默认保护；见 [客户端清理](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/client-cleanup.md) |
 | 配置与扩展能力 | settings、Skills、commands、agents、hooks、MCP、plugins、项目配置 | 清缓存或卸载不自动包括这些对象 |
 | 账号字段／本地设备记录 | 指定账号缓存、userID／machineID／anonymousId、应用设备记录 | 仅明确隐私／迁移目标下讨论；去关联／防封效果未证，不默认轮换 |
 | Desktop／Cowork 重置 | 持久数据、会话、技能、工作文件、任务导出及当次重置提示 | 可能涉及云端删除；Safe Storage 不作普通缓存 |
@@ -142,7 +142,7 @@
 | 后续七类事件 | 有事件模型和合成验证 | client_update、proxy_update、client_restart、system_restart、sleep_wake、network_change、proxy_fault_recovery 未发生／未观察就保留未完成 |
 | 持续保护 | 有一次启动前检查设计 | **不是常驻 Kill Switch／持续监控**，不保证检查与启动之间无竞态 |
 
-历史依据：[教程覆盖](tutorial-coverage.md)、[小火箭验证边界](shadowrocket-domestic.md#测试与报告边界)、[检测工具记录](score-check.md)、[恢复与生命周期](recovery-and-acceptance.md)、[Guardian](guardian-integration.md)。没有新实测时，不更改这些状态。
+历史依据：[教程覆盖](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/tutorial-coverage.md)、[小火箭验证边界](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/shadowrocket-domestic.md#测试与报告边界)、[检测工具记录](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/score-check.md)、[恢复与生命周期](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)、[Guardian](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/guardian-integration.md)。没有新实测时，不更改这些状态。
 
 ### 社区经验与因果效果未证
 
@@ -183,7 +183,7 @@
 | 加密保险库完全隔离同用户其他程序 | 加密／权限有作用，绝对隔离说法不成立 |
 | 跨设备导入一定免登录 | OS 绑定、账号状态、过期／撤销均可能导致重登 |
 
-出处：[原帖主题核对](guided-workflow.md)、[账号准备](account-preparation.md)、[来源记录](evidence-sources.md)、[CCBaga 固定源码](ccbaga-methods.md)。以上是截至本次记录的范围，不宣称穷尽互联网所有说法。
+出处：[原帖主题核对](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/guided-workflow.md)、[账号准备](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/account-preparation.md)、[来源记录](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/evidence-sources.md)、[CCBaga 固定源码](ccbaga-methods.md)。以上是截至本次记录的范围，不宣称穷尽互联网所有说法。
 
 ## 已纠正的说法
 
@@ -216,11 +216,11 @@
 | 固定主仓提交／下载哈希匹配就代表所有依赖固定且无漏洞 | 远程 main／latest 及 fork 安全补丁覆盖需另核对 |
 | 礼品卡余额一律免绑卡／免地址 | 官方说明部分购买仍可能需要登记付款方式，不能作通用承诺 |
 
-原始依据分布在 [DNS 与协议说明](customer-setup.md)、[服务路径](service-routing-checks.md)、[检测分数](score-check.md)、[客户端清理](client-cleanup.md)、[账号准备](account-preparation.md)、[CCBaga 源码核对](ccbaga-methods.md)。纠正的是这里列明的解释，不把真实可用的诊断或配置机制一并否定。
+原始依据分布在 [DNS 与协议说明](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/customer-setup.md)、[服务路径](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/service-routing-checks.md)、[检测分数](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/score-check.md)、[客户端清理](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/client-cleanup.md)、[账号准备](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/account-preparation.md)、[CCBaga 源码核对](ccbaga-methods.md)。纠正的是这里列明的解释，不把真实可用的诊断或配置机制一并否定。
 
 ## 如何组合成实际方案
 
-执行顺序只在 [五步流程](five-step-setup.md) 维护；本页是分类与选择依据，不提供第二条相冲突的自动执行顺序。
+执行顺序只在 [五步流程](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/five-step-setup.md) 维护；本页是分类与选择依据，不提供第二条相冲突的自动执行顺序。
 
 1. 依据用户目标选默认范围及必要可选项，保留指定语言、节点、业务和其他明确保留项。纯清理不展开整机重配；CCBaga 替代路线不与现有网络配置盲目叠加。
 2. 准备阶段完成离线盘点、候选、备份与精确影响清单；清理缓存、退出登录、身份迁移、卸载、历史／云端删除分别选择。一个组合按钮的副作用也全部列明。
@@ -228,4 +228,4 @@
 4. 网络配置和非 AI 路径核验在前，客户端启动／安装／登录／实际 AI 请求在后；离线清理按其自身条件处理，重启与首次联网仍遵守网络门槛。
 5. 只报告实际完成与未完成及原因。每项分别注明文件、应用、进程、功能和事件覆盖；历史局部测试不升级为本轮或跨平台通过。用户只要说明或修改 Skill 时，停留在文件与资料层。
 
-完整对象和操作细节按需读取 [浏览器清理](browser-cleanup.md)、[客户端清理](client-cleanup.md)、[CCBaga 参数与源码](ccbaga-methods.md)、[恢复与验收](recovery-and-acceptance.md)。分类变化需有新证据或用户新选择；不得为了让清单好看而把“待验证”改成完成。
+完整对象和操作细节按需读取 [浏览器清理](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/browser-cleanup.md)、[客户端清理](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/client-cleanup.md)、[CCBaga 参数与源码](ccbaga-methods.md)、[恢复与验收](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)。分类变化需有新证据或用户新选择；不得为了让清单好看而把“待验证”改成完成。

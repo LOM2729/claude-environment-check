@@ -45,7 +45,7 @@
 
 源码：[配置及启动参数](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/browser/config.rs#L111)、[资料写入与清理](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/browser/profile.rs#L81)、[重置与快捷操作](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/browser/mod.rs#L538)、[实际测量判据](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src/browser-verification.ts#L10)。
 
-普通浏览器仍按 [单站点流程](browser-cleanup.md) 处理；不能把 B 的整资料清理方法套到用户主浏览器。
+普通浏览器仍按 [单站点流程](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/browser-cleanup.md) 处理；不能把 B 的整资料清理方法套到用户主浏览器。
 
 ## 三、系统地区与权限
 
@@ -91,7 +91,7 @@
 | 历史配置备份 | 默认 .claude/backups 与根配置的滚动备份 | 可能删除唯一恢复证据；不因要清当前状态顺带清备份 |
 | 当前入口排除 | Shell 配置、共享 npm／Git 代理、Skills／插件、整份 ClaudeBackups、保险库与浏览器资料 | 旧底层目标定义存在不代表当前 UI 能执行，不把不可达旧代码宣传为功能 |
 
-实现：[残留扫描](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/cleaner_residue.rs#L36)、[删除事务](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/cleaner_transaction.rs#L17)、[目标定义与过滤](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/cleaner_targets.rs#L150)。我方实际清理仍按 [准备与恢复](incident-and-cleanup.md#清理准备与恢复) 先形成具体方案，不直接执行这张源码目录表。
+实现：[残留扫描](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/cleaner_residue.rs#L36)、[删除事务](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/cleaner_transaction.rs#L17)、[目标定义与过滤](https://github.com/liseami/CCBaga/blob/6db5ad55e799c5b020be8ff5e4def2c147cd5602/src-tauri/src/cleaner_targets.rs#L150)。我方实际清理仍按 [准备与恢复](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/incident-and-cleanup.md#清理准备与恢复) 先形成具体方案，不直接执行这张源码目录表。
 
 ## 六、网络与 VPS 可选路线
 

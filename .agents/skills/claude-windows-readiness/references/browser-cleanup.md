@@ -1,6 +1,6 @@
 # 浏览器：按站点和资料清理
 
-需要还原作者整套清理时，另读 [Guardian 浏览器/痕迹链](source-methods-guardian-account-cleanup.md)与 [CCBaga/清理来源方法](source-methods-ccbaga-cleanup.md)。单站点、整 Profile、扩展/Native Messaging、PWA 与共享身份分别列出；仅记录作者工具/路径，不自动在目标机逐个清理。
+需要还原作者整套清理时，另读 [Guardian 浏览器/痕迹链](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-account-cleanup.md)与 [CCBaga/清理来源方法](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-ccbaga-cleanup.md)。单站点、整 Profile、扩展/Native Messaging、PWA 与共享身份分别列出；仅记录作者工具/路径，不自动在目标机逐个清理。
 
 用于明确的浏览器清理、网页登录循环、页面状态损坏；先按 [故障分流](incident-and-cleanup.md) 判断是否确实涉及本地状态。仅审查或优化 Skill 时，不读取真实浏览器数据、不打开诊断页面、不运行清理。2026-11-06 核对下列官方资料；菜单名称、数据分类和分区行为以目标版本为准。
 
@@ -49,4 +49,4 @@
 - [Edge Cookie 管理](https://support.microsoft.com/en-us/edge/manage-cookies-in-microsoft-edge-view-allow-block-delete-and-use)、[浏览数据范围](https://support.microsoft.com/en-us/edge/view-and-delete-browser-history-in-microsoft-edge)。
 - [Safari 网站数据](https://support.apple.com/en-gb/guide/safari/sfri11471/mac)、[Firefox Cookie 与站点数据](https://support.mozilla.org/en-US/kb/clear-cookies-and-site-data-firefox)。
 
-社区清理清单仅提供对象线索，不能证明目标版本的数据归属或防封效果。源码核对与采用范围见 [清理资料核对](evidence-sources.md#清理资料核对2026-11-06)。
+社区清理清单仅提供对象线索，不能证明目标版本的数据归属或防封效果。源码核对与采用范围见 [清理资料核对](evidence-sources.md)。

@@ -1,6 +1,6 @@
 # 故障分流、凭据事件与清理规划
 
-具体浏览器、客户端与身份/恢复方法按 [统一任务分支](workflow-methods.md)进入 [浏览器清理](browser-cleanup.md)、[客户端清理](client-cleanup.md)或 [离线恢复](source-methods-guardian-runtime-recovery.md)。先分清事故和清理目标，默认仅可再生缓存，原位/隔离/保护项分别复核。
+具体浏览器、客户端与身份/恢复方法按 [统一任务分支](workflow-methods.md)进入 [浏览器清理](browser-cleanup.md)、[客户端清理](client-cleanup.md)或 [离线恢复](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-runtime-recovery.md)。先分清事故和清理目标，默认仅可再生缓存，原位/隔离/保护项分别复核。
 
 用户报告现有问题时先解决当前阻碍，不重走完整环境问卷。一次收集必要事实：产品／提供方、客户端与执行位置、发生时间和时区、执行动作、脱敏错误、最近变更、已知工单或订单状态。复用已知信息，保留原始证据在用户本机。
 
@@ -27,7 +27,7 @@
 
 支持或申诉材料只写实际通知、时间线、影响、已执行步骤和待确认问题，附必要脱敏 request ID／订单状态。正文可先准备，发送给第三方是独立动作，沿用用户实际授权；不保证回复天数或退款结果。
 
-## 只有用户需要时才规划清理
+## 清理准备与恢复
 
 清理目标可能是损坏缓存、迁移、隐私整理、退出登录或卸载；先区分目的和精确对象。网络异常、KYC 或历史停用不自动触发删除日志、对话、密钥或设备标识。
 
@@ -39,4 +39,3 @@
 - 上游清理库有 POSIX 范围及 Mac 宿主限制；本次审阅未验证其在用户设备上的执行。精确事务方法可参考，现有执行脚本不直接移植为通用清理器。
 
 来源：[上游事故与集成](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/incidents-and-integrations.md)、[清理入口](https://github.com/DUNHKpcc/Claude-Guardian/blob/06fe998d753f697c47ae0b67be5fe91451532a1f/skills/claude-guardian/references/cleanup-cli-usage.md)。更多代码限制见 [Guardian 核对](guardian-integration.md)。
-

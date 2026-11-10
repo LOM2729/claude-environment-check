@@ -1,8 +1,8 @@
 # Claude 客户端：缓存、认证、用户数据与卸载
 
-原生备份/迁移/重装和失败恢复的最新细节见 [CCBaga原生](source-methods-ccbaga-native.md)、[维护界面与安装](source-methods-ccbaga-ui-maintenance.md)及 [Guardian事务/离线恢复](source-methods-guardian-runtime-recovery.md)。这些方法分别有范围和容量限制，不将全部reset/删除统一写成先备份可恢复。
+原生备份/迁移/重装和失败恢复的最新细节见 [CCBaga原生](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-ccbaga-native.md)、[维护界面与安装](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-ccbaga-ui-maintenance.md)及 [Guardian事务/离线恢复](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-runtime-recovery.md)。这些方法分别有范围和容量限制，不将全部reset/删除统一写成先备份可恢复。
 
-原作者的完整分支另见 [Guardian 账号与清理](source-methods-guardian-account-cleanup.md)和 [三个清理 Skill](source-methods-ccbaga-cleanup.md)：SIMPLE/bare、项目 purge、六隐私变量、CC Switch 窄覆盖/弃路由/整卸载、Teamo 共用历史、滚动备份 ID 同步和 Keychain 恢复边界。它们作为可选来源方法保留，不因收录变成默认缓存清理。
+原作者的完整分支另见 [Guardian 账号与清理](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-account-cleanup.md)和 [三个清理 Skill](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-ccbaga-cleanup.md)：SIMPLE/bare、项目 purge、六隐私变量、CC Switch 窄覆盖/弃路由/整卸载、Teamo 共用历史、滚动备份 ID 同步和 Keychain 恢复边界。它们作为可选来源方法保留，不因收录变成默认缓存清理。
 
 用于明确要求清理、重认证、卸载，或证据指向客户端状态损坏的排障。先按 [事故分流](incident-and-cleanup.md) 识别目标；网页站点数据转 [浏览器清理](browser-cleanup.md)。只改 Skill／阅读资料的任务不盘点真实客户端，也不以真机清理验证文档。以下产品行为于 2026-11-06 核对，执行前复核当前版本。
 

@@ -1,5 +1,7 @@
 # Claude-Guardian：流程、实际能力与证据的深入复核
 
+> 本页保留研究阶段的版本与能力对照；0.17.0后新增的我方工具以 [当前执行能力](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/execution-capabilities.md) 为准，不能把当时的未实现状态当作当前清单，也不能把隔离测试升级为真实目标机验收。
+
 研究日期：2026-11-10。当前公开 main：`e934166adbdbd582f169b1b14adb7be76aa90a77`（2026-11-09，`fix:remove high policy`），与先前归档版本一致。
 
 本轮通过 GitHub API 读取当前提交、完整树和 CI 状态，本地235个源文件逐一匹配固定 Git blob；语义复核聚焦入口、网络、清理、恢复和直接相关实现／测试，全文与选段分别列在各专项末尾。哈希校验不算重新读完全部正文；本轮没有运行上游脚本、测试、探针，没有访问 Claude 服务或读取本机实际账号／浏览器数据。

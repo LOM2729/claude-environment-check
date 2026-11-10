@@ -19,7 +19,25 @@ import sys
 import tempfile
 from types import SimpleNamespace
 
-VERSION = '0.16.2'
+VERSION = '0.17.0'
+FEATURE_MODULES = ('intake_flow', 'browser_webrtc', 'skill_updates', 'scoped_cleanup',
+                   'native_client', 'system_guard', 'remote_setup')
+FEATURE_SUPPORT = {
+    'intake_flow': {'mode': 'offline', 'platforms': ['macos', 'windows', 'linux']},
+    'browser_webrtc': {'platforms': ['macos', 'windows', 'linux'],
+                      'live_scope': 'selected_browser_profile_ice_only'},
+    'skill_updates': {'platforms': ['macos', 'windows', 'linux'],
+                      'skill_targets': ['mac', 'windows'], 'automatic_install': False},
+    'scoped_cleanup': {'inventory_platforms': ['macos', 'windows', 'linux'],
+                       'native_write_platforms': ['macos'], 'permanent_delete': False},
+    'native_client': {'native_platforms': ['macos'], 'product': 'clash-verge-rev',
+                      'versions': ['2.5.8'], 'scope': 'exclusive_rules_extension'},
+    'system_guard': {'native_platforms': ['macos', 'windows', 'linux'],
+                    'policies': ['unified-v4', 'explicit-exceptions', 'inbound-management'],
+                    'domestic_v4_native_compilation': False},
+    'remote_setup': {'native_platforms': ['linux'], 'distributions': ['debian', 'ubuntu'],
+                     'service_manager': 'systemd', 'implicit_ssh_execution': False},
+}
 MAX_FILE = 8 * 1024 * 1024
 ENV_KEYS = ('ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
             'ANTHROPIC_BASE_URL', 'CLAUDE_CONFIG_DIR', 'HTTP_PROXY', 'HTTPS_PROXY',
@@ -923,6 +941,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', action='version', version=VERSION)
     sub = parser.add_subparsers(dest='command', required=True)
+    sub.add_parser('capabilities', help='List bundled command capabilities; no device inspection or changes')
     c = sub.add_parser('collect', help='Read local metadata; no network requests or system changes')
     c.add_argument('--output', required=True)
     c.add_argument('--target-alias', default='local-machine')
@@ -1054,9 +1073,31 @@ def main(argv=None):
     config_recovery.register_commands(sub)
     lifecycle_acceptance.register_commands(sub)
     workflow_progress.register_commands(sub)
+    import importlib
+    features = [importlib.import_module(name) for name in FEATURE_MODULES]
+    feature_commands = {}
+    mutating_commands = set()
+    for module in features:
+        module.register_commands(sub)
+        for command in module.COMMANDS:
+            require(command not in feature_commands, 'DUPLICATE_FEATURE_COMMAND')
+            feature_commands[command] = module
+        mutating_commands.update(getattr(module, 'MUTATING_COMMANDS', ()))
     args = parser.parse_args(argv)
     try:
-        if args.command in config_recovery.COMMANDS:
+        if args.command == 'capabilities':
+            result = {'schema': 'claude-tool-capabilities/1', 'version': VERSION,
+                      'features': [{'module': name, 'commands': list(module.COMMANDS),
+                                    'support': FEATURE_SUPPORT[name],
+                                    'system_or_data_mutations': list(getattr(module, 'MUTATING_COMMANDS', ())),
+                                    'native_acceptance': 'not_run'}
+                                   for name, module in zip(FEATURE_MODULES, features)],
+                      'network_requests': 0, 'system_changes_performed': False,
+                      'capability_declaration_not_device_verification': True}
+        elif args.command in feature_commands:
+            result = feature_commands[args.command].run(SimpleNamespace(**globals()), args)
+            require(type(result) is dict, 'INVALID_FEATURE_RESULT')
+        elif args.command in config_recovery.COMMANDS:
             result = config_recovery.run(SimpleNamespace(**globals()), args)
         elif args.command in lifecycle_acceptance.COMMANDS:
             result = lifecycle_acceptance.run(SimpleNamespace(**globals()), args)
@@ -1195,7 +1236,12 @@ def main(argv=None):
             result = verify_readback(args.plan, args.target, args.exported_readback)
             if args.output:
                 write_new(args.output, encode(result))
+        if args.command in feature_commands:
+            code = result.get('exit_code', 2 if result.get('required_checks_completed') is False else 0)
+            require(type(code) is int and code in (0, 1, 2), 'INVALID_FEATURE_EXIT_CODE')
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        if args.command in feature_commands:
+            return code
         if args.command in ('lifecycle-template', 'workflow-save'):
             return 0  # Template creation succeeded; its unperformed events remain incomplete.
         if args.command in config_recovery.COMMANDS + lifecycle_acceptance.COMMANDS + workflow_progress.COMMANDS:
@@ -1205,9 +1251,9 @@ def main(argv=None):
         if args.command == 'ai-audit' and result['status'] != 'static_policy_matches':
             return 2
         return 2 if args.command == 'verify' and result['status'] != 'candidate_bytes_match' else 0
-    except (SetupError, OSError, ValueError, TypeError, KeyError, RecursionError) as exc:
-        error = {'error': str(exc) if isinstance(exc, SetupError) else 'OPERATION_FAILED', 'system_settings_changed': False}
-        if args.command in ('recovery-apply', 'recovery-rollback'):
+    except (SetupError, OSError, ValueError, TypeError, KeyError, RecursionError, KeyboardInterrupt) as exc:
+        error = {'error': str(exc) if isinstance(exc, SetupError) else 'OPERATION_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'OPERATION_FAILED', 'system_settings_changed': False}
+        if args.command in ('recovery-apply', 'recovery-rollback') or args.command in mutating_commands:
             # A failed readback/journal write is not evidence that replacement never happened.
             error.update(system_settings_changed=None, system_changes_performed=None,
                          config_file_changed=None,
@@ -1217,7 +1263,7 @@ def main(argv=None):
         else:
             error['system_changes_performed'] = False
         print(json.dumps(error), file=sys.stderr)
-        return 1
+        return 130 if isinstance(exc, KeyboardInterrupt) else 1
 
 
 if __name__ == '__main__':

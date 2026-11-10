@@ -4,6 +4,8 @@
 
 **[下载最新客户包](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip)** · [校验文件](https://github.com/LOM2729/claude-environment-check/releases/latest/download/Claude-Setup-Kit.zip.sha256) · [使用说明](START-HERE.md)
 
+0.17.0新增工具可从 [当前源码包](https://github.com/LOM2729/claude-environment-check/archive/refs/heads/main.zip) 使用；上面的latest Release链接仍以已发布版本为准，不代表本轮新安装包已经发布。
+
 ## 桌面端
 
 [下载桌面端](https://github.com/LOM2729/claude-environment-check/releases/latest)：macOS 13+ Apple Silicon 与 Windows x64，独立应用内置五步向导和检查引擎，无需客户安装 Python。支持选配置／节点、只读检查、确认导出新文件、读回核对、已有报告导入及 Codex 续做。实际导入、系统网络配置和联网实测仍按本机具体方案完成，不能把文件导出当作配置已生效。详见 [桌面使用与构建说明](https://github.com/LOM2729/claude-environment-check/blob/main/desktop/README.md)。
@@ -29,6 +31,12 @@
 日常从 [Mac Skill](.agents/skills/claude-mac-readiness/SKILL.md) 或 [Windows Skill](.agents/skills/claude-windows-readiness/SKILL.md)进入：完整配置读五步，局部任务只读对应专题。
 
 [完整方法与未验证项](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/complete-environment-method.md)、[来源覆盖与阅读记录](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-coverage.md)统一归档，不在两平台客户包中重复分发。main 文档与已发布安装包分别维护；第三方方法不代表本包新增执行器。
+
+## 0.17.0 可选执行模块
+
+已补齐程序化访谈、浏览器WebRTC检测、逐文件更新核对、Mac数据隔离、固定版本Clash原生适配、系统防护开关，以及Linux VM／VPS部署维护；具体命令与平台边界见 [可选执行工具](.agents/skills/claude-mac-readiness/references/execution-capabilities.md)。入口仍按任务加载，不强制把这些功能一起运行。
+
+源码与隔离测试可交付；真实浏览器、管理员权限、防火墙、重启恢复和Windows／Linux目标机验收尚未完成。Mac／Linux系统防护的独立恢复另需已核可信Python，Windows使用系统PowerShell。Mac数据隔离和Clash 2.5.8适配不扩称Windows原生支持；桌面端新增工具通过内置后端CLI使用，现有五步界面保持原有操作范围。已发布安装包仍以对应Release版本为准。
 
 ## 新增准备与排障模块
 
@@ -65,7 +73,7 @@ Python 3.9+，YAML 需 PyYAML 6.0.3，优先复用已有运行时；确实缺依
 
 需要重启客户端、核心、服务、机器，或操作可能中断控制通道时，只在确有需要后给客户明确动作、影响及本机离线恢复办法，再安排操作时机。客户手动完成、恢复连接后重新读回与核验，不能自行断开当前通道。
 
-候选、文件匹配、应用载入、实际进程采用和端到端观察分别记录。生命周期工具只审阅供给证据，不自行制造事件；Mac／Windows 合成测试不等于客户网络实测。没有常驻监控、系统 Kill Switch 或账号防封保证。官方资料、源码参考和个人经验分开，见 [来源说明](.agents/skills/claude-mac-readiness/references/evidence-sources.md)。
+候选、文件匹配、应用载入、实际进程采用和端到端观察分别记录。生命周期工具只审阅供给证据，不自行制造事件；Mac／Windows 合成测试不等于客户网络实测。系统防护和远端自愈仅按明确任务启用；配置写入与实际效果分别验收，不提供账号防封保证。官方资料、源码参考和个人经验分开，见 [来源说明](.agents/skills/claude-mac-readiness/references/evidence-sources.md)。
 
 完整配置、凭据、差异、IP 与证据只留客户本机；每位客户新解压一份。发布包按文件白名单生成，不含客户文件、运行报告或未完成教程草稿。
 

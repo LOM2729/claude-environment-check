@@ -30,3 +30,9 @@ npm --prefix desktop exec electron-builder -- --mac zip --arm64
 开发运行需先指定 `CLAUDE_KIT_PYTHON` 为已装项目依赖的 Python，再执行 `npm start --prefix desktop`。打包版自动使用自带引擎，不读取该开发变量。
 
 首版构建未配置商业代码签名证书；不以关闭 Gatekeeper、SmartScreen 或公司策略的方式安装。受管理设备应由管理员审核。安装包能构建、合成测试通过，不代表真实客户代理、网络或系统权限已验收。
+
+## 0.17.0 专项CLI
+
+内置后端的 `--cli capabilities` 列出七类新增工具；运行 `--cli <具体命令> --help` 查看当前参数。五步UI仍只执行原有范围，系统防护／清理／远端变更由Codex按具体已审阅计划交接，不能从UI的配置导出同意推导系统操作权限。
+
+后端打包包含独立恢复worker源码、Windows后端和浏览器检测页；系统恢复不依赖在线Codex。真实浏览器、管理员、防火墙和启动恢复尚待各目标设备验收，构建或隔离测试通过不能代替。

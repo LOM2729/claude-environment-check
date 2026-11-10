@@ -49,4 +49,22 @@ with tempfile.TemporaryDirectory(prefix='desktop-frozen-smoke-') as temp:
         '--next-step','核对本轮示例','--out',str(folder/'checkpoint')],capture_output=True,text=True,encoding='utf-8',
         env={**os.environ,'PYTHONIOENCODING':'cp1252'},check=True,timeout=30)
     assert json.loads(checkpoint.stdout)['status']=='已完成'
-print('Frozen backend: CLI version, JSON/YAML, snapshots, handoff and offline candidate passed; no network or system configuration.')
+    capabilities=subprocess.run([str(EXE),'--cli','capabilities'],capture_output=True,text=True,encoding='utf-8',check=True,timeout=30)
+    declared=json.loads(capabilities.stdout)
+    assert len(declared['features'])==7 and not declared['system_changes_performed']
+    facts=folder/'facts.json'
+    facts.write_text(json.dumps([{'field':'platform','state':'known','value':'macos'},
+                                {'field':'priority','state':'known','value':'cost'}]),encoding='utf-8')
+    intake=subprocess.run([str(EXE),'--cli','intake-start','--task','compare','--answers',str(facts),
+                           '--output',str(folder/'intake.json')],capture_output=True,text=True,encoding='utf-8',check=True,timeout=30)
+    assert json.loads(intake.stdout)['status']=='explanation_only'
+    assert (EXE.parent/'_internal/browser_webrtc.html').is_file()
+    guard_input=folder/'guard-input.json'
+    guard_input.write_text(json.dumps({'schema':'clearpath-guard-input/1','scope':'fixture','platform':'windows',
+        'policy':'unified-v4','interfaces':['Ethernet'],'core_path':r'C:\Example\mihomo.exe',
+        'nodes':[{'address':'192.0.2.10','ports':[443],'protocol':'tcp'}]}),encoding='utf-8')
+    guard=subprocess.run([str(EXE),'--cli','guard-plan','--input',str(guard_input),
+                          '--output',str(folder/'guard-plan.json')],capture_output=True,text=True,encoding='utf-8',check=True,timeout=30)
+    assert not json.loads(guard.stdout)['system_changes']
+    assert (EXE.parent/'_internal/system_guard_windows.ps1').is_file()
+print('Frozen backend: legacy workflow, seven feature imports, offline intake/guard plans and assets passed; no network or system configuration.')

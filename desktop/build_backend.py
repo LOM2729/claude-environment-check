@@ -14,7 +14,7 @@ def build():
           '--distpath',str(DESKTOP/'backend-dist'),'--workpath',str(work/'pyinstaller'),'--specpath',str(work),
           '--paths',str(ROOT/'src')]
     for source in sorted((ROOT/'src').iterdir()):
-        if source.suffix in ('.py','.json','.list','.ps1','.txt'):
+        if source.suffix in ('.py','.json','.list','.ps1','.sh','.html','.txt'):
             args += ['--add-data',str(source)+os.pathsep+'.']
         if source.suffix=='.py': args += ['--hidden-import',source.stem]
     args += ['--hidden-import','yaml',str(DESKTOP/'backend.py')]

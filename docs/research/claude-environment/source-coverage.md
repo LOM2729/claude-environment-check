@@ -1,5 +1,7 @@
 # 来源覆盖、方法入口与未读边界
 
+> 本页保留研究阶段的版本与能力对照；0.17.0后新增的我方工具以 [当前执行能力](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/execution-capabilities.md) 为准，不能把当时的未实现状态当作当前清单，也不能把隔离测试升级为真实目标机验收。
+
 本轮补齐日期：2026-11-10。此页回答“来源到底读了哪些、原方法放在哪里、哪些尚未验证”。文档覆盖、代码存在、作者报告、项目验收状态和本机实测分开记录。此次只审阅资料、修改 Skill 文档；没有运行来源脚本/探针、清理、安装、登录或更改本机网络，未改 Clearpath 产品。
 
 ## 第二轮补读已完成：范围与新增方法

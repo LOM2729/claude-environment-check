@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>浏览器 WebRTC 检测</title>
+<style nonce="__NONCE__">body{font:16px/1.6 system-ui,sans-serif;max-width:46rem;margin:3rem auto;padding:0 1.2rem;color:#222;background:#faf9f6}h1{font-size:1.8rem}label{display:block;margin:1rem 0}input{font:inherit;max-width:100%;padding:.5rem}button{min-height:44px;cursor:pointer;font:inherit;padding:.5rem .9rem;margin:.5rem .5rem .5rem 0}pre{white-space:pre-wrap;word-break:break-word;background:#efeee8;padding:1rem}small{display:block;color:#555}:focus-visible{outline:3px solid #116466;outline-offset:3px}input{min-height:44px;box-sizing:border-box}button:disabled{cursor:default}</style>
+<h1>当前浏览器 WebRTC 检测</h1>
+<p id="binding"></p><p>仅检查打开此页的浏览器资料，不代表其他应用或整机路径。</p>
+<p>点击后向以下 STUN 服务器发起 UDP／ICE 请求；服务器可看到请求来源地址，此页不请求摄像头或麦克风。</p>
+<pre id="targets"></pre>
+<label>本轮已核实的 HTTPS 出口 IPv4<input id="reference" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="仅在浏览器内存中比较，不发送或保存"></label>
+<button id="start">同意本次 STUN 检测并开始</button><button id="cancel">取消并关闭检测</button><button id="download" disabled>导出脱敏结果</button>
+<pre id="status" role="status">尚未发送 STUN 请求</pre>
+<small>host／mDNS、relay 与 srflx 分开统计；超时或没有候选保持未完成，相同 IPv4 也不证明相同路径；服务关闭后页面通过本地心跳停止检测，可能有短暂发现窗口。</small>
+<script nonce="__NONCE__">
+'use strict';
+const session=__SESSION_JSON__;
+const $=id=>document.getElementById(id);
+$('binding').textContent=`目标：${session.plan.target_alias} · 资料：${session.plan.profile_alias}`;
+$('targets').textContent=session.plan.stun_urls.join('\n');
+let pc=null, channel=null, timer=null, heartbeat=null, startAbort=null, heartbeatAbort=null, referenceIP='', latest=null, state=null, sent=false;
+const expiry=setTimeout(()=>finish('expired'),Math.max(0,session.expires_ms-Date.now()));
+function ipv4(value){const p=value.split('.');return p.length===4&&p.every(x=>/^(0|[1-9][0-9]{0,2})$/.test(x)&&Number(x)<=255);}
+function cleanup(){if(timer!==null)clearTimeout(timer);timer=null;if(heartbeat!==null)clearTimeout(heartbeat);heartbeat=null;if(startAbort)startAbort.abort();if(heartbeatAbort)heartbeatAbort.abort();startAbort=null;heartbeatAbort=null;if(pc){pc.onicecandidate=null;pc.onicecandidateerror=null;pc.onicegatheringstatechange=null;}if(channel){try{channel.close();}catch(_){}channel=null;}if(pc){try{pc.close();}catch(_){}pc=null;}referenceIP='';$('reference').value='';}
+function display(result){const c=result.counts;$('status').textContent=JSON.stringify({结束:result.finish,候选:c,IPv4样本:result.mismatch_observed?'不同':result.reference_matches?'相同（仅样本）':'未取得可比样本',IPv6_srflx样本:result.ipv6_observed,ICE收集完成:result.gathering_complete,错误码:result.error_codes,截断:result.truncated},null,2);}
+async function localRequest(path,options,kind){const controller=new AbortController();if(kind==='start')startAbort=controller;else heartbeatAbort=controller;const timeout=setTimeout(()=>controller.abort(),1500);try{return await fetch(session.base+path,Object.assign({},options,{signal:controller.signal}));}finally{clearTimeout(timeout);if(kind==='start'&&startAbort===controller)startAbort=null;if(kind==='heartbeat'&&heartbeatAbort===controller)heartbeatAbort=null;}}
+function checkService(){if(sent)return;localRequest('heartbeat',{cache:'no-store'},'heartbeat').then(r=>{if(!r.ok)throw new Error('ended');if(!sent)heartbeat=setTimeout(checkService,750);}).catch(()=>finish('cancelled'));}
+function finish(reason){
+ if(sent)return;sent=true;clearTimeout(expiry);
+ if(!state){cleanup();$('start').disabled=true;$('status').textContent='检测已取消／到期，未开始';fetch(session.base+'cancel',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrf},body:JSON.stringify({session_id:session.session_id}),keepalive:true}).catch(()=>{});return;}
+ state.finish=reason;state.ended_at=new Date().toISOString();cleanup();latest=state;state=null;$('start').disabled=true;$('download').disabled=false;display(latest);
+ fetch(session.base+'result',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrf},body:JSON.stringify(latest),keepalive:true}).then(r=>{if(!r.ok)$('status').textContent+='\n本地服务未接收，请导出脱敏结果。';}).catch(()=>{$('status').textContent+='\n本地服务已关闭，可导出脱敏结果。';});
+}
+function candidate(event){
+ if(!state)return;if(!event.candidate){state.gathering_complete=true;finish('completed');return;}
+ const raw=event.candidate;const fields=(raw.candidate||'').trim().split(/\s+/);const kind=raw.type||fields[7]||'unknown';const address=raw.address||fields[4]||'';
+ if(Object.values(state.counts).reduce((a,b)=>a+b,0)>=256)state.truncated=true;
+ const increment=key=>{state.counts[key]=Math.min(65535,state.counts[key]+1);};
+ if(kind==='srflx'){if(ipv4(address)){increment('srflx_ipv4');if(referenceIP){if(address===referenceIP)state.reference_matches=true;else state.mismatch_observed=true;}}else if(address.includes(':')){increment('srflx_ipv6');state.ipv6_observed=true;}else increment('unknown');}
+ else if(kind==='host'){increment(address.toLowerCase().endsWith('.local')?'mdns':'host');}
+ else if(kind==='relay'||kind==='prflx')increment(kind);else increment('unknown');
+}
+$('start').addEventListener('click',async()=>{
+ if(sent||pc||Date.now()>=session.expires_ms)return finish('expired');
+ const input=$('reference').value.trim();if(input&&!ipv4(input)){$('status').textContent='请填有效IPv4，或留空并接受结果未完成。';return;}
+ referenceIP=input;$('reference').value='';$('start').disabled=true;
+ $('status').textContent='正在核对本地检测会话…';
+ try{
+  const permission=await localRequest('start',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrf},body:JSON.stringify({session_id:session.session_id})},'start');
+  if(!permission.ok)throw new Error('session-ended');if(sent)return;if(Date.now()>=session.expires_ms)return finish('expired');
+  state={schema:'claude-browser-webrtc-observation/1',plan_sha256:session.plan_sha256,session_id:session.session_id,started_at:new Date().toISOString(),ended_at:new Date().toISOString(),finish:'error',counts:{host:0,mdns:0,srflx_ipv4:0,srflx_ipv6:0,relay:0,prflx:0,unknown:0},reference_provided:!!referenceIP,reference_matches:false,mismatch_observed:false,ipv6_observed:false,gathering_complete:false,truncated:false,error_codes:[]};
+  $('status').textContent='正在收集当前资料的ICE候选…';
+  if(typeof RTCPeerConnection!=='function')throw new Error('unsupported');
+  pc=new RTCPeerConnection({iceServers:session.plan.stun_urls.map(url=>({urls:url})),iceCandidatePoolSize:0});
+  pc.onicecandidate=candidate;pc.onicecandidateerror=e=>{if(!state)return;const code=Number.isInteger(e.errorCode)?e.errorCode:0;if(state.error_codes.length<32)state.error_codes.push(code);else state.truncated=true;};
+  pc.onicegatheringstatechange=()=>{if(pc&&state&&pc.iceGatheringState==='complete'){state.gathering_complete=true;finish('completed');}};
+  channel=pc.createDataChannel('readiness-probe');timer=setTimeout(()=>finish('timeout'),session.plan.measurement_seconds*1000);heartbeat=setTimeout(checkService,750);
+  const offer=await pc.createOffer();if(sent||!pc)return;await pc.setLocalDescription(offer);
+ }catch(_){if(state&&state.error_codes.length<32)state.error_codes.push(0);finish('error');}
+});
+$('cancel').addEventListener('click',()=>finish('cancelled'));
+window.addEventListener('pagehide',()=>finish('pagehide'));
+$('download').addEventListener('click',()=>{if(!latest)return;const blob=new Blob([JSON.stringify(latest,null,2)+'\n'],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='webrtc-observation.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),0);});
+</script></html>

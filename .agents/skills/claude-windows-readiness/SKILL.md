@@ -16,6 +16,7 @@ description: Configure and troubleshoot Claude environments on Windows（含原�
 - **首次／完整配置**：读 [五步流程](references/five-step-setup.md)，默认快速完成一份方案、执行与集中核验；不并读全部参考。
 - **连接／认证排障**：读 [Windows（含原生与 WSL）检查](references/windows-checks.md)；需要分流错误时再读 [事故处理](references/incident-and-cleanup.md)。疑似环境覆盖可用 [脱敏检查](scripts/check-env.ps1)，仅看键名／存在状态，不据此推定实际认证。
 - **定向清理或其他局部任务**：从 [专题入口](references/workflow-methods.md) 选择对应模块，执行前读完该方法的前提与恢复。
+- **专项执行能力**：读 [可选工具](references/execution-capabilities.md)，按当前平台支持与具体方案调用；普通任务不强制创建访谈状态或开启防护。
 - **全部方法、来源比较或未经验证项**：仅此类请求读 [研究索引](references/source-index.md)。来源审计不属于日常必读。
 
 ## 共同约束
@@ -26,6 +27,6 @@ description: Configure and troubleshoot Claude environments on Windows（含原�
 - 清理默认仅可再生缓存；登录、历史、配置、身份或云端删除另列范围。写入状态不明先对账，恢复保护后续编辑，不盲目重试。
 - 不输出凭据原文；登录、付款和系统认证由用户处理。涉及当前服务地区、订阅或版本行为时核对官方资料，配置与检测分数不保证账号安全。
 
-工具入口为 `scripts/claude_setup.py`，仅使用当前版本支持的命令；需要时读 [工具说明](references/automation.md)。工具不自动应用系统网络设置；`recovery-*` 只在精确批准下处理指定文本文件，不自动重载。
+工具入口为 `scripts/claude_setup.py`，仅使用当前版本支持的命令；需要时读 [工具说明](references/automation.md)。默认不改系统；系统防护／远端部署须按专项方案和独立恢复前提执行，`recovery-*` 仍只处理精确批准的文本文件，不自动重载。
 
 普通任务简报改动、实际验证、未完成原因与恢复方式。正式报告、完整检查表、检查点及故障演练按需展开，未测不标通过。

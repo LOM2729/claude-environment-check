@@ -27,6 +27,7 @@
 
 - 核心仅POSIX；精确根、保护路径和隔离目录不能重叠。相同用户/组、同文件系统、无目录链接/硬链接和不支持元数据。
 - 单计划最多16根、4,096项、64 MiB总内容、深度32；私有文档4 MiB，默认操作预算30秒、最大60秒，计划10分钟。
+- **新增静态边界，未实测：**Mac宿主备份阶段的枚举限额为2,000,000项，与后续C5的4,096项/64 MiB不同；不能认为备份前已执行同样预算，采用前先核目标范围和备份资源需求。依据：[备份实现](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/scripts/native_cleanup_mac.py#L425-L478)。
 - 预留未来回执体积；大量Unicode路径即使内容小也可能触限。超限先报告，按明确范围重做独立批次，不能悄悄删上限。
 - 通用 `cleanup_cli` 默认没有宿主；`HOST_ADAPTER_UNAVAILABLE`表示缺真实归属、备份和写入者核验，不是允许换成无保护删除命令。
 

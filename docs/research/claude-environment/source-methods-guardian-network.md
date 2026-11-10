@@ -101,6 +101,12 @@ PF规则在 `com.apple/claude-guardian` 子anchor，物理接口仅放节点真�
 
 来源：[现行PF与场景说明](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/references/local-firewall-prompts.md)、[PF脚本](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/mac-killswitch/guardian-pf-killswitch.sh)、[ADR-060至064](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/docs/decisions.md)、[11-02历史报告](https://github.com/DUNHKpcc/Claude-Guardian/blob/9b607dba3833b08e49765b614ac3493e990e3225/reports/mac-pf-isolated-acceptance-2026-11-02.md)。
 
+### 4.4 新增静态风险：保险丝启动前窗口（未经目标机验证）
+
+固定源码先加载规则、启用PF、写日志，最后才启动独立保险丝；中间异常没有统一回滚trap，不能承诺每条部分执行路径都有已生效的保险丝。此为代码顺序推论，未复现真实断网；采用前须补齐先就绪恢复、再应用、确认后持久化，并按原状态恢复的方案，不修改上游“已验收”的历史标签来代替新证据。
+
+依据：[apply顺序](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/mac-killswitch/guardian-pf-killswitch.sh#L323-L341)；详细边界见 [本轮深入复核](guardian-review-20261110.md)。
+
 ## 5. Windows首次防火墙与S10两机差异
 
 ### 5.1 首次部署流程
@@ -194,6 +200,8 @@ Linux客机顺序：
 6. nft inet INPUT/OUTPUT默认drop，lo/TUN/已建连接、节点、DHCP、限定管理源SSH/ping例外；priority10在conntrack之后；规则单事务替换；180秒内confirm，之后核服务及refresh.timer实际active和下次触发。
 7. 核节点更新、核心退出、TUN/策略路由残留、IPv6和浏览器；所选NTP路径被拦时单独列例外或RTC方案。退出/恢复需原规则和服务状态，不能只删表即称恢复完毕。
 
+**新增静态风险，未经目标机验证：**初装先enable开机unit再apply，超时仅删除运行时nft表，未撤持久规则或开机unit；未确认的规则仍可能在重启后载入。后来Switch的确认后enable不能反向证明初装已修复，恢复须按本次原值分别对账运行层和持久层。依据：[初装顺序](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/vm-killswitch/install-flclash-killswitch.sh#L168-L243)。
+
 当前参数化脚本还有需要实施前补齐的条件：刷新ExecStart实际脚本位置、LAN_NET/NIC等参数持久化、定时用户sudo能力、旧规则和服务原值恢复。把这些作为部署前核验，不删除整个参考方法。macOS客机复用Mac系统远程登录、Clash与PF方法，不运行Linux脚本。
 
 来源：[VM完整指引](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/references/vm-guidance.md)、[客机SSH](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/vm-killswitch/enable-guest-ssh.sh)、[FlClash/TUN安装](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/vm-killswitch/install-flclash-tun.sh)、[nft防护](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/vm-killswitch/install-flclash-killswitch.sh)。
@@ -243,7 +251,7 @@ Guardian给出的具体方法：读取nproc、free的available、swap、磁盘�
 
 VPS自己IP就是出口时，`vps-guard.sh`是**入站加固**：INPUT drop，回环/已建连接/ADMIN_NET的SSH与ping/DHCP/IPv6邻居发现；OUT不限制。先render、语法检查、云安全组与系统层分别核、180秒保险丝、另一会话确认。MOSH=1才给ADMIN_NET放可配置UDP60000–61000；漫游到管理源外会断。VPS另套家宽TUN时才选VM的出站killswitch，加入管理通道出站白名单。
 
-入站guard没有出站防直连是其用途边界，不是整个方法无价值。回滚须恢复本次旧表/服务状态；源脚本默认删专属表不足以证明任意既有部署已完整恢复，实施前补准确恢复方案。
+入站guard没有出站防直连是其用途边界，不是整个方法无价值。回滚须恢复本次旧表/服务状态；源脚本默认删专属表不足以证明任意既有部署已完整恢复，实施前补准确恢复方案。其初装同样先enable后apply，超时不撤开机状态，可能重启后重新载入；此为未经目标机验证的静态风险，不能与运行时撤销混称完整恢复。依据：[VPS初装及保险丝](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/vps-firewall/vps-guard.sh#L67-L108)。
 
 来源：[VPS详细指引](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/references/vps-guidance.md)、[S08 PDF](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/sources/S08-vps-claude-tutorial.pdf)、[S08文字定位](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/sources/S08-extracted-text.md)、[入站guard](https://github.com/DUNHKpcc/Claude-Guardian/blob/e934166adbdbd582f169b1b14adb7be76aa90a77/skills/claude-guardian/assets/vps-firewall/vps-guard.sh)。
 

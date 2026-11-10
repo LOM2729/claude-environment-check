@@ -5,7 +5,9 @@ description: Configure and troubleshoot Claude environments on Windows（含原�
 
 # Claude Windows（含原生与 WSL） 环境
 
-调用本 Skill 的首次回复以“老大，”开头，随后直接进入本轮任务。
+本 Skill 对话中，每句面向用户的自然语言说明都以“老大，”开头；代码、命令、URL 和配置内容保持原样。
+
+先复用已知的阶段、系统和目标，只补会影响方案的缺口；需要选择本机／VM／VPS时先读 [路线规划](references/deployment-routes.md)，选定范围后再检查。只比较方案就停在说明阶段，不操作设备。
 
 只处理本轮目标设备与实际入口，优先复用正常配置和仍有效的证据。局部任务不扩成全套配置；纯资料／Skill 维护只改文档，不触发本机采集或试验。
 

@@ -1,0 +1,3460 @@
+{
+  "schema": "claude-readiness-source-read-manifest-v1",
+  "review_date": "2026-11-10",
+  "purpose": "实际阅读范围，不是执行记录；重复文件/复用内容不可累计当独立文件或功能",
+  "third_party_code_executed": false,
+  "target_machine_tested": false,
+  "environment_changes": false,
+  "source_groups": {
+    "ccbaga_and_three_cleanup_skills": {
+      "scope": "CCBaga network Skill package plus eight application/identity/platform/security/acceptance documents; all text in ban-clean/env-cleanup and suyuan claude-cleanup only.",
+      "source_file_count": 33,
+      "source_files": [
+        {
+          "path": "ccbaga/skills/ccbaga-network/CLAUDE.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 1080,
+          "sha256": "dacc62e7c264cecc67f67d524e4fac4579532f32a9b4a34aab633590dc29abcc",
+          "line_count": 8,
+          "read_ranges": [
+            [
+              1,
+              8
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/LICENSE",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 1076,
+          "sha256": "acfcbb3fdae956821acce7ad72ba5c83a3b12d5dc5bc37a78bf2a95e9dbad111",
+          "line_count": 21,
+          "read_ranges": [
+            [
+              1,
+              21
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/README.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 10596,
+          "sha256": "f0eb4986aa44d78d28f4ed93e0a5805465cb0a25084d33c7bc4ff2287c132a0d",
+          "line_count": 113,
+          "read_ranges": [
+            [
+              1,
+              113
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/SKILL.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 19202,
+          "sha256": "245ba2698678bf43cec96a877b435856b544f365736681637f10549212adbf6e",
+          "line_count": 111,
+          "read_ranges": [
+            [
+              1,
+              111
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/providers.json",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 199,
+          "sha256": "4965163452df5c9ba327ad93b047828de92bf7c73613cd1b13e4fab27782a9dc",
+          "line_count": 4,
+          "read_ranges": [
+            [
+              1,
+              4
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/scripts/CLAUDE.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 1666,
+          "sha256": "6ffcec0606b3052907a67c9b880f98b5092b0a5e7465e225a492f7426addf8a7",
+          "line_count": 7,
+          "read_ranges": [
+            [
+              1,
+              7
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/scripts/network.py",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 18391,
+          "sha256": "3585c960043bc8ac566930896cc8a5038852cbc72dc69a6a2b4cc7e04b451aae",
+          "line_count": 371,
+          "read_ranges": [
+            [
+              1,
+              371
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/scripts/setup-vps.sh",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 27142,
+          "sha256": "e32e360616884446d39ecd6aaf6397deb448b1676fcf94db0c1e3f75bfb16e09",
+          "line_count": 573,
+          "read_ranges": [
+            [
+              1,
+              573
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/scripts/test_network.py",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 11727,
+          "sha256": "901e04ac4d428cf7f5809f5a46e1b637964404c2d033092a54c979c7021ce404",
+          "line_count": 203,
+          "read_ranges": [
+            [
+              1,
+              203
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/skills/ccbaga-network/scripts/windows.py",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 5264,
+          "sha256": "c71cadb4eac3015332284bc395fa6f927d38039550c57437edf001d13352715b",
+          "line_count": 104,
+          "read_ranges": [
+            [
+              1,
+              104
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "ban-clean/README.md",
+          "repository": "Pluviobyte/claude-ban-clean",
+          "commit": "3b1698030aace5bbd1ae27df48b4906331d161ab",
+          "bytes": 5844,
+          "sha256": "f3ad4b077c2db325da1573a81b1d8906dd4af1c496018ab8341076dbb98ea1bb",
+          "line_count": 109,
+          "read_ranges": [
+            [
+              1,
+              109
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ban-clean/SKILL.md",
+          "repository": "Pluviobyte/claude-ban-clean",
+          "commit": "3b1698030aace5bbd1ae27df48b4906331d161ab",
+          "bytes": 3829,
+          "sha256": "64f62685cc8c83a8b40c9564855ae38363d894d810d8af47c71ff4661bcc6757",
+          "line_count": 43,
+          "read_ranges": [
+            [
+              1,
+              43
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ban-clean/agents/openai.yaml",
+          "repository": "Pluviobyte/claude-ban-clean",
+          "commit": "3b1698030aace5bbd1ae27df48b4906331d161ab",
+          "bytes": 322,
+          "sha256": "43dded7f934de1c5d915e8ecb7752f5d6935f7341b13e5131568f67c63292ce3",
+          "line_count": 4,
+          "read_ranges": [
+            [
+              1,
+              4
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ban-clean/references/browser.md",
+          "repository": "Pluviobyte/claude-ban-clean",
+          "commit": "3b1698030aace5bbd1ae27df48b4906331d161ab",
+          "bytes": 2517,
+          "sha256": "b384a3b0b6c76b2c201a93b4173f87d9a451d74f03ae8079aa31e13940a7b3d3",
+          "line_count": 29,
+          "read_ranges": [
+            [
+              1,
+              29
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ban-clean/references/verification.md",
+          "repository": "Pluviobyte/claude-ban-clean",
+          "commit": "3b1698030aace5bbd1ae27df48b4906331d161ab",
+          "bytes": 2431,
+          "sha256": "d7cb2e3939286e171dca9d515ec98a706a13a068c24cf95ed748b7a4b6e07c7e",
+          "line_count": 31,
+          "read_ranges": [
+            [
+              1,
+              31
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ban-clean/scripts/cleanup.py",
+          "repository": "Pluviobyte/claude-ban-clean",
+          "commit": "3b1698030aace5bbd1ae27df48b4906331d161ab",
+          "bytes": 9166,
+          "sha256": "4e11fd5556eef75dca6296df3c68136e482b1664432825f949161281a14b2de5",
+          "line_count": 223,
+          "read_ranges": [
+            [
+              1,
+              223
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "ban-clean/tests/test_cleanup.py",
+          "repository": "Pluviobyte/claude-ban-clean",
+          "commit": "3b1698030aace5bbd1ae27df48b4906331d161ab",
+          "bytes": 3239,
+          "sha256": "b058643f529f295299bca77897d1e0a118b9e07082493d96a0deb0da5820caa7",
+          "line_count": 76,
+          "read_ranges": [
+            [
+              1,
+              76
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "env-cleanup/README.md",
+          "repository": "pnedfff/claude-env-cleanup",
+          "commit": "56ba3fb388449ff2533487f9044e17300178df1b",
+          "bytes": 14636,
+          "sha256": "797a9f13170ef1aff49febcf192e9917a4a6a005edf099821d4cef6c1e9b854a",
+          "line_count": 299,
+          "read_ranges": [
+            [
+              1,
+              299
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "env-cleanup/SKILL.md",
+          "repository": "pnedfff/claude-env-cleanup",
+          "commit": "56ba3fb388449ff2533487f9044e17300178df1b",
+          "bytes": 43295,
+          "sha256": "ed2d23dcbff5f048cfd2bccf36c16ebf6f7f77d069383055c4aa83bd1026e690",
+          "line_count": 496,
+          "read_ranges": [
+            [
+              1,
+              496
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "env-cleanup/agents/openai.yaml",
+          "repository": "pnedfff/claude-env-cleanup",
+          "commit": "56ba3fb388449ff2533487f9044e17300178df1b",
+          "bytes": 525,
+          "sha256": "2efce3d2860831ead6151ead6c6575499b05b598f0e9039f6f4e217eeb5bddf4",
+          "line_count": 4,
+          "read_ranges": [
+            [
+              1,
+              4
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "env-cleanup/scripts/audit_claude_env.py",
+          "repository": "pnedfff/claude-env-cleanup",
+          "commit": "56ba3fb388449ff2533487f9044e17300178df1b",
+          "bytes": 29407,
+          "sha256": "2ff8ade8b181d9bdfd70871b4e5e79d53519e4c08b4da9aef413923e7c1b3891",
+          "line_count": 863,
+          "read_ranges": [
+            [
+              1,
+              863
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "env-cleanup/scripts/audit_network_env.py",
+          "repository": "pnedfff/claude-env-cleanup",
+          "commit": "56ba3fb388449ff2533487f9044e17300178df1b",
+          "bytes": 20479,
+          "sha256": "4bea1e8306d02ca1c701a947d5f86848f7a5ba55cd5ddd668367013c08006251",
+          "line_count": 542,
+          "read_ranges": [
+            [
+              1,
+              542
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "suyuan/claude-cleanup/SKILL.md",
+          "repository": "suyuan2022/suyuan-skill",
+          "commit": "8babd4557a4774ca8e3d5b784d82f0ee5a4565e5",
+          "bytes": 4621,
+          "sha256": "90c5d370ab55b84e4aead7e1de4e4e40dc09ab7843b0fb2a8c9f79e030cbb8aa",
+          "line_count": 90,
+          "read_ranges": [
+            [
+              1,
+              90
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "suyuan/claude-cleanup/scripts/claude_cleanup.py",
+          "repository": "suyuan2022/suyuan-skill",
+          "commit": "8babd4557a4774ca8e3d5b784d82f0ee5a4565e5",
+          "bytes": 16812,
+          "sha256": "59353a679e9a976e8d5dfc88e6130d5ec247f4d27bc606bf6ef474888fb78895",
+          "line_count": 336,
+          "read_ranges": [
+            [
+              1,
+              336
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "suyuan/claude-cleanup/tests/test_claude_cleanup.py",
+          "repository": "suyuan2022/suyuan-skill",
+          "commit": "8babd4557a4774ca8e3d5b784d82f0ee5a4565e5",
+          "bytes": 8398,
+          "sha256": "13df20a3b9fd7d7d1e33b88176e291deabad6f9fdf67cb4a881de30ad7fcc6c3",
+          "line_count": 175,
+          "read_ranges": [
+            [
+              1,
+              175
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "source_code",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/docs/CLAUDE.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 2524,
+          "sha256": "a25b4138f711c865fac7542eaf20bc5514fafbb2acd8bd3fab5fe7739fae7d95",
+          "line_count": 13,
+          "read_ranges": [
+            [
+              1,
+              13
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/docs/audit-2026-10-27.json",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 31510,
+          "sha256": "7c5bac8e5ba6e6fbdebaf9a9056543bdf0656800744630cbb057cd63d6165faf",
+          "line_count": 710,
+          "read_ranges": [
+            [
+              1,
+              710
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "upstream_record",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/docs/identity-storage.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 15487,
+          "sha256": "88411edaafbbdd63cc5f7809a57aac8fb27287d2846fcdf8a18d038381da5568",
+          "line_count": 87,
+          "read_ranges": [
+            [
+              1,
+              87
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/docs/linux.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 9398,
+          "sha256": "1cf3d978ce7c5e978f88759626087303f7c4b87b497025f7d531672ecacccdc8",
+          "line_count": 105,
+          "read_ranges": [
+            [
+              1,
+              105
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/docs/release-verification-0.2.50.json",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 9850,
+          "sha256": "1a2dba580d0d05b50c2ce91f18d973ab945863ba8d07ffaff849588ce7529eba",
+          "line_count": 214,
+          "read_ranges": [
+            [
+              1,
+              214
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "upstream_record",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/docs/usage.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 4110,
+          "sha256": "24fe01521ba30a3405142b116a6c259a70c1c441940321c8519cfbff5e9e99ac",
+          "line_count": 50,
+          "read_ranges": [
+            [
+              1,
+              50
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/docs/windows.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 6026,
+          "sha256": "bd858f7c0b592012cc5b102b75a6fc8c8e72a957b24e97024e34a0c7c04b74f0",
+          "line_count": 52,
+          "read_ranges": [
+            [
+              1,
+              52
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        },
+        {
+          "path": "ccbaga/src-tauri/SECURITY.md",
+          "repository": "liseami/CCBaga",
+          "commit": "6db5ad55e799c5b020be8ff5e4def2c147cd5602",
+          "bytes": 19629,
+          "sha256": "b7f33cf5a54a874eb97367fb2d8217cf42d0c92bb2225f34696b8e7a58773ccf",
+          "line_count": 92,
+          "read_ranges": [
+            [
+              1,
+              92
+            ]
+          ],
+          "semantic_read": "complete",
+          "read_method": "Full file text emitted and read in the active audit; longer files split into contiguous complete ranges; no source code execution.",
+          "evidence_type": "author_documentation",
+          "executed": false
+        }
+      ],
+      "capability_count": 63,
+      "coverage_counts": {
+        "冲突需保留": 8,
+        "只有名称或链接": 36,
+        "已纠正需证据": 5,
+        "流程完整": 4,
+        "缺失": 10
+      },
+      "capabilities": [
+        {
+          "id": "N01",
+          "capability": "安装与调用",
+          "author_method_and_conditions": "本地 coding agent 才能接触本地密钥；npm 安装需 Node 22.20+，脚本 Mac/Linux Python 3.10+、Windows 3.12+及原生 OpenSSH/curl。`DO_NOT_TRACK=1 npx --yes skills add liseami/CCBaga --skill ccbaga-network --global --agent <目标> --copy --yes`；目标 Codex/Cursor/OpenCode/Copilot/General。复制整个目录含 providers 和 windows.py；既有安装先审阅；更新保持关闭安装器统计。安装不批准购买或部署。",
+          "our_mapping_and_gap": "`ccbaga-methods.md` 只说独立 Skill；没有安装条件、完整目录、agent 映射和更新方法。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N02",
+          "capability": "采购路线与缺货",
+          "author_method_and_conditions": "作者限定 DMIT VPS＋Webshare Static Residential/ISP；VPS优先靠近出口、Debian12/13、公网IPv4、root密钥SSH22、订单后生成SSH key。Webshare固定地区、Direct Connection、Username/Password、SOCKS5；独享需另核，不能由Static ISP推出独享/物理家庭线。缺货只同供应商换地区/同类套餐或等待；用户选价格地区并付款，供应商链接参数不得改。作者参考套餐LAX.AN4.Pro.MINI不是库存承诺。",
+          "our_mapping_and_gap": "`deployment-routes.md` 是供应商中立比较；`ccbaga-methods.md` 提推广链接但没有作者完整限制。应保留作者特定路线，同时标为商业/产品选择，不改我方默认。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N03",
+          "capability": "一次收集与敏感资料",
+          "author_method_and_conditions": "一次清单收VPS地址、PEM/PPK/PUB或下载包、住宅代理主机/真实端口/用户/密码/预期固定出口。AI定位用户已给附件，不让客户找路径、开终端或写JSON；不索取供应商网页登录密码，不复用旧聊天/其他项目密钥。作者允许本地agent聊天附件/粘贴连接资料并披露服务商可能处理；这与我方“不粘贴凭据”是不同交互选择。",
+          "our_mapping_and_gap": "`automatic-configuration.md` 已有一次补缺与代理操作；`ccbaga-methods.md` 只有三文件概括，并把来源的可选聊天交付收窄了。应保留原方法和数据流差异。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N04",
+          "capability": "三文件校验",
+          "author_method_and_conditions": "`keys --pem --ppk --pub`；每文件非空、对应后缀、≤64KiB，拒绝叶子链接；PPK v2/v3 public段与PUB前两字段比较，再在私有临时副本用`ssh-keygen -y -P ''`推导PEM公钥。PEM加密/不匹配即停；PPK只核公钥段，不验证其私钥段。临时副本退出移除，不改原件。ZIP接收按文档先列项、只取三文件、拒绝遍历/链接/超限；ZIP操作由agent做，脚本没有ZIP导入器。",
+          "our_mapping_and_gap": "`ccbaga-methods.md` “三份文件同一密钥”和“一致性检查”，没有容量、PPK版本、临时副本、加密拒绝与ZIP边界。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N05",
+          "capability": "九字段配置",
+          "author_method_and_conditions": "`vps,pem,ppk,pub,home_host,home_port,home_user,home_pass,expected_ip`九字段严格等集；端口整数1–65535；主机为合法IPv4/无scope IPv6/ASCII域名，拒绝URL、错写IPv4、纯数字末段；expected_ip必须字符串固定IP。凭据字符串非空≤4096且无控制字符。`configure`读stdin≤64KiB，Git/Skill外，新文件拒绝覆盖；默认`~/.config/ccbaga-network/connection.json`。",
+          "our_mapping_and_gap": "`ccbaga-methods.md` 只有私密配置概念；九字段及输入边界未保存。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N06",
+          "capability": "私密文件与Windows",
+          "author_method_and_conditions": "POSIX0600，目录0700；Windows原生helper用当前SID单一FullControl受保护DACL，拒绝junction/symlink目录，临时PEM先收紧再写秘密；不以chmod伪装Windows权限。Windows子进程置Job Object，超时只终止自己的任务树；不要为通过而关Defender/SmartScreen/防火墙/企业策略。",
+          "our_mapping_and_gap": "`ccbaga-methods.md` 有“原生OpenSSH、私有NTFS ACL”，`incident-and-cleanup.md` 有一般权限/恢复，但无这个来源的具体条件和子进程边界。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N07",
+          "capability": "首次SSH身份",
+          "author_method_and_conditions": "`identity`使用`-F none,-T,-p22,-lroot,BatchMode,IdentitiesOnly,IdentityAgent=none`，只公钥、禁止密码与keyboard-interactive；首次StrictHostKeyChecking=accept-new，私有known_hosts；用户对照供应商控制台host-key指纹。后续固定yes，变更就停，不删known_hosts；路径引号/反斜杠/%转义，拒`${…}`。identity只验证root/Debian，12/13要求在check再核。",
+          "our_mapping_and_gap": "我方路线文档只有“可恢复SSH/密钥”概括；TOFU与后续严格验证序列缺。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N08",
+          "capability": "部署前check",
+          "author_method_and_conditions": "`check`先定位ssh/ssh-keygen/curl，临时校验密钥；本地SOCKS curl15秒，VPS root、Debian12/13、authorized_keys、已装curl/python3及远端SOCKS20秒，SSH任务60秒。目标出口不等于expected_ip就停；本地直达代理失败可以未验证，但不冒充成功。缺远端包须独立安装后重测。占用443/8443、既有Xray/sub/state冲突由agent预检，不能声称脚本已自动完成该人工契约。",
+          "our_mapping_and_gap": "`deployment-routes.md` 一般服务器盘点；`ccbaga-methods.md` 自检/前提概括，缺双路径与停止条件。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N09",
+          "capability": "审阅/部署交接",
+          "author_method_and_conditions": "列目标root:22、固定出口、包/内核/SSH/firewall/Xray/sub影响与控制台救援；明确批准后`deploy --confirm`。再次check，SSH stdin发送配置及随包UTF-8脚本；远端私有mktemp并trap清理；1800秒超时，输出只保留64KiB尾部且失败不回显原输出。之后新SSH连接验证服务并fetch。超时明确可能部分变更，不能盲重跑。",
+          "our_mapping_and_gap": "`ccbaga-methods.md` 有连带影响和非原子回滚，缺逐阶段入口/1800秒/新SSH/fetch/中断对账。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N10",
+          "capability": "系统更新/校时",
+          "author_method_and_conditions": "`apt update`，默认full-upgrade（底层SKIP_UPGRADE=1可跳过）；安装ca-certificates/curl/wget/unzip/openssl/python3/psmisc/ufw/fail2ban/python3-systemd/nftables/unattended-upgrades/apt-listchanges/htop/mtr-tiny/vnstat/iperf3。关iperf3 daemon，开vnstat；无timesyncd/chrony时安装启动timesyncd。dpkg最多等10分钟，保留confold；外部下载最多5次、递增5秒退避。",
+          "our_mapping_and_gap": "只有“full-upgrade、软件包、自动更新”总称，vnstat/iperf3/校时及锁等待等副作用未列。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N11",
+          "capability": "网络内核参数",
+          "author_method_and_conditions": "脚本按1–2Gbps、约200ms跨洋RTT假设：BBR+fq、64MiB最大收发缓冲、TCP rmem/wmem、notsent_lowat131072、slow_start_after_idle0、MTU probing1、fastopen3、backlog8192/16384、端口10240–65000、fin15、keepalive300/30/5、conntrack262144/7200/30、hashsize65536及redirect/syncookie设置。写98-proxy-tuning.conf、module配置并sysctl。原作者注释回滚删除新增文件再sysctl，不是自动恢复所有运行期旧值；收益未证不能省略参数假设。",
+          "our_mapping_and_gap": "`deployment-routes.md` 只有BBR先比较；`ccbaga-methods.md` 只有“BBR/fq/sysctl”。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N12",
+          "capability": "SSH/fail2ban/自动更新",
+          "author_method_and_conditions": "SSH drop-in：PermitRootLogin prohibit-password、禁Password/KbdInteractive/EmptyPasswords、AuthenticationMethods publickey、禁X11、MaxAuthTries3、Grace30、MaxStartups10:30:60、Alive60×3。`sshd -t`通过后reload，保留旧会话并新会话验收。fail2ban sshd aggressive/systemd、nftables、maxretry5/find10m、ban1h递增至1w。自动安全升级每日、autoclean7日、不自动重启。",
+          "our_mapping_and_gap": "我方没有完整参数及对应服务重载和回退关系；不能靠一个“SSH加固”链接表示已覆盖。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N13",
+          "capability": "Xray来源/身份/状态",
+          "author_method_and_conditions": "底层从XTLS/Xray-install的main下载脚本；XRAY_VERSION空为latest，可固定；缺geoip另下载。设置nofile1000000/nproc10000；UUID、X25519、short ID、sub token由env→state→新生成，保存`/etc/xray-setup.env`0600。重跑保留身份；state不要随意删。完整主仓固定不代表外部安装器固定。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`已有漂移供应链提醒及状态概括，无变量优先级/可选版本/恢复原节点身份步骤。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N14",
+          "capability": "Xray路径/规则",
+          "author_method_and_conditions": "默认TCP443、Reality SNI/dest addons.mozilla.org、Vision、home SOCKS出口；先私网和BT阻断，再可选direct域名、UDP阻断、其余TCP走home，不回落DIRECT。DNS `https+local://1.1.1.1/dns-query`/UseIPv4；警告级日志、connIdle300、handshake4等。底层默认Stripe四域直连，但wrapper传空白关闭；不能直接运行底层默认并说等价。配置先`xray -test`，备份后640、root+实际服务组读，enable/restart Xray。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`已保留关键路径和Stripe差异，但缺准确参数、配置校验与服务动作顺序。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N15",
+          "capability": "UFW/订阅服务",
+          "author_method_and_conditions": "UFW默认入站deny、出站allow；先放SSH22再443/可选8443，force enable；并非整机出站kill switch。sub目录token路径、空index隐藏列目录；Python HTTP8443，DynamicUser/NoNewPrivileges/ProtectSystem/ProtectHome等沙箱、128M；明确是明文HTTP。ENABLE_SUB=0会停sub并删该端口allow规则。原配置文件每次按时间戳备份，整套非事务回滚。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`有端口与HTTP警示，缺服务关闭分支、入出站差异及部分回退。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N16",
+          "capability": "客户端YAML",
+          "author_method_and_conditions": "mixed7890、Rule、ipv6false、TUN mixed/auto-route/auto-detect-interface/any:53、fake-IP198.18.0.1/16、respect-rules；bootstrap223.5.5.5/223.6.6.6直连，默认Cloudflare/Google DoH#PROXY，AI DoH#AI，列明国内域名直连。AI和PROXY组只有节点/REJECT；节点udpfalse、Reality/Vision、Chrome外层指纹。完整域名表在固定脚本，不能混成我方domestic-v4同一政策。",
+          "our_mapping_and_gap": "我方列了TUN/DNS概念和“不叠加”边界，未保存该来源可重现的YAML参数组合。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N17",
+          "capability": "服务端自检/失败",
+          "author_method_and_conditions": "检查Xray语法、Xray/fail2ban/BBR/sub active、HTTP内容与目录索引；VPS上起临时loopback SOCKS10808的VLESS client，再向ipify确认home出口，退出清理该进程和临时配置/log；若启Stripe例外另测HTTP303。逐项累积FAIL，全部通过才输出CC_SUB_URL并exit0；失败不会自动恢复包/SSH/firewall。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`只有自检项目名，未说明loopback位置、失败累积和无自动回滚。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N18",
+          "capability": "私密交付/fetch",
+          "author_method_and_conditions": "wrapper只接受同VPS主机、HTTP8443、32位hex token路径`/<token>/clash.yaml`的返回；receipt和YAML0600在私有config同目录。`fetch`新SSH检查xray/sub，再读state中token、取<64KiB的YAML；只做关键片段完整性检查，不是全配置语义审计。优先SSH取本地文件；URL必要时说明HTTP风险或用本地SSH隧道，不上传转换站。",
+          "our_mapping_and_gap": "我方有“SSH取文件、HTTP不加密”，缺fetch的停止条件与不重新部署的恢复入口。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "N19",
+          "capability": "TUN启用/验收/断开",
+          "author_method_and_conditions": "导入YAML→选择profile/node并保持Rule→授权所需服务→TUN ON/System Proxy OFF/B显式proxy空→`tun-check`用curl `--proxy '' --noproxy '*'`对expected_ip→B实际国家/时区出口→另测DNS/WebRTC/原业务。失败查认证、节点、Reality兼容、冲突代理、DNS，不改expected_ip刷绿。断开先TUN OFF、System Proxy继续OFF，再退出客户端并确认普通联网；删除helper/VPS/订阅另选。",
+          "our_mapping_and_gap": "我方已有一般验收与手动重启原则，来源完整顺序和断开顺序未保存。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A01",
+          "capability": "三类动作入口",
+          "author_method_and_conditions": "Easy setup先选地区再选动作；Browser保存配置后打开检查页；清缓存保登录；清全资料单独确认、永久删密码/书签/历史/扩展/设置/会话且无备份；Computer语言/地区/时区分开，可能要权限/重启/注销。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`二、三节已区分动作和损失；`browser-cleanup.md`强调不能套主浏览器。就这些步骤而言已连贯。",
+          "coverage_status": "流程完整",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A02",
+          "capability": "保留选项与恢复历史",
+          "author_method_and_conditions": "Keep in workspace是保留，不是删除勾选：历史不勾＝随加密身份归档；恢复对应卡片时仍不勾历史，让它回到工作区；勾选＝保持共享且不进此次归档。先看保存卡片和恢复状态，已删除卡片/直接删的副本不保证恢复。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`说“随身份走”但没有恢复时勾选语义，易误把未勾当已删。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A03",
+          "capability": "身份槽/备份代次",
+          "author_method_and_conditions": "识别UUID+组织，缺UUID时规范邮箱+组织，unknown/Desktop-only不猜合并；同账号更新同槽保留自定义名，新代次完整认证后提交SQLite再回收旧代次；不是无限历史备份。元数据不代表服务器登录有效。",
+          "our_mapping_and_gap": "我方只有“原地保存/更新归档”，缺同槽覆盖与旧代次回收影响。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A04",
+          "capability": "保存/切换/中断恢复",
+          "author_method_and_conditions": "Save backup会经确认停止Claude，再归档选定状态但不改登录/工作区/浏览器绑定；切换先验出入归档，失败回滚/持久恢复检查点；中断时先恢复再允许B启动。普通刷新不解密整库、不回收目录。锁文件只排除确认瞬态空锁；debug/latest精确例外，不放宽其他链接。",
+          "our_mapping_and_gap": "我方已有backup/switch区别和一般恢复，但无锁/回收/中断阻断的具体恢复顺序。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A05",
+          "capability": "浏览器联动",
+          "author_method_and_conditions": "默认开启（保留用户显式关闭）；首次绑定可选采用既有profile，空身份新目录，旧身份复用原目录；切换关闭再重开B，不复制/合并浏览器资料。unlink回原共享目录且保留身份目录；删卡默认保留浏览器资料，另选才删；绑定卡与实际CLI账号不一致时显示失配。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`只有独立资料绑定概念，缺默认状态、解绑、首次采用及重开失败单独报告。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A06",
+          "capability": "跨机密码迁移",
+          "author_method_and_conditions": "导出已保存/有备份卡到新.bagapack；密码≥12字符、≤1024UTF-8字节，不能找回。仅同OS；PBKDF2-HMAC-SHA256 600000次、32字节salt、AES-GCM/tar/Zstd；一次性原生路径票据5分钟。导入先完整认证/白名单/版本/重复检查、≤8GiB/100000成员，再新增卡，不覆盖现有/不切换/不启动；duplicate账号/seed冲突拒绝。",
+          "our_mapping_and_gap": "我方只保留同OS/密码/可能重登概括，未保存这些操作条件和失败分支。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A07",
+          "capability": "迁移登录和内容限制",
+          "author_method_and_conditions": "可选浏览器部分仅seed/环境显示设置，不含Cookie/密码/session/proxy/OS browser keys；身份包仍可含已获准归档Claude登录材料。Mac保留原Keychain account，不猜新用户名/不改ACL；Windows DPAPI不重新加密，可能需重登。历史正文与绝对项目路径不改；hooks/plugins/MCP导入时不执行，但恢复后启动可能执行，完整性不等于来源可信。",
+          "our_mapping_and_gap": "我方已纠正“整个包不含凭据”，但缺信任输入与历史路径不迁移条件。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A08",
+          "capability": "v0.2.49具体迁移故障",
+          "author_method_and_conditions": "根级`.claude.json.backup*`在接收机原home不存在时验证失败；作者v0.2.50接收端修复，仍用原包原密码，无须重新导出。若升级后还失败另诊断，不覆盖现有库。",
+          "our_mapping_and_gap": "我方仅引用身份文档，无这个可直接指导用户的失败恢复分支。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A09",
+          "capability": "Windows安装/维护",
+          "author_method_and_conditions": "单用户NSIS含A+B，缺WebView2时下载安装；未Authenticode签名，作者写More info→Run anyway，但企业策略不能关闭。更新校验签名/版本，关闭B退出A；默认卸载保资料，显式Delete application data会删CCBaga自有资料。当前用户WinGet/native/npm/bun来源识别，官方bootstrap先下载校验再删旧程序。",
+          "our_mapping_and_gap": "我方有签名/架构和CLI总体边界，缺WebView2、卸载复选框、来源先验顺序。作者绕过提示的步骤应原样标明为其说明，与我方工具确认规则并列，不静默抹掉。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A10",
+          "capability": "Windows权限范围",
+          "author_method_and_conditions": "语言包/注销/默认浏览器UserChoice需用户操作；Credential Manager不枚举不删；文件凭据、当前SID/实际owner、reparse/进程创建时间/livehandle另核。CI是Server2022/2025，不等于每个Win10/11桌面版本。",
+          "our_mapping_and_gap": "我方已有“Windows待真机”但没有这些明确保留项及手动阶段。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A11",
+          "capability": "Linux可选路线",
+          "author_method_and_conditions": "x86_64；DEB/RPM/AppImage为Ubuntu22.04/glibc2.35基线，Arch另构建；GTK3/WebKitGTK4.1、zsh/curl/xdg、Wayland wl-clipboard/X11 xclip。正常sandbox、不加no-sandbox；AppImage仍依赖系统glibc。XDG cache/config白名单，第三方Desktop仅cache/log，不做整账号reset；Secret Service/KWallet不支持；非systemd时区/非GNOME定位未验；语言需桌面设置再登录。",
+          "our_mapping_and_gap": "我方只列平台和部分GNOME限制，不应由Mac/Windows Skill直接套执行，但作为完整来源路线保留步骤。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A12",
+          "capability": "账号受限处理",
+          "author_method_and_conditions": "Usage：保存通知/工单→用受影响账号在claude.ai按申诉入口→页面有导出时导出。可用选项由官方决定，不由本地清理保证恢复。",
+          "our_mapping_and_gap": "`incident-and-cleanup.md`已有事件材料/官方处理，`client-cleanup.md`已有导出及云端边界；未提供账号保证。",
+          "coverage_status": "流程完整",
+          "target_machine_tested": false
+        },
+        {
+          "id": "A13",
+          "capability": "证据与依赖",
+          "author_method_and_conditions": "两份上游记录逐项区分source/CI/安装包签名及公开下载；v0.2.50源提交568fed…与本次6db5…不是同一报告时间。固定Chromium148 fork回补覆盖未验证，不能从SHA/供应链证明推出安全补丁完备；GLib本地补丁与registry扫描分开。历史合成性能不是客户时延保证。",
+          "our_mapping_and_gap": "`ccbaga-methods.md`/`complete-environment-method.md`保留这些核心证据边界；部分旧“所有Windows无证据”文字需明确指我方端到端，不抹掉作者CI/安装实测记录。",
+          "coverage_status": "已纠正需证据",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B01",
+          "capability": "运行模式/保护主体",
+          "author_method_and_conditions": "Mac、Python3.10标准库；默认`cleanup.py`只审计cache，`--scope cache/account/device-records`可重复；`--apply`需真实TTY的一次CONFIRM，无--yes。不能由Claude自清；检测Claude/父进程不明即停，不自动kill。用户仅要审计不启动客户端。",
+          "our_mapping_and_gap": "我方有一般分范围/授权原则与来源链接，但没有三scope原始入口及TTY条件。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B02",
+          "capability": "cache白名单",
+          "author_method_and_conditions": "Code cache/stats-cache/telemetry、claude-cli-nodejs、Desktop系统/ShipIt缓存、Claude日志；Desktop Cache/Code/GPU/DawnGraphite/DawnWebGPU/GPUPersistent/GraphiteDawn/Crashpad/sentry/window-state/vm-support-probe，指定Claude_*诊断。移遥测队列不等于关闭遥测。",
+          "our_mapping_and_gap": "`client-cleanup.md`抽象“按目标版本可重建”，`ccbaga-methods.md`是另一项目目录，不能代替本作者精确白名单。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B03",
+          "capability": "account字段/journal",
+          "author_method_and_conditions": "`.claude.json`、`.claude/backups/.claude.json.backup.*`和Desktop config.json只删5个顶层字段：oauthAccount/accountUuid/oauth:tokenCache/oauth:tokenCacheV2/lastKnownAccountUuid；保留未知、嵌套、userID/machineID和历史索引；CLI `.credentials.json`与Desktop config.json.journal则整个备份后移走，避免journal恢复旧态。",
+          "our_mapping_and_gap": "我方没有五键/journal细节。源码整体移凭据文件可能连带其中MCP/插件秘密，不能沿用入口笼统“保护MCP”宣称毫无影响；也不等同CCBaga只删两键的实现。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B04",
+          "capability": "device-records",
+          "author_method_and_conditions": "仅ant-did和ant-device-registry.json，独立选择，不换底层密钥；文档描述某版ant-did为随机UUID的Base64、registry可凭保留密钥/服务器重建。get-or-create可能写入，-34018表示权限缺失；不能用接口探测伪装只读。内部rotateKey某版要登录，不断言永久不存在别的入口。",
+          "our_mapping_and_gap": "我方只保留设备记录名称和“非服务端重置”；缺这些作者观察条件及不确定性的具体解释。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B05",
+          "capability": "备份/部分失败/恢复",
+          "author_method_and_conditions": "先快照选中目标每文件SHA和目录树，空间需数据总量+100MiB；0700时间戳备份、hashes/report；全部复制校验后再查写入者与源变化，移到时间戳Trash，JSON临时写+fsync+replace。失败partial-or-stopped，不自动回滚。恢复先另存当前、按指定路径/字段比较新增数据，核哈希/权限，不整目录覆盖或清空Trash。",
+          "our_mapping_and_gap": "`incident-and-cleanup.md`已有独立私有备份、哈希、执行前复核、失败对账、保护后续编辑及有限恢复。来源固定空间阈值可补，但通用流程已完整。",
+          "coverage_status": "流程完整",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B06",
+          "capability": "浏览器分区流程",
+          "author_method_and_conditions": "Profile逐个检查；SQLite mode=ro，遇锁停止，不immutable强读/删锁；按origin/storage key限定，Persona/Cloudflare/hCaptcha分顶层站点，保留别的网站。关闭相关标签→必要时退出Chrome→一致备份DB/目录→原生站点设置优先。若专项离线SQL，先验schema，在事务中验证未选记录不变；LevelDB须兼容库逐key并比较其余键，不能全文搜后整库删。",
+          "our_mapping_and_gap": "`browser-cleanup.md`基本具备完整顺序及分区/停写/恢复，专项DB没有通用执行器属明确边界；源精确“不变校验”可补。",
+          "coverage_status": "流程完整",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B07",
+          "capability": "验收与重建",
+          "author_method_and_conditions": "按Profile复查Cookie/IndexedDB/Local/Session/配额/扩展存储，并写不能检查的类型；页面/扩展可重建。授权后正常启动复查仅比较新旧标识是否相同，不输出值、不额外登录/开历史。历史清理非默认。5个测试仅临时目录，不覆盖恢复冲突或所有版本；脚本无浏览器/Keychain执行器。",
+          "our_mapping_and_gap": "我方已有按原目标复核和重建语义，但未把脚本测试范围与“没有恢复执行器”逐能力关联。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "B08",
+          "capability": "Reset旧文",
+          "author_method_and_conditions": "来源verification仍写Reset App Data影响Cowork“本地”任务；我方已有2026-11-03官方变化链接与当前确认框核对，不能把来源旧句当普适行为。",
+          "our_mapping_and_gap": "`client-cleanup.md`与`evidence-sources.md`已纠正；本轮未重新访问官方页面，日期/版本证据应由主线程保留。",
+          "coverage_status": "已纠正需证据",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E01",
+          "capability": "来源场景/初审",
+          "author_method_and_conditions": "Kevin个人Mac：先audit_claude_env.py，活跃配置优先，不默认递归session/debug/cache/plugins/backups。保留ClashX7890，区分Claude专用15721；脚本查配置键名/route markers/限定SQLite表命中计数、PATH/package/app/process/launchagent/browserbridge。名称“skill”不确定时先分类为Skill/CLI/App/agent/data/log再处理。",
+          "our_mapping_and_gap": "`client-cleanup.md`有通用对象分类，`evidence-sources.md`只记个人路径/审计器，未保留作者入口与具体检查层次。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E02",
+          "capability": "返回官方认证（窄路线）",
+          "author_method_and_conditions": "已有claude.ai OAuth但connectors因高优先级key/proxy关闭：备份cc-switch.db→定位claude-official那一行→只移ANTHROPIC_AUTH_TOKEN/API_KEY/BASE_URL→保留仍在用的302等profile→刷新相关进程。不能把回官方等同卸载所有非官方路线。",
+          "our_mapping_and_gap": "`client-cleanup.md`只有泛化环境覆盖排查，没有CC Switch这一可执行分支。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E03",
+          "capability": "移除非官方路由（较宽路线）",
+          "author_method_and_conditions": "明确弃用该Claude route时，先备份Claude settings、Codex config.toml、CCSwitch settings及DB；移Claude auth/base/model覆盖；存在时设launchOnStartup=false/enableLocalProxy=false/currentProviderClaude=claude-official；DB只删选定Claude provider/env；停相关CCSwitch/helper，核15721不监听，保留通用代理。",
+          "our_mapping_and_gap": "现有模块未保存此来源分支，不能将其与E02混成“删BASE_URL”。涉及Codex/共享路由是独立对象，需保留为作者可选方案。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E04",
+          "capability": "完整卸载CC Switch",
+          "author_method_and_conditions": "盘点App、~/.cc-switch、cask、PATH、进程/LaunchAgents、15721→作者时间戳backup内inventory/files/removed→先复制App和state→`HOMEBREW_NO_AUTO_UPDATE=1 brew uninstall --cask cc-switch`→剩余移removed→复核App/state/cask/PATH/process/agent/port。保留Codex/Teamo/bridge/sharedprojects。",
+          "our_mapping_and_gap": "我方只有通用“路由工具/卸载”，无这个完整分支及复核清单。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E05",
+          "capability": "请求链卫生",
+          "author_method_and_conditions": "活跃Claude/Codex/Teamo/CCSwitch/ClaudeCodeRouter/Cursor/Gemini/Kiro/OpenClaw/claude-sync及NativeMessaging/LaunchAgents，分intentional route、stale route、permission bypass、request transformer、telemetry/history。作者默认移除bypassPermissions/skipDangerousModePermissionPrompt，OpenClaw dangerouslyAllowHostHeaderOriginFallback=false，除非用户明确保留；日志/带key备份仅隐私清理时隔离。不是见BASE_URL就判恶意。",
+          "our_mapping_and_gap": "我方有“具体来源/范围、不按关键词判非法”，但没保留作者5类决策与3个具体权限设置分支。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E06",
+          "capability": "六个隐私变量",
+          "author_method_and_conditions": "明确要隐私控制时：备份settings.json，无文件才建合法对象；merge顶层env的`DISABLE_TELEMETRY`、`DISABLE_ERROR_REPORTING`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`、`DISABLE_FEEDBACK_COMMAND`、`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY`、`DO_NOT_TRACK`均字符串1。验证JSON→重跑审计看分类→重启相关CLI/Desktop/terminal再检查实际采用。默认不改自动更新/featureflags。来源称官方支持；当前版本需再核，非ZDR/清Cookie/指纹重置。",
+          "our_mapping_and_gap": "`complete-environment-method.md`只有“遥测/非必要流量控制”名称，没有六变量和流程。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E07",
+          "capability": "WebFetch/调查覆盖",
+          "author_method_and_conditions": "`skipWebFetchPreflight`单独安全预检opt-out，不属于上述总开关，不默认设；审计还识别`CLAUDE_CODE_ENABLE_FEEDBACK_SURVEY_FOR_OTEL`和feedbackSurveyRate，标覆盖/独立权衡。",
+          "our_mapping_and_gap": "我方缺具体变量/设置关系，不能用“关闭遥测”一句覆盖。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E08",
+          "capability": "时区/字体试验",
+          "author_method_and_conditions": "用户明确指定时设Asia/Singapore；若systemsetup报Error:-99又称已设置，读/etc/localtime或gettimezone核实；上海/新加坡同UTC+8不能靠offset判断；浏览器族程序重启后再读Intl。字体先盘点~/Library/Fonts、/Library/Fonts，只将用户安装字体移时间戳备份，`atsutil databases -removeUser`、`killall fontd`；保留系统PingFang/Hiragino/STHeiti/Songti。作者指出普通Chrome仍可检测系统字体，干净profile/指纹浏览器/VM/远端是另选。",
+          "our_mapping_and_gap": "时区我方流程充分；“用户字体移动+用户缓存重建”的可选实验只剩风险名称，没有原步骤。保留作者方法及恢复备份，不因为效果未证而删掉；不是默认执行。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E09",
+          "capability": "脱敏环境基线",
+          "author_method_and_conditions": "先本地审计，必要时明确--external，DNS/WebRTC/PWR用真实浏览器；只保地区/时区/语言/本地代理端口/DNS摘要/ASN/provider/IP族/判断。去完整公网/LAN/gateway/tailnet/mDNS/profile名/rawPWR/cookie/secret。写`~/.claude/session-env/environment-fingerprint-profile.md`候选并复读；用户确认后才称“用户确认基线”，带确认日期；漂移先报diff再覆盖。",
+          "our_mapping_and_gap": "`score-check.md`有脱敏报告，但没有候选→确认→带日期复用→漂移更新的完整来源流程和固定可选档案位置。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E10",
+          "capability": "新账号作者经验",
+          "author_method_and_conditions": "**前2周**只官方Desktop/App、避免独立CLI与OpenCode/OpenClaw/CraftAgent；有采购目标才偏App Store/Google Play；先基础Pro，有使用历史后升级；**升级Max后2周**保守，作者口径“约不超过3次触顶”；不共享账号，不24小时持续高负载；早期少切IP/国家/ASN，避免拥挤公共代理；**约1个月或首续费后**逐步放宽。作者自己称用户提供稳定性heuristics，无防封保证。",
+          "our_mapping_and_gap": "我方列了其他“Free3天/Pro15天”等阈值，**没有本来源2周/3次/1个月原条件**，不能说已完整保留。需连同来源、非官方证据和机会成本完整列为经验待验。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E11",
+          "capability": "封号后三步自查",
+          "author_method_and_conditions": "先两审计（network加--post-ban，--external另选）→所有用过的Profile清Claude/Anthropic/loginhelper站点数据及相关扩展，浏览器重启→CCSwitch仅已允许时卸载否则只盘点→官方App/CLI仅明确要求才卸载；保留Teamo/bridge/sharedhistory→五站浏览器复核→四栏报告自动检查/人工步骤/已清及备份/剩余项。作者称“换新账号前指纹重置重点”；不等于已证明解除限制。",
+          "our_mapping_and_gap": "我方把单项分散成浏览器/客户端/事故模块，没保留该作者组合顺序和手动/自动边界。保持为可选来源方案，账号处理不能被清理替代。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E12",
+          "capability": "三站/五站与作者阈值",
+          "author_method_and_conditions": "默认三站ip.net.coffee/claude、ippure.com/claude、iplark.com；post-ban五站ip.net.coffee/claude、iplark、net.coffee工具hub、ippure、cc.mastersgo.cc。脚本打印作者粘贴指南的海外稳定出口、risk<20%、sharedusers≤10、尽量全绿，ping0仅参考。DNS解释用浏览器国家/本地ISP等启发式；IPv6/机房/混合地区/中文语言字体/PWR提示只是watch item。",
+          "our_mapping_and_gap": "`score-check.md`只列部分站且已纠正“国家差即泄漏”；我方应保留原作者工具清单/阈值/定义，再并列其证据不足，不把原方法静默删掉。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E13",
+          "capability": "监测与历史参数",
+          "author_method_and_conditions": "`audit_network_env.py [--external] [--post-ban] [--timeout 8] [--history PATH或--append-history PATH]`；看proxy/DNS/default route/端口15721,7890,7892,1080,8080,8888,6152、Chromium languages。外部依次ipify/ifconfig.co/Cloudflare trace及Claude login/API，后者可重定向；历史比较ip/地区/city/org/asn并打印diff。没有脚本化浏览器DNS/STUN/PWR测试。",
+          "our_mapping_and_gap": "我方泛化有事件/报告，未保留这一具体可选稳定性历史流程。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E14",
+          "capability": "脚本/文案不一致",
+          "author_method_and_conditions": "默认未--external仍无条件getaddrinfo解析claude.ai/api.anthropic.com/chat.openai.com；不能叫严格离线。脚本直接打印IP、DNS/gateway、profile.name；append-history保留完整IP和browserprofile信息，**不是已脱敏的档案生成器**；只在写最终profile前手工脱敏不足以保证工具输出未进入对话。部分错误/无结果被写成no-listener/notinstalled，也应核退出码。",
+          "our_mapping_and_gap": "我方离线先行/采集端脱敏原则正确，但来源表只写“审计器”，未保存这些实际差异。不要直接复用其输出作为已脱敏证据。",
+          "coverage_status": "已纠正需证据",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E15",
+          "capability": "官方卸载/共享运行时",
+          "author_method_and_conditions": "先全PATH/npm/npx/App/PWA/URLHandler/NativeMessaging/扩展/进程/launchd盘点；备份→仅停确认官方进程→按npm等来源卸载→App/用户快捷方式/支持目录/cache/plist/ByHost/savedstate/log隔离→按明确请求移`.claude.json`等标记→桥接manifest及扩展分别处理→复核所有入口/后台。作者允许授权后移扩展ID目录，这与优先浏览器原生卸载是不同方式，应标同步/注册状态限制。",
+          "our_mapping_and_gap": "我方通用卸载流程完整，但没有PWA路径、URLHandler、NativeMessaging两名称、3个扩展ID、npx与shared marker复核的来源具体清单。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "E16",
+          "capability": "Teamo/bridge保护",
+          "author_method_and_conditions": "作者明确保留`@teamolab/teamo-cli`、teamo二进制、~/.teamo、~/.claude/projects、com.claude-to-im.bridge及其项目；子claude若parent=teamo先ps/lsof辨识，不当官方安装残留；`.claude.json`仅元数据再生也不证明卸载失败。前后验证teamo入口/version、目录与会话JSONL、桥接加载状态。这些是作者依赖模型，不是我方默认安装Teamo。",
+          "our_mapping_and_gap": "我方已有“其他共享工具可能重建”，没有这条可直接避免误删的父子进程和共用history核对方法。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "S01",
+          "capability": "审计/最终清单",
+          "author_method_and_conditions": "Mac限定的说明；`claude_cleanup.py --audit`，Claude自己执行只许audit。普通终端执行时风险项逐个选择，安全cache/log自动进最终清单，不逐项问；一次真实TTY CONFIRM才写盘，无管道代答。仅安全清理且Claude还运行则跳过安全目标、不要求退出；选风险项才提示用户退出并复查，脚本不kill。",
+          "our_mapping_and_gap": "我方仅通用集中确认/停写，没有这个作者的运行中跳过分支。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "S02",
+          "capability": "全量备份",
+          "author_method_and_conditions": "第一次写完整~/.claude和~/.claude.json，`ClaudeBackups/…partial`复制后核文件数/总字节，identity只比字节数；成功rename批次。~/.claude不存在则拒绝。Desktop整目录和App不是这份独立全量备份内容，只后续移Trash；出错即停，没有统一自动回滚/restore命令。",
+          "our_mapping_and_gap": "我方已指出计数不能证内容一致，但来源“完整备份”实际范围与恢复缺口没列。应保留作者步骤及我方哈希增强，不以增强版冒称原实现。",
+          "coverage_status": "已纠正需证据",
+          "target_machine_tested": false
+        },
+        {
+          "id": "S03",
+          "capability": "安全白名单/保护",
+          "author_method_and_conditions": "cache/stats-cache/telemetry/usage-data及两usageJSONL；claude-cli-nodejs、Desktop cache glob、Claude logs/diagnostic/crashreport。保护projects/sessions/history/file-history/debug/skills/plugins/hooks/commands/scripts/agents/MCP/backups/CLAUDE/settings等；窄白名单移时间戳Trash，不清空。",
+          "our_mapping_and_gap": "我方用一般“可重建缓存”代替，没有该来源保护debug和backups的区别；不能与CCBaga可选删除历史表混同。",
+          "coverage_status": "只有名称或链接",
+          "target_machine_tested": false
+        },
+        {
+          "id": "S04",
+          "capability": "身份轮换",
+          "author_method_and_conditions": "明确选中时生成同一组64hex userID和machineID，写主`.claude.json`及`.claude/backups/.claude.json.backup.*`；移除已知账号缓存键，保留未知字段。先全部解析准备再逐文件原子写，仍不是跨文件事务；作用是本地隐私/排障，作者不保证风控关联改变。",
+          "our_mapping_and_gap": "我方只列“轮换ID经验未证”，漏了同步滚动备份这一完整方法条件。需要保留为来源可选，不默认执行。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        },
+        {
+          "id": "S05",
+          "capability": "凭据/Desktop/App",
+          "author_method_and_conditions": "Keychain单独y/N删除固定`Claude Code-credentials`；Desktop 0保留/1清持久数据登录态/2再移Applications/Claude.app。持久范围含Claude、Claude-3p、bundle support、HTTPStorages、preferences、savedstate、WebKit/ByHost；都只移Trash。固定Keychain名不能覆盖customconfig，且删除钥匙串并非“所有移除只入Trash”。",
+          "our_mapping_and_gap": "我方已强调认证/SafeStorage边界，但没保留0/1/2选项及原作者总述与实际删除差异。",
+          "coverage_status": "已纠正需证据",
+          "target_machine_tested": false
+        },
+        {
+          "id": "S06",
+          "capability": "SIMPLE模式",
+          "author_method_and_conditions": "0保持/1设置`settings.json.env.CLAUDE_CODE_SIMPLE=\"1\"`/2移除该键；结构化改写保留其他env/hooks/plugins/权限模型/秘密。作者描述最小提示词、有限工具，跳过hooks/skills/plugins/MCP/自动memory/CLAUDE.md自动发现，资产不删除；一次性可考虑`--bare`。启用后的订阅/OAuth等实际行为需当期官方核对，不把它等同清缓存。",
+          "our_mapping_and_gap": "当前`complete-environment-method.md`及客户端模块没有这一可选方法和副作用清单。",
+          "coverage_status": "缺失",
+          "target_machine_tested": false
+        },
+        {
+          "id": "S07",
+          "capability": "台北时区与遥测继承",
+          "author_method_and_conditions": "仅当前不是Asia/Taipei时询问；CONFIRM后sudo-v验证授权、后续systemsetup-settimezone并读/etc/localtime。三个遥测键DISABLE_TELEMETRY/DISABLE_ERROR_REPORTING/CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC逐值前后保持：已关保持，没关不主动关；与env-cleanup的六键主动关闭是不同方案。",
+          "our_mapping_and_gap": "我方时区按用户选定出口，不默认台北；需要把作者固定台北和遥测继承完整并列，不能被“不要固定时区/关闭遥测未证”两句覆盖。",
+          "coverage_status": "冲突需保留",
+          "target_machine_tested": false
+        }
+      ],
+      "exclusions": [
+        "CCBaga full native/UI implementation was not reread by this assignment; app claims here derive from the listed docs and acceptance records.",
+        "CCBaga build/release/UI helper scripts outside the network Skill were not newly reviewed; do not infer full-repository coverage.",
+        "Other three suyuan Skills were not read.",
+        "No official documentation was newly fetched in this resumed audit.",
+        "cchahaeasy.top latest website changes are being checked by the parent; this fixed snapshot report does not claim to cover them."
+      ]
+    },
+    "guardian_account_cleanup": {
+      "scope": "Guardian非网络SKILL及21份references与必要关联源码/原始Markdown",
+      "baseline_commit": "9b607dba3833b08e49765b614ac3493e990e3225",
+      "latest_commit": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "5f34bd8e8048dd1cd1df3cc085941aeb27eea4f9814cd2e60c0c6d3ff221de94",
+          "line_count": 200,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              200
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/account-onboarding.md",
+          "sha256": "7005c2e5cdc2eca8153079be6230c89ec133419d43c41f4345619eae01ca66ab",
+          "line_count": 64,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              64
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/accounts-and-payments.md",
+          "sha256": "4cf6bd9f22a6b39ae9db949c719848346a7921a0f2547210c3afc71b8781cfa9",
+          "line_count": 223,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              223
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/agent-on-target.md",
+          "sha256": "aa095643490e80f356c6952b15d61a74eba80bb245ace6d4bac25a1145837b67",
+          "line_count": 47,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              47
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/agent-rules-task.md",
+          "sha256": "afb2acb929422a3044fd8a7a7acbe9898a8980a752dabc9d2c660281ab9751f0",
+          "line_count": 69,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              69
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/authorization-tiers.md",
+          "sha256": "ce758dca1cc04ffb4d2a70866f37d45e26f5ea40ae2f334f4987b45bea8f128d",
+          "line_count": 102,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              102
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/ban-appeal.md",
+          "sha256": "3fe8caf467182bff7bfc45e1bfa3e406e8e39aeb087b9e44403e69242225b837",
+          "line_count": 41,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              41
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/cleanup-cli-usage.md",
+          "sha256": "8150d32c64230bfab58267731b81240ae2e407de401fc79ee9d368844f2e7e43",
+          "line_count": 124,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              124
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/contact-and-safety.md",
+          "sha256": "0519b75cf42ae9ae7e22fd96596dc4353b92ffb70b8b8c7106b82d5ccd1c6bf0",
+          "line_count": 39,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              39
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/evidence-policy.md",
+          "sha256": "c4a691255bb41c0dfaad8d9ce72948a919263bdd055ffa03254bf9120e2aa62c",
+          "line_count": 124,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              124
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": "索引全文已读，不代表其中链接原文已读"
+        },
+        {
+          "path": "references/host-libraries.md",
+          "sha256": "a790f3a38be4c9b7729792580a9bde31dd217663d980f315b56d3ff7e8c2598b",
+          "line_count": 172,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              172
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/illegal-tools-cleanup.md",
+          "sha256": "e41a2fe0cb4018c1f945326aad1887302f5bbca920acad106c5f0ea51f78f07b",
+          "line_count": 100,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              100
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/incidents-and-integrations.md",
+          "sha256": "02b3b8e467edd692ac4a7b525d7f48de38ab915479e85093d7377cf2ec4e654f",
+          "line_count": 210,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              210
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/intake.md",
+          "sha256": "10d4a8bcc55d1330935c94ea7ec4434b9e7519f74de1476c547f74c4375ad463",
+          "line_count": 298,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              298
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/linux-cleanup.md",
+          "sha256": "41d35c37fee265de6972e209dee6fc6f9276d31e2c3e665d15dc3077bdc4ed4b",
+          "line_count": 95,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              95
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/mobile-guidance.md",
+          "sha256": "957bf152d64b1be5b47b0e094e04b17fca7a169779b9f81a38199e609ed5ea97",
+          "line_count": 43,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              43
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/scripts-index.md",
+          "sha256": "a008eea37bcae1f45f7c001d676367854071067c89202350dc77e2c90a329be5",
+          "line_count": 73,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              73
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": "索引全文已读，不代表其中链接原文已读"
+        },
+        {
+          "path": "references/section-index.md",
+          "sha256": "09f4d5e32dc98087480258847df30be82640a2dccac0df928b4360951e51dc33",
+          "line_count": 476,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              476
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": "索引全文已读，不代表其中链接原文已读"
+        },
+        {
+          "path": "references/skill-update.md",
+          "sha256": "8dc6f6b4510b3a6cd427e2e56a7e727a7a6e1c1ffb2f8b636288a00248e18bfe",
+          "line_count": 35,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              35
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/source-library.md",
+          "sha256": "f9949aeb59b32240d2f89e09ec7ea5429d739314f69bb23cf89a0b88f754078b",
+          "line_count": 126,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              126
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": "索引全文已读，不代表其中链接原文已读"
+        },
+        {
+          "path": "references/trace-cleanup.md",
+          "sha256": "372317d9b82a3a8aabcb52e44089c59f1620ce26054b3107b0c2d12e142f1717",
+          "line_count": 112,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              112
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "references/windows-cleanup.md",
+          "sha256": "c57ed0dacd1d941fe84c49343b02c9ccf862dcb8f2f7878d6e9e7f96dc884d48",
+          "line_count": 167,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              167
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "scripts/native_claude_state_mac.py",
+          "sha256": "baa8e543ea8ff70dd6457823b033c4c1da972fc7627e62be310fa96d14d2afc8",
+          "line_count": 225,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              225
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "scripts/native_cleanup_mac.py",
+          "sha256": "fe43597d9859f1dc2b2d7cb4bc1ebbac9e2f8ae4307e47a85f683b73c9e3cb7b",
+          "line_count": 573,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              573
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "scripts/update_check.py",
+          "sha256": "ea198408e3b67aa6aaef69ab73ed9922ed06a5ffdb27730075f7709311153676",
+          "line_count": 188,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              188
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "sources/S02-ai-payments.md",
+          "sha256": "9fc0962d5386011d3c292fd30a8f8530544899a82bda62d9c574ff62d4e52c75",
+          "line_count": 189,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              189
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "sources/S03-source-text.md",
+          "sha256": "9789083417f707a303d4f5b920b75f35e4fe0044410d48bb7355dd1abf202de6",
+          "line_count": 55,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              55
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": "Markdown原文已读，不能代替PDF图片表格"
+        },
+        {
+          "path": "sources/S04-claude-guide.md",
+          "sha256": "281b2881c5a016b5188aa71c1e7162e1742c98170d9685f2a4e24503ee7a5992",
+          "line_count": 354,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              354
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "sources/S06-macos-cleanup-sanitized.md",
+          "sha256": "2fc1d7694bd636b2bd449a31961872958155af78855b921caf9f72a796498a91",
+          "line_count": 244,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              244
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "scripts/cleanup_transactions.py",
+          "sha256": "42b1586eae6d67dbdfa59ffb398a445bd717d3da304bc19c3cd64a6b34ea797e",
+          "line_count": 952,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              627,
+              707
+            ],
+            [
+              750,
+              934
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "scripts/cleanup_cli.py",
+          "sha256": "2bbc335cd9d181a2866ee36f3a2ee72838fb789b2c65b891cc56652fe2f3d7dd",
+          "line_count": 406,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              260,
+              406
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "scripts/agent_rules_task.py",
+          "sha256": "b09ad827d1c39f2ca2d7fbf8355f45a51a9ede4ef3f1d9068a3045412b49dc91",
+          "line_count": 413,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              100,
+              413
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        },
+        {
+          "path": "scripts/interview_flow.py",
+          "sha256": "5df32ebe1d12435b5d625da4d46a8d2f0e57880d426e21f980f97825fd45b7b8",
+          "line_count": 3129,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              2476,
+              2528
+            ]
+          ],
+          "evidence": "static_text_read_only",
+          "executed": false,
+          "note": ""
+        }
+      ],
+      "latest_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "048d15bbeb45b2cbf47797653dd00faf8aa070de799d2ac9658068e84674db52",
+          "line_count": 201,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              201
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/account-onboarding.md",
+          "sha256": "db2872cb24abb3763b3d6564b75a49f22b851ce4d577431a975e61e1f0c49efd",
+          "line_count": 69,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              69
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/accounts-and-payments.md",
+          "sha256": "70267866f9a019a428b46bb94c39696efab889ac81564489dd813dbcd62506f5",
+          "line_count": 223,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              223
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/agent-on-target.md",
+          "sha256": "aa095643490e80f356c6952b15d61a74eba80bb245ace6d4bac25a1145837b67",
+          "line_count": 47,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              47
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "references/agent-rules-task.md",
+          "sha256": "afb2acb929422a3044fd8a7a7acbe9898a8980a752dabc9d2c660281ab9751f0",
+          "line_count": 69,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              69
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "references/authorization-tiers.md",
+          "sha256": "ebab5d4482bc15d4442587665bd26b7ac70a799ef525fcdf07d61456a537048b",
+          "line_count": 102,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              102
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/ban-appeal.md",
+          "sha256": "686f29b40636dab7be27529c69120c727278c0f40556c28067203374101aab5a",
+          "line_count": 41,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              41
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/cleanup-cli-usage.md",
+          "sha256": "8150d32c64230bfab58267731b81240ae2e407de401fc79ee9d368844f2e7e43",
+          "line_count": 124,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              124
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "references/contact-and-safety.md",
+          "sha256": "b0cf376e4575ff0fa57a15fcab9c53b43cc5d5f08111247230c7dd223baa4db6",
+          "line_count": 39,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              39
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/evidence-policy.md",
+          "sha256": "d7a200d3f914222a49e0792adc83ac0ca065335ec87b5081b19cf9ecbfd7a18b",
+          "line_count": 124,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              124
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/host-libraries.md",
+          "sha256": "a790f3a38be4c9b7729792580a9bde31dd217663d980f315b56d3ff7e8c2598b",
+          "line_count": 172,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              172
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "references/illegal-tools-cleanup.md",
+          "sha256": "a4a46e5dc55437f0a50d88f9eb5e0000191079aa884590242b291b688f2f5c5a",
+          "line_count": 100,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              100
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/incidents-and-integrations.md",
+          "sha256": "bda4aba346df723b12b12bd952cdc2536a93d6ebbf1fe207833dddad6271c04a",
+          "line_count": 210,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              210
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/intake.md",
+          "sha256": "10d4a8bcc55d1330935c94ea7ec4434b9e7519f74de1476c547f74c4375ad463",
+          "line_count": 298,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              298
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "references/linux-cleanup.md",
+          "sha256": "41d35c37fee265de6972e209dee6fc6f9276d31e2c3e665d15dc3077bdc4ed4b",
+          "line_count": 95,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              95
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "references/mobile-guidance.md",
+          "sha256": "a2315ff4efaa7b50a5e658f3ffa9380e918bd8b13d7ebd7f3ac07ca553aad065",
+          "line_count": 43,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              43
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/scripts-index.md",
+          "sha256": "772d9104f62f9dccfa5e208c71ba933fbe745d8bad7d30dec05e97aa7ae0cc85",
+          "line_count": 82,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              82
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/section-index.md",
+          "sha256": "dcafc6fdd6b36a66eedb27090b4fb360f3d9bf24b5b50b756f58204cf6dac527",
+          "line_count": 493,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              493
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/skill-update.md",
+          "sha256": "8e70de2ac0609eb45e6f891bd64d42ec4a1cf485719a423d87bd9776957c091d",
+          "line_count": 35,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              35
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/source-library.md",
+          "sha256": "feab678bf1c98a7df49125ec012d3dc8f74f0108074e8e364ce6ccad4732fc1a",
+          "line_count": 126,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              126
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/trace-cleanup.md",
+          "sha256": "2b589f0a65edfce61f89b6566226cca008532628e9ee405920a288fabf19ec13",
+          "line_count": 112,
+          "changed_from_baseline": true,
+          "reading": "full_via_baseline_and_complete_diff_context",
+          "read_ranges": [
+            [
+              1,
+              112
+            ]
+          ],
+          "executed": false,
+          "method": "全部diff hunk及上下文已阅读，未变内容复用旧版全文"
+        },
+        {
+          "path": "references/windows-cleanup.md",
+          "sha256": "c57ed0dacd1d941fe84c49343b02c9ccf862dcb8f2f7878d6e9e7f96dc884d48",
+          "line_count": 167,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              167
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "scripts/native_claude_state_mac.py",
+          "sha256": "baa8e543ea8ff70dd6457823b033c4c1da972fc7627e62be310fa96d14d2afc8",
+          "line_count": 225,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              225
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "scripts/native_cleanup_mac.py",
+          "sha256": "fe43597d9859f1dc2b2d7cb4bc1ebbac9e2f8ae4307e47a85f683b73c9e3cb7b",
+          "line_count": 573,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              573
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "scripts/update_check.py",
+          "sha256": "ea198408e3b67aa6aaef69ab73ed9922ed06a5ffdb27730075f7709311153676",
+          "line_count": 188,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              188
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "sources/S02-ai-payments.md",
+          "sha256": "9fc0962d5386011d3c292fd30a8f8530544899a82bda62d9c574ff62d4e52c75",
+          "line_count": 189,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              189
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "sources/S03-source-text.md",
+          "sha256": "9789083417f707a303d4f5b920b75f35e4fe0044410d48bb7355dd1abf202de6",
+          "line_count": 55,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              55
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "sources/S04-claude-guide.md",
+          "sha256": "281b2881c5a016b5188aa71c1e7162e1742c98170d9685f2a4e24503ee7a5992",
+          "line_count": 354,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              354
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "sources/S06-macos-cleanup-sanitized.md",
+          "sha256": "2fc1d7694bd636b2bd449a31961872958155af78855b921caf9f72a796498a91",
+          "line_count": 244,
+          "changed_from_baseline": false,
+          "reading": "full",
+          "read_ranges": [
+            [
+              1,
+              244
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "scripts/cleanup_transactions.py",
+          "sha256": "42b1586eae6d67dbdfa59ffb398a445bd717d3da304bc19c3cd64a6b34ea797e",
+          "line_count": 952,
+          "changed_from_baseline": false,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              627,
+              707
+            ],
+            [
+              750,
+              934
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "scripts/cleanup_cli.py",
+          "sha256": "2bbc335cd9d181a2866ee36f3a2ee72838fb789b2c65b891cc56652fe2f3d7dd",
+          "line_count": 406,
+          "changed_from_baseline": false,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              260,
+              406
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "scripts/agent_rules_task.py",
+          "sha256": "b09ad827d1c39f2ca2d7fbf8355f45a51a9ede4ef3f1d9068a3045412b49dc91",
+          "line_count": 413,
+          "changed_from_baseline": false,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              100,
+              413
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        },
+        {
+          "path": "scripts/interview_flow.py",
+          "sha256": "5df32ebe1d12435b5d625da4d46a8d2f0e57880d426e21f980f97825fd45b7b8",
+          "line_count": 3129,
+          "changed_from_baseline": false,
+          "reading": "partial",
+          "read_ranges": [
+            [
+              2476,
+              2528
+            ]
+          ],
+          "executed": false,
+          "method": "与已读旧版字节一致，仅复用已记录阅读范围"
+        }
+      ],
+      "latest_changed_files_reviewed": [
+        "SKILL.md",
+        "references/account-onboarding.md",
+        "references/accounts-and-payments.md",
+        "references/authorization-tiers.md",
+        "references/ban-appeal.md",
+        "references/contact-and-safety.md",
+        "references/evidence-policy.md",
+        "references/illegal-tools-cleanup.md",
+        "references/incidents-and-integrations.md",
+        "references/mobile-guidance.md",
+        "references/scripts-index.md",
+        "references/section-index.md",
+        "references/skill-update.md",
+        "references/source-library.md",
+        "references/trace-cleanup.md"
+      ],
+      "unread_originals": [
+        "sources/S03-claude-experience.pdf（包括第4/5页图片表）",
+        "sources/S08-vps-claude-tutorial.pdf",
+        "sources/vps-recommendations/*.pdf（17份）",
+        "sources/S03-extracted-text.md",
+        "sources/S08-extracted-text.md",
+        "sources/S01-server-glossary.md",
+        "sources/S05-local-protection.md",
+        "sources/S07-vps-script-catalog.md",
+        "sources/S10-windows-deployment-sanitized.md",
+        "sources/R02-vps-line-optimization.md",
+        "仓库历史docs/ADR/issue原始证据及未列为full/partial的脚本/资产",
+        "各Markdown链接的外部网页：本任务未重新访问"
+      ],
+      "team_received_evidence": [
+        {
+          "source": "sources/S03-claude-experience.pdf",
+          "reader": "/root",
+          "reported_at": "2026-11-10",
+          "reading": "all_5_pages_visual_read_by_parent",
+          "this_agent_visual_read": false,
+          "used_pages": [
+            4,
+            5
+          ],
+          "observations": {
+            "page4": "手机IPv6可正常统一出口或关闭；时区保持真实不频繁改；语言不必英文；本人真实账单。须区分p1的不同场景建议。",
+            "page5": "五时间窗风险方向作为排查假设，不构成因果诊断。"
+          },
+          "provenance": "父任务collaboration消息；视觉产物由父任务管理"
+        }
+      ]
+    },
+    "guardian_network": {
+      "schema": "guardian-network-source-reading/1",
+      "as_of": "2026-11-10",
+      "scope": "Guardian网络/系统/路线方法覆盖对账；不是全仓独立审计",
+      "no_upstream_execution": true,
+      "no_tests_run": true,
+      "no_network_probes": true,
+      "no_environment_mutations": true,
+      "files": [
+        {
+          "file": "guardian/AGENTS.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "f8ec2899d9e077dd6ca57d6933d09b2acd76328584d8f8caff6a3c6b0544976f",
+          "line_count_at_manifest_build": 59
+        },
+        {
+          "file": "guardian/skills/claude-guardian/SKILL.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "5f34bd8e8048dd1cd1df3cc085941aeb27eea4f9814cd2e60c0c6d3ff221de94",
+          "line_count_at_manifest_build": 200
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/whole-machine-ipv4.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "846ff9c07d565ea9872728424d9d4cf9f07181ca6a43a7cf1a7ebca3139ceea4",
+          "line_count_at_manifest_build": 150
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/agent-remediation.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "a2c82fa40255fa8282031ee9bb26babdb505133cfa69e855135e427c6d9ad189",
+          "line_count_at_manifest_build": 133
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/local-firewall-prompts.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "e21ec52733e99d4117b45c74c19fee7a9fd217e80d95e0acfebb2c759011dbba",
+          "line_count_at_manifest_build": 160
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/macos-dns-case-lessons.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "2b2b153a803630192853571ac9d5c78e17dff3f5a24cdd24da2d51d020f9daef",
+          "line_count_at_manifest_build": 74
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/exit-consistency.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "7a2617f65138fbd0f53ff6264e41ffb5d9dd368b2345660f30303ae4573412b9",
+          "line_count_at_manifest_build": 42
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/network-and-remedies.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "a12998ca667fd9ddac476def51637a96915e32ad40ed8889406b483d7894940e",
+          "line_count_at_manifest_build": 77
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/line-optimization.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "822849c88433c06e1ccebff41bc74d3ee349013a63cc14a18f5783dc7d44ef78",
+          "line_count_at_manifest_build": 115
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/vm-guidance.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "b0ebb9ec890f8e08765b5904ecac681019d2a8cd9fd524d802d7b2c756c09ab7",
+          "line_count_at_manifest_build": 97
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/vps-guidance.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "ad50c3ead409b342ec08cd22e90d5f9ca3716bab080970ec8c46b944fcc3dbe3",
+          "line_count_at_manifest_build": 119
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/advanced-route.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "a9b595df81ddfab862e07b906d4a40ea42eb75be91d223ff8fd2d6db49605918",
+          "line_count_at_manifest_build": 170
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/local-advanced-route.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "3fbd73108f9a6062e14b13970af2a4d17b4ea31724ab79d1834a0f1e0a951ea9",
+          "line_count_at_manifest_build": 68
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/egress-ip-options.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "248efc961e037ec2374c6ea52dc5ddace75486723804e4ec0389c9eb37b1736a",
+          "line_count_at_manifest_build": 64
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/routes-and-platforms.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "bf942ca456e79b05fe4924426e252843c7e804b209076a2960dc07f99015b274",
+          "line_count_at_manifest_build": 247
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/agent-on-target.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "aa095643490e80f356c6952b15d61a74eba80bb245ace6d4bac25a1145837b67",
+          "line_count_at_manifest_build": 47
+        },
+        {
+          "file": "guardian/skills/claude-guardian/references/agent-rules-task.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "afb2acb929422a3044fd8a7a7acbe9898a8980a752dabc9d2c660281ab9751f0",
+          "line_count_at_manifest_build": 69
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/S10-windows-deployment-sanitized.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "4193e4a1ff0194f6f8d82ad3b9f15af2ee413b3bdf93221fe4a15cdebf7f6bb1",
+          "line_count_at_manifest_build": 309
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/S05-local-protection.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "f2a975d359161312763f02d6c5d2b4e796e52a57edf2a9ecb233445c8d2389d9",
+          "line_count_at_manifest_build": 356
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/S07-vps-script-catalog.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "ffbc46c8835389ee68fcc476570a7bac87ee498a80f9d0437e77034bd0a49663",
+          "line_count_at_manifest_build": 66
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/S08-extracted-text.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "c806fd5e26da8721f97ad2cc0bc11cdecf1114d12d9ca3c80453fafb0c09c505",
+          "line_count_at_manifest_build": 343
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/R02-vps-line-optimization.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "c339fd4c511c5c2a007eb6f912211feb0a199dacaeb36ca840f80c87d14edcfb",
+          "line_count_at_manifest_build": 221
+        },
+        {
+          "file": "guardian/docs/mac-pf-killswitch-test.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "0082198e841e468a383b8f8dcdca981db0f6bb06800ba4fe5619c0d69132863c",
+          "line_count_at_manifest_build": 241
+        },
+        {
+          "file": "guardian/reports/mac-pf-isolated-acceptance-2026-11-02.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "c59c2107508e9a04a7743ea16f6ae34badcd6684271ac602c831c490e14af185",
+          "line_count_at_manifest_build": 92
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/network_check.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "21ca79805ebc3696ac358d5e8366769892b90b610947f0d3ad3af3b8ba2c7a16",
+          "line_count_at_manifest_build": 422
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/egress_verifier.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "699ba1a6090663f15324074acfe8e9fba5acf92acfb1e37de88e9ec8c4d8c3ad",
+          "line_count_at_manifest_build": 195
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/agent_remediation.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "04ba730d9551479243d0061d94404c6783602053e591124726edc90d17bf28a1",
+          "line_count_at_manifest_build": 411
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/native_clash_verge_mac.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "a6ddc7c2c39bd249d43f1c18cc7d3d66eeab53f65d693c0757264871219124e1",
+          "line_count_at_manifest_build": 117
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/repair_execution.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "dc689c43944b5c5cae435079ce9719b90ee6120ef42ab42a926d5c102181df1e",
+          "line_count_at_manifest_build": 237
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/agent_rules_task.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "b09ad827d1c39f2ca2d7fbf8355f45a51a9ede4ef3f1d9068a3045412b49dc91",
+          "line_count_at_manifest_build": 413
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/stun_probe.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "33133b6d5141797194dbc151b7fa7c473bf17dee7c13a1709bd142e93d107178",
+          "line_count_at_manifest_build": 108
+        },
+        {
+          "file": "guardian/skills/claude-guardian/scripts/serve_webrtc.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "23cc16790dc913435c66f4f16812f0e62231760b64e1157a8540f479d20fc301",
+          "line_count_at_manifest_build": 399
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/mac-killswitch/guardian-pf-killswitch.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "bf9ec46a44a2544141b770926201621e48a929bc3e91b3a6341b7fb529087c45",
+          "line_count_at_manifest_build": 474
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/vm-killswitch/enable-guest-ssh.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "3073314a54f06107fc6c01876a1c18c6ea3e5616a547fbdec16be6b4b78a56c6",
+          "line_count_at_manifest_build": 24
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/vm-killswitch/install-flclash-tun.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "f35f613f870be1123777c00cdf8f3e4149ca77571d1810d40eb01a809f8da28e",
+          "line_count_at_manifest_build": 98
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/vm-killswitch/install-flclash-killswitch.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "018297fead6a5a3a89b18e6066bb3d15fa877c12c34832bf51fb77ab3584bef7",
+          "line_count_at_manifest_build": 300
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/remote-hardening/install-reverse-tunnel.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "afcb7a437ac782db626fdd9c0a4e68d74bac2b2ef9d544e98b903dc11f79e718",
+          "line_count_at_manifest_build": 86
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/remote-hardening/flclash-crash-heal.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "a8f3a253c54ba9269df3286a8c5ee367d03e2ddcc1f864c2be93eee4f0d1abd9",
+          "line_count_at_manifest_build": 142
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/vps-firewall/vps-guard.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "0039a27b6d9693144bd1661e0b838fbc4c0b7d5dd12e134edc77e9081b00a4f4",
+          "line_count_at_manifest_build": 130
+        },
+        {
+          "file": "guardian/skills/claude-guardian/assets/webrtc-probe.html",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读；发生输出截断的段落另行补读",
+          "snapshot": "9b607dba3833b08e49765b614ac3493e990e3225",
+          "executed": false,
+          "sha256_at_manifest_build": "42e38e25a2a53a04d194334134a7833d7e63e11acd82f647a9bc04f44dd4980b",
+          "line_count_at_manifest_build": 154
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/SKILL.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "048d15bbeb45b2cbf47797653dd00faf8aa070de799d2ac9658068e84674db52",
+          "line_count_at_manifest_build": 201
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/killswitch-switch.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "c69fa2c43452629f3936dc5058c8f78c320e750d529d3ca7a0b2c31beb07f0d4",
+          "line_count_at_manifest_build": 71
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/local-firewall-prompts.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "29827e149db1ee79fb7d4b95b81c76f6a725eb1a7343532bf1d12e921221347e",
+          "line_count_at_manifest_build": 231
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/whole-machine-ipv4.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "fba3879ae13e2f86cc2d4b842ea24bd3d7492e61dffd998d15584257cbac6a49",
+          "line_count_at_manifest_build": 150
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/agent-remediation.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "c2b5a08ad2c3de5360a449518bbedea7c65f82d90aa646dd412b4a143139fa7f",
+          "line_count_at_manifest_build": 133
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/routes-and-platforms.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "e58e8410d63832d6186f5f435cd8c93b78c111353c93c6f91cdd3b6c43fb0f3d",
+          "line_count_at_manifest_build": 262
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/egress-ip-options.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "2753a020ddc2644ac4b7e870f10006b66db37630feec370a8179b69f39079086",
+          "line_count_at_manifest_build": 64
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/killswitch.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "6a547574031c684b8a1c892be00cb52fca65a02c5c3caa4f0d229df920c0ef57",
+          "line_count_at_manifest_build": 274
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/killswitch_ui.py",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "2258b9c5757a632a5ae20519e048734d712b06fb68bac27d3a690623a96785e0",
+          "line_count_at_manifest_build": 221
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/mac-killswitch/guardian-pf-killswitch.sh",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "4d12f4333f85a675ce1eb8040e918ebd40bb3d1e92b2a03296657bb49cbbd96f",
+          "line_count_at_manifest_build": 474
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/killswitch/windows-switch.ps1",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "bc447156f447bf1216751dd6d534afb416cf07ea646c109874612c182dedf2a7",
+          "line_count_at_manifest_build": 116
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/killswitch/config.example.json",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "62276f70db1d865fa88db5add4859ca93654bf093eda324ff943b2cb00f255c0",
+          "line_count_at_manifest_build": 14
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/killswitch/switch.js",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "9b2a4e2df9aa090409d4a3f3a456e942529e3b4d493645fe3bc2c6275c4d3bc0",
+          "line_count_at_manifest_build": 67
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/killswitch/switch.html",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "33070ef2a50807fa3ed989514b8c6782da3b53dd6b76dfbdbde4fedd100a0820",
+          "line_count_at_manifest_build": 11
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/killswitch/switch.css",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段实际阅读",
+          "snapshot": "e934166adbdbd582f169b1b14adb7be76aa90a77",
+          "executed": false,
+          "sha256_at_manifest_build": "30d2b122ef0f8a14ad07719432c7b3126b5aa98a99ade0606ac214ce8e0d9402",
+          "line_count_at_manifest_build": 1
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/advanced-route.md",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/references/advanced-route.md",
+          "executed": false,
+          "sha256_at_manifest_build": "778136aa845e713b2887979a886d33e0808ffc09316acac00b91e0c4be4dfd97",
+          "line_count_at_manifest_build": 172
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/exit-consistency.md",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/references/exit-consistency.md",
+          "executed": false,
+          "sha256_at_manifest_build": "c6954dfc59b804d75584bdfda853cd3c53bb38d7944adf30f9fea9a7458f049c",
+          "line_count_at_manifest_build": 42
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/vps-guidance.md",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/references/vps-guidance.md",
+          "executed": false,
+          "sha256_at_manifest_build": "0295698d651e936ef5a68b16e2d36fa5853cfaa8a8b8d7a060c476b5d5d5232a",
+          "line_count_at_manifest_build": 119
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/remote-hardening/flclash-crash-heal.sh",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/assets/remote-hardening/flclash-crash-heal.sh",
+          "executed": false,
+          "sha256_at_manifest_build": "489bc8e4b0d8c78971661b436f2290d8df087972c58b27de8563966013bd146c",
+          "line_count_at_manifest_build": 142
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/remote-hardening/install-reverse-tunnel.sh",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/assets/remote-hardening/install-reverse-tunnel.sh",
+          "executed": false,
+          "sha256_at_manifest_build": "f919f5b40cf441722615e112aff893e7620d7339c32bb3811cc2d8e25d86afe5",
+          "line_count_at_manifest_build": 86
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/vm-killswitch/enable-guest-ssh.sh",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/assets/vm-killswitch/enable-guest-ssh.sh",
+          "executed": false,
+          "sha256_at_manifest_build": "77457c3849c185c9a664cc5b5116d9c10097eb0f8bb3d4f4bfc0781298f4c296",
+          "line_count_at_manifest_build": 24
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/vm-killswitch/install-flclash-killswitch.sh",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/assets/vm-killswitch/install-flclash-killswitch.sh",
+          "executed": false,
+          "sha256_at_manifest_build": "be66fceafe1a6aa3bcc16fd0b9fc720d08ae3e9fb457549ccde616b8e1ad26c5",
+          "line_count_at_manifest_build": 300
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/vm-killswitch/install-flclash-tun.sh",
+          "read_scope": "全部内容覆盖（非重新逐行打印全文）",
+          "method": "旧基线全文已读＋两个快照完整 diff 已读；仅称谓变化及已记录新增场景链接",
+          "baseline": "guardian/skills/claude-guardian/assets/vm-killswitch/install-flclash-tun.sh",
+          "executed": false,
+          "sha256_at_manifest_build": "273b81e18c93870cdb7ad3072666d10d980f8abcea74d7740698eccdc1540268",
+          "line_count_at_manifest_build": 98
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/network-and-remedies.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/references/network-and-remedies.md",
+          "executed": false,
+          "sha256_at_manifest_build": "a12998ca667fd9ddac476def51637a96915e32ad40ed8889406b483d7894940e",
+          "line_count_at_manifest_build": 77
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/macos-dns-case-lessons.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/references/macos-dns-case-lessons.md",
+          "executed": false,
+          "sha256_at_manifest_build": "2b2b153a803630192853571ac9d5c78e17dff3f5a24cdd24da2d51d020f9daef",
+          "line_count_at_manifest_build": 74
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/line-optimization.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/references/line-optimization.md",
+          "executed": false,
+          "sha256_at_manifest_build": "822849c88433c06e1ccebff41bc74d3ee349013a63cc14a18f5783dc7d44ef78",
+          "line_count_at_manifest_build": 115
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/vm-guidance.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/references/vm-guidance.md",
+          "executed": false,
+          "sha256_at_manifest_build": "b0ebb9ec890f8e08765b5904ecac681019d2a8cd9fd524d802d7b2c756c09ab7",
+          "line_count_at_manifest_build": 97
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/local-advanced-route.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/references/local-advanced-route.md",
+          "executed": false,
+          "sha256_at_manifest_build": "3fbd73108f9a6062e14b13970af2a4d17b4ea31724ab79d1834a0f1e0a951ea9",
+          "line_count_at_manifest_build": 68
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/agent-on-target.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/references/agent-on-target.md",
+          "executed": false,
+          "sha256_at_manifest_build": "aa095643490e80f356c6952b15d61a74eba80bb245ace6d4bac25a1145837b67",
+          "line_count_at_manifest_build": 47
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/references/agent-rules-task.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/references/agent-rules-task.md",
+          "executed": false,
+          "sha256_at_manifest_build": "afb2acb929422a3044fd8a7a7acbe9898a8980a752dabc9d2c660281ab9751f0",
+          "line_count_at_manifest_build": 69
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/network_check.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/network_check.py",
+          "executed": false,
+          "sha256_at_manifest_build": "21ca79805ebc3696ac358d5e8366769892b90b610947f0d3ad3af3b8ba2c7a16",
+          "line_count_at_manifest_build": 422
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/egress_verifier.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/egress_verifier.py",
+          "executed": false,
+          "sha256_at_manifest_build": "699ba1a6090663f15324074acfe8e9fba5acf92acfb1e37de88e9ec8c4d8c3ad",
+          "line_count_at_manifest_build": 195
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/agent_remediation.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/agent_remediation.py",
+          "executed": false,
+          "sha256_at_manifest_build": "04ba730d9551479243d0061d94404c6783602053e591124726edc90d17bf28a1",
+          "line_count_at_manifest_build": 411
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/native_clash_verge_mac.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/native_clash_verge_mac.py",
+          "executed": false,
+          "sha256_at_manifest_build": "a6ddc7c2c39bd249d43f1c18cc7d3d66eeab53f65d693c0757264871219124e1",
+          "line_count_at_manifest_build": 117
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/repair_execution.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/repair_execution.py",
+          "executed": false,
+          "sha256_at_manifest_build": "dc689c43944b5c5cae435079ce9719b90ee6120ef42ab42a926d5c102181df1e",
+          "line_count_at_manifest_build": 237
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/agent_rules_task.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/agent_rules_task.py",
+          "executed": false,
+          "sha256_at_manifest_build": "b09ad827d1c39f2ca2d7fbf8355f45a51a9ede4ef3f1d9068a3045412b49dc91",
+          "line_count_at_manifest_build": 413
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/stun_probe.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/stun_probe.py",
+          "executed": false,
+          "sha256_at_manifest_build": "33133b6d5141797194dbc151b7fa7c473bf17dee7c13a1709bd142e93d107178",
+          "line_count_at_manifest_build": 108
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/scripts/serve_webrtc.py",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/scripts/serve_webrtc.py",
+          "executed": false,
+          "sha256_at_manifest_build": "23cc16790dc913435c66f4f16812f0e62231760b64e1157a8540f479d20fc301",
+          "line_count_at_manifest_build": 399
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/vps-firewall/vps-guard.sh",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/assets/vps-firewall/vps-guard.sh",
+          "executed": false,
+          "sha256_at_manifest_build": "0039a27b6d9693144bd1661e0b838fbc4c0b7d5dd12e134edc77e9081b00a4f4",
+          "line_count_at_manifest_build": 130
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/assets/webrtc-probe.html",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/assets/webrtc-probe.html",
+          "executed": false,
+          "sha256_at_manifest_build": "42e38e25a2a53a04d194334134a7833d7e63e11acd82f647a9bc04f44dd4980b",
+          "line_count_at_manifest_build": 154
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/sources/S05-local-protection.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/sources/S05-local-protection.md",
+          "executed": false,
+          "sha256_at_manifest_build": "f2a975d359161312763f02d6c5d2b4e796e52a57edf2a9ecb233445c8d2389d9",
+          "line_count_at_manifest_build": 356
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/sources/S07-vps-script-catalog.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/sources/S07-vps-script-catalog.md",
+          "executed": false,
+          "sha256_at_manifest_build": "ffbc46c8835389ee68fcc476570a7bac87ee498a80f9d0437e77034bd0a49663",
+          "line_count_at_manifest_build": 66
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/sources/S08-extracted-text.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/sources/S08-extracted-text.md",
+          "executed": false,
+          "sha256_at_manifest_build": "c806fd5e26da8721f97ad2cc0bc11cdecf1114d12d9ca3c80453fafb0c09c505",
+          "line_count_at_manifest_build": 343
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/sources/S10-windows-deployment-sanitized.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/sources/S10-windows-deployment-sanitized.md",
+          "executed": false,
+          "sha256_at_manifest_build": "4193e4a1ff0194f6f8d82ad3b9f15af2ee413b3bdf93221fe4a15cdebf7f6bb1",
+          "line_count_at_manifest_build": 309
+        },
+        {
+          "file": "guardian-latest/skills/claude-guardian/sources/R02-vps-line-optimization.md",
+          "read_scope": "复用已读全文",
+          "method": "cmp -s 逐文件确认与旧基线字节相同，退出码0",
+          "baseline": "guardian/skills/claude-guardian/sources/R02-vps-line-optimization.md",
+          "executed": false,
+          "sha256_at_manifest_build": "c339fd4c511c5c2a007eb6f912211feb0a199dacaeb36ca840f80c87d14edcfb",
+          "line_count_at_manifest_build": 221
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/deployment-routes.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "cf48a766010172d588478e19dc25cc41085f44d151d2f172507462374bc37239",
+          "line_count_at_manifest_build": 57
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/deployment-routes.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/deployment-routes.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "cf48a766010172d588478e19dc25cc41085f44d151d2f172507462374bc37239",
+          "line_count_at_manifest_build": 57
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/guardian-integration.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "e0285e909eec8865a60f9ee3328578292a0c6431eff6d64694882d4edb0f45b6",
+          "line_count_at_manifest_build": 100
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/guardian-integration.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/guardian-integration.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "e0285e909eec8865a60f9ee3328578292a0c6431eff6d64694882d4edb0f45b6",
+          "line_count_at_manifest_build": 100
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/complete-environment-method.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "b8e4d6c92d483c5f9c68cb80cdcb5fa9c3f636dbde4e3ff1df1704df251e870b",
+          "line_count_at_manifest_build": 218
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/complete-environment-method.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/complete-environment-method.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "b8e4d6c92d483c5f9c68cb80cdcb5fa9c3f636dbde4e3ff1df1704df251e870b",
+          "line_count_at_manifest_build": 218
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/unified-ipv4.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "68da30670b3c638575cb02e2392793d758b1a99120609f51ca4c1ff63960cb47",
+          "line_count_at_manifest_build": 85
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/unified-ipv4.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/unified-ipv4.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "68da30670b3c638575cb02e2392793d758b1a99120609f51ca4c1ff63960cb47",
+          "line_count_at_manifest_build": 85
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/service-routing-checks.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "174ba4f07af1236480425a8055ebedf3a6534e76e1bcd97c7a3033e6467212ae",
+          "line_count_at_manifest_build": 86
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/service-routing-checks.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/service-routing-checks.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "174ba4f07af1236480425a8055ebedf3a6534e76e1bcd97c7a3033e6467212ae",
+          "line_count_at_manifest_build": 86
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/lifecycle-checks.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "38083a9dc191ae4334ea2b95e34a0d964a5f59fd11fbfc4758353e6cec5b470a",
+          "line_count_at_manifest_build": 132
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/lifecycle-checks.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/lifecycle-checks.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "38083a9dc191ae4334ea2b95e34a0d964a5f59fd11fbfc4758353e6cec5b470a",
+          "line_count_at_manifest_build": 132
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/customer-setup.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "709ef50ba77da4a70e9e719e134a4e5a0947e551f375a476a686ab363dea9e5e",
+          "line_count_at_manifest_build": 73
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/customer-setup.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/customer-setup.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "709ef50ba77da4a70e9e719e134a4e5a0947e551f375a476a686ab363dea9e5e",
+          "line_count_at_manifest_build": 73
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/execution-paths.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "1ec7a5eba03ea000e5d615180a9b3fb40511a25b22be1560dbf293ae686f8491",
+          "line_count_at_manifest_build": 31
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/execution-paths.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/execution-paths.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "1ec7a5eba03ea000e5d615180a9b3fb40511a25b22be1560dbf293ae686f8491",
+          "line_count_at_manifest_build": 31
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/automatic-configuration.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "a9cf86299c7d12ece46a702f7caefa1e898156fa646deb0b1d647198b0f0f428",
+          "line_count_at_manifest_build": 48
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/automatic-configuration.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/automatic-configuration.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "a9cf86299c7d12ece46a702f7caefa1e898156fa646deb0b1d647198b0f0f428",
+          "line_count_at_manifest_build": 48
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/score-check.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "83a1b8f99836dc3e107b367c2d94bf6e35c992db77d03689c89dd2e46360db7a",
+          "line_count_at_manifest_build": 48
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/score-check.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/score-check.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "83a1b8f99836dc3e107b367c2d94bf6e35c992db77d03689c89dd2e46360db7a",
+          "line_count_at_manifest_build": 48
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/recovery-and-acceptance.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "97de6820e899d865a8c6bfc60a16b77163c8e35494b72373e512eba9f2096bba",
+          "line_count_at_manifest_build": 95
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/recovery-and-acceptance.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/recovery-and-acceptance.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "97de6820e899d865a8c6bfc60a16b77163c8e35494b72373e512eba9f2096bba",
+          "line_count_at_manifest_build": 95
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/timezone-policy.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "b137113bbbb979161f009cb98ccca13cd670adda2bc5b9b845dcacc16aee9141",
+          "line_count_at_manifest_build": 27
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/timezone-policy.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/timezone-policy.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "b137113bbbb979161f009cb98ccca13cd670adda2bc5b9b845dcacc16aee9141",
+          "line_count_at_manifest_build": 27
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/five-step-setup.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "d9f84aaf89ad3765a297546583e6b039ab4fc2f83222a34610052ae71621cff1",
+          "line_count_at_manifest_build": 53
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/five-step-setup.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/five-step-setup.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "d9f84aaf89ad3765a297546583e6b039ab4fc2f83222a34610052ae71621cff1",
+          "line_count_at_manifest_build": 53
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/domestic-video-udp.md",
+          "read_scope": "全部文本",
+          "method": "cat/sed 分段阅读；截断段落已补读",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "15eeb5470360082c708f3a588d7274f997c2541909a3ae047dc272032459e4fc",
+          "line_count_at_manifest_build": 50
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/domestic-video-udp.md",
+          "read_scope": "复用已读同文副本",
+          "method": "diff -u 与Mac同名文件逐份比较，退出码0；不冒称第二次独立全文阅读",
+          "same_as": "<installed-skills>/claude-mac-readiness/references/domestic-video-udp.md",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "15eeb5470360082c708f3a588d7274f997c2541909a3ae047dc272032459e4fc",
+          "line_count_at_manifest_build": 50
+        },
+        {
+          "file": "<installed-skills>/claude-mac-readiness/references/mac-checks.md",
+          "read_scope": "全部文本",
+          "method": "cat",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "a5d01755f9facd184d4dd0e6efabfc1dc05071d521553edc1c17230f488f53ff",
+          "line_count_at_manifest_build": 62
+        },
+        {
+          "file": "<installed-skills>/claude-windows-readiness/references/windows-checks.md",
+          "read_scope": "全部文本",
+          "method": "cat",
+          "executed": false,
+          "hash_note": "我方副本使用本次修改前preimage的哈希，避免将修改后内容冒充此前已读内容",
+          "sha256_at_manifest_build": "3951e813a13b3d360fe2d56bdae29a09084d3f66975fab1cf0ca9da9b0228cf8",
+          "line_count_at_manifest_build": 65
+        },
+        {
+          "file": "guardian-latest/CHANGELOG.md",
+          "read_scope": "部分",
+          "lines": "1-81（ADR059–070对应近期变化）",
+          "method": "sed逐段全文读取所列范围",
+          "executed": false,
+          "sha256_at_manifest_build": "7408612637a12e6fecbbe61c2b29930a25babdecfbecd8811c4164c99a13f16e",
+          "line_count_at_manifest_build": 1040
+        },
+        {
+          "file": "guardian-latest/docs/decisions.md",
+          "read_scope": "部分",
+          "lines": "526-605（ADR059–070全文）；ADR054/055/056/057/058只经rg定位",
+          "method": "sed读取近期完整ADR；其余不计全文",
+          "executed": false,
+          "sha256_at_manifest_build": "7607aaf6b34c1f99e3615a1b45934ddfde2d23758db351b4a3cfc92868a7d05e",
+          "line_count_at_manifest_build": 605
+        },
+        {
+          "file": "guardian/CHANGELOG.md",
+          "read_scope": "仅定位/摘录",
+          "method": "rg S10/PF/ADR039/054/11-02；不计全文",
+          "executed": false,
+          "sha256_at_manifest_build": "4b98b6e05b8e33a6ccb37802ade39512caa54f144c18c18ca1e721219fa0ffc3",
+          "line_count_at_manifest_build": 962
+        },
+        {
+          "file": "guardian/docs/decisions.md",
+          "read_scope": "仅定位/摘录",
+          "method": "rg S10/PF/ADR039/054及有关新增；不计全文",
+          "executed": false,
+          "sha256_at_manifest_build": "2ad22d266044bf0e336663a589dff8bc9824b0a098d898e33a17c26e02327a48",
+          "line_count_at_manifest_build": 521
+        },
+        {
+          "file": "guardian-latest-diff.json",
+          "read_scope": "比较元数据及文件清单；非全文补丁审阅",
+          "method": "首次cat产生截断未计全文，后用jq读取完整files状态清单；具体文件另读全文或diff",
+          "executed": false,
+          "sha256_at_manifest_build": "7d1b5e13bee8d24cfccdb604a5d27f08a96e191074b04246de87ca2ea17ce3ee",
+          "line_count_at_manifest_build": 2089
+        }
+      ],
+      "not_read_by_this_agent": [
+        {
+          "file": "guardian/skills/claude-guardian/sources/S08-vps-claude-tutorial.pdf",
+          "status": "本agent未读PDF像素；文字辅助稿全文已读",
+          "team_supplement": "主线程于本轮另行视觉核对全11页，完整路线结果已传回；由主线程记录其视觉清单"
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/R02-images/single-relay.png",
+          "status": "本agent未看像素",
+          "team_supplement": "主线程另行视觉核对，单端中转透明转发"
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/R02-images/dual-tunnel.png",
+          "status": "本agent未看像素",
+          "team_supplement": "主线程另行视觉核对，双端隧道增加加密段"
+        },
+        {
+          "file": "guardian/skills/claude-guardian/sources/vps-recommendations/*.pdf",
+          "status": "17份历史报价PDF本轮未逐页复核，不继承旧139页声明"
+        },
+        {
+          "url": "https://github.com/DUNHKpcc/Claude-Guardian/issues/25",
+          "status": "本agent未独立读取外部工单全文；采用G1现行指引/ADR明确转述并标明来源层级"
+        },
+        {
+          "files": "未列入files的事务、系统API、打包、测试底层文件",
+          "status": "本次未完整审阅或执行，不声称全仓通过"
+        }
+      ],
+      "notes": [
+        "全部文本包含分段cat/sed阅读；仅rg命中未列为全文。",
+        "上游历史实测、G1项目验收状态、源码存在与本轮实测分开；本轮无目标机实测。",
+        "我方guardian-integration旧全仓209文件/19PDF139页声明不作为本轮阅读证据。"
+      ]
+    }
+  },
+  "coverage_status_note": "capabilities中的缺失/仅名称等为本次修改前的审计结果；补齐文档路由见 source-coverage.md，不把补齐文档改写成目标实测通过。",
+  "visual_originals": [
+    {
+      "repository": "DUNHKpcc/Claude-Guardian",
+      "commit": "9b607dba3833b08e49765b614ac3493e990e3225",
+      "file": "skills/claude-guardian/sources/S03-claude-experience.pdf",
+      "sha256": "ffd8ab0e3f8c597733f842c3b17e4bea8d9ac9585f6a21d4e12039b0b32ed792",
+      "visual_read_pages": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "reader": "root agent",
+      "note": "PDF以1500px长边逐页渲染后查看；文字与截图均核对，未执行其中命令"
+    },
+    {
+      "repository": "DUNHKpcc/Claude-Guardian",
+      "commit": "9b607dba3833b08e49765b614ac3493e990e3225",
+      "file": "skills/claude-guardian/sources/S08-vps-claude-tutorial.pdf",
+      "sha256": "8b0afec499f0d8c12c6e8594947e0594ac4e9622c35d602ca35e3a8e2cc01013",
+      "visual_read_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "reader": "root agent",
+      "note": "PDF以1500px长边逐页渲染后查看；文字与截图均核对，未执行其中命令"
+    },
+    {
+      "repository": "DUNHKpcc/Claude-Guardian",
+      "commit": "9b607dba3833b08e49765b614ac3493e990e3225",
+      "file": "skills/claude-guardian/sources/R02-images/dual-tunnel.png",
+      "sha256": "f4fd0f37a96768205339f5c2de6a4229fad5593708a830eaebdcdd848701e0cc",
+      "visual_read_pages": [
+        1
+      ],
+      "reader": "root agent",
+      "note": "查看原图"
+    },
+    {
+      "repository": "DUNHKpcc/Claude-Guardian",
+      "commit": "9b607dba3833b08e49765b614ac3493e990e3225",
+      "file": "skills/claude-guardian/sources/R02-images/single-relay.png",
+      "sha256": "1d0ba47a9b0410a7daa84df69371bfd03808ac184d5054978cd26da48ac17d39",
+      "visual_read_pages": [
+        1
+      ],
+      "reader": "root agent",
+      "note": "查看原图"
+    }
+  ],
+  "website": {
+    "url": "https://www.cchahaeasy.top/?p=DUNHKPCC",
+    "capture_date": "2026-11-10",
+    "method": "读取公开HTML/JS/JSON，静态解析SCHEMA并按网页规则合并覆盖；没有执行网站JS或桌面包",
+    "browser_render_verified": false,
+    "desktop_package_downloaded": false,
+    "content_sections_read": "全部effective-content分区；7教程正文、11FAQ、协议、免责声明、下载/安装、商品及公告",
+    "js_scope": "SCHEMA正文、合并逻辑、相关公开页面装配与服务状态/退款界面说明；不宣称全网站业务JS审计",
+    "files": [
+      {
+        "file": "index.html",
+        "sha256": "e07650f4f1880eb92f5e477e8bcddadeca46a9a4ef33d7ae38302081eafe836a",
+        "bytes": 5437,
+        "role": "公开源快照；读取范围以上述scope为准"
+      },
+      {
+        "file": "hx.js",
+        "sha256": "a504109099dcae6c5f5b0d15778617301e35177479befc37dc7bbd027bf094b0",
+        "bytes": 14906,
+        "role": "公开源快照；读取范围以上述scope为准"
+      },
+      {
+        "file": "assets/site.js",
+        "sha256": "1ad12481ca9a48d1b926dc3f758ddc51f0657bd547baa71e360c1f1fb7d5b083",
+        "bytes": 375068,
+        "role": "公开源快照；读取范围以上述scope为准"
+      },
+      {
+        "file": "content/site-content.json",
+        "sha256": "81530cca774bc9793cffd989fc1163fa48ab90025eaa43ef01c733addfeba76b",
+        "bytes": 2009,
+        "role": "公开源快照；读取范围以上述scope为准"
+      },
+      {
+        "file": "content/downloads.json",
+        "sha256": "ecef6c03f4210d9af5b8b395953ea7c4b798484d8cbbc879cae3f288538459a3",
+        "bytes": 542,
+        "role": "公开源快照；读取范围以上述scope为准"
+      },
+      {
+        "file": "content/products.json",
+        "sha256": "cc6ff68dccd1083db6bd0a3d3078ca81af6a670bce61392888e1e362ba6eb99b",
+        "bytes": 13031,
+        "role": "公开源快照；读取范围以上述scope为准"
+      },
+      {
+        "file": "content/announcements.json",
+        "sha256": "2eabef7b83984063b66a7ed396cf9a029dfa2664644c1868e72e2e04916d58e0",
+        "bytes": 580,
+        "role": "公开源快照；读取范围以上述scope为准"
+      },
+      {
+        "file": "effective-content.json",
+        "sha256": "69951f0ea6d85233ded7513910a08cb5c259d828ae6e036398d355ffdadf1834",
+        "bytes": 38965,
+        "role": "静态还原文案"
+      }
+    ]
+  },
+  "official_documents_checked": [
+    "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/configure-ipv6-in-windows",
+    "https://wiki.metacubex.one/config/general/#ipv6",
+    "https://wiki.metacubex.one/config/dns/#ipv6",
+    "https://code.claude.com/docs/en/cli-reference",
+    "https://code.claude.com/docs/en/headless#start-faster-with-bare-mode",
+    "https://code.claude.com/docs/en/env-vars"
+  ],
+  "unread_or_unverified": [
+    "17份历史VPS报告PDF未逐页复核",
+    "CCBaga原生实现未全仓重读",
+    "部分Guardian清理脚本只读manifest记录段落",
+    "cc-hahaeasy桌面实现/签名/安装/后台/运行状态未验证",
+    "本轮无来源命令或目标网络/清理实验"
+  ],
+  "superseded_by": "source-complete-read-manifest.json",
+  "historical_snapshot_note": "本文件为上轮真实阅读快照；旧未读清单不是当前状态。当前补齐范围和不可取得材料见新manifest。"
+}

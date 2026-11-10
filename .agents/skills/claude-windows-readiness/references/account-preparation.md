@@ -1,5 +1,7 @@
 # 注册、订阅与使用准备
 
+Guardian、env-cleanup等互相不同的使用节奏和渠道方法完整保留在 [账号来源方法](source-methods-guardian-account-cleanup.md)及 [清理来源方法](source-methods-ccbaga-cleanup.md)，均分清来源经验与官方条件，不合成为账号安全门槛。
+
 用于用户明确询问首次注册、订阅渠道、套餐或使用节奏。普通网络故障直接进入 [事故分流](incident-and-cleanup.md)，已有付费与权益不符用 [账单检查](billing-checks.md)，不让用户重新走购买问卷。本文提供准备和比较；账号认证、身份核验及付款仍由用户在官方流程处理。
 
 ## 先复用已有信息

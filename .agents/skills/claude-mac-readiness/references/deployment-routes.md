@@ -1,5 +1,7 @@
 # Claude 运行路线、出口来源与部署规划
 
+来源完整部署与选型方法见 [Guardian网络/VM/VPS](source-methods-guardian-network.md)、[CCBaga网络部署](source-methods-ccbaga-cleanup.md)和 [17份VPS报告](source-methods-vps-reports.md)。按 [统一任务分支](workflow-methods.md)选择用途和恢复范围，历史参数不作当前采购承诺。
+
 只在用户比较路线、选择出口或明确需要 VM／VPS 部署时读取。已有设备和任务明确时沿用当前路线，不为普通修复重走问卷。比较方案先交付比较；实际安装、服务器访问和网络变更沿用本轮授权范围及恢复要求。
 
 ## 运行位置和出口位置分开选择

@@ -5,6 +5,8 @@ description: Configure and troubleshoot Claude environments on Windows（含原�
 
 # Claude Windows（含原生与 WSL） 环境
 
+调用本 Skill 的首次回复以“老大，”开头，随后直接进入本轮任务。
+
 只处理本轮目标设备与实际入口，优先复用正常配置和仍有效的证据。局部任务不扩成全套配置；纯资料／Skill 维护只改文档，不触发本机采集或试验。
 
 ## 从任务进入

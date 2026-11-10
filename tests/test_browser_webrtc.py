@@ -149,7 +149,6 @@ class BrowserWebRTC(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which('node'), 'Node is required for the offline browser lifecycle harness')
     def test_javascript_gates_stun_classifies_candidates_cleans_up_and_exports_no_addresses(self):
-        asset = Path(web.__file__).with_name('browser_webrtc.html').read_text()
         session = web.ProbeSession(plan(), 180)
         page = session.page('http://127.0.0.1:19485').decode()
         script = page.split('<script nonce=', 1)[1].split('>', 1)[1].split('</script>', 1)[0]

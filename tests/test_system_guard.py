@@ -327,7 +327,8 @@ class GuardInputs(unittest.TestCase):
             host.apply(Path('/synthetic/state'))
         self.assertTrue(any('OnBootSec=5s' in text for _, text in writes))
         self.assertFalse(any('enable' in command and command[-1] == 'clearpath-guard-fixture.service' for command in commands))
-        self.assertEqual(commands[-1], ['/usr/sbin/nft', '-j', '-f', '/synthetic/state/rules.nft.json'])
+        self.assertEqual(commands[-1], ['/usr/sbin/nft', '-j', '-f',
+                                        str(Path('/synthetic/state') / 'rules.nft.json')])
 
     def test_native_linux_failed_timer_admission_never_reaches_apply(self):
         commands = []

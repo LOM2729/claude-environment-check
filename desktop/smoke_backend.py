@@ -67,4 +67,22 @@ with tempfile.TemporaryDirectory(prefix='desktop-frozen-smoke-') as temp:
                           '--output',str(folder/'guard-plan.json')],capture_output=True,text=True,encoding='utf-8',check=True,timeout=30)
     assert not json.loads(guard.stdout)['system_changes']
     assert (EXE.parent/'_internal/system_guard_windows.ps1').is_file()
+    # Export a real target-platform entry without opening a terminal or changing policy.
+    native_input=folder/'native-guard-input.json'
+    native_request=json.loads(guard_input.read_text(encoding='utf-8'))
+    if os.name!='nt':
+        native_request.update(platform='macos',interfaces=['en0'])
+        native_request.pop('core_path')
+    native_input.write_text(json.dumps(native_request),encoding='utf-8')
+    native_plan=folder/'native-guard-plan.json'
+    planned=subprocess.run([str(EXE),'--cli','guard-plan','--input',str(native_input),'--output',str(native_plan)],
+                           capture_output=True,text=True,encoding='utf-8',check=True,timeout=30)
+    pin=json.loads(planned.stdout)['plan_sha256']
+    exported=subprocess.run([str(EXE),'--cli','guard-export','--plan',str(native_plan),'--plan-sha256',pin,
+                             '--out',str(folder/'manual-entry')],capture_output=True,text=True,encoding='utf-8',check=True,timeout=30)
+    export_result=json.loads(exported.stdout)
+    assert export_result['launcher_generated'] and not export_result['system_changes']
+    manifest=json.loads((folder/'manual-entry/launch-manifest.private.json').read_text(encoding='utf-8'))
+    assert manifest['runtime']['mode']=='frozen' and manifest['authorization_saved'] is False
+    assert not manifest['network_verified']
 print('Frozen backend: legacy workflow, seven feature imports, offline intake/guard plans and assets passed; no network or system configuration.')

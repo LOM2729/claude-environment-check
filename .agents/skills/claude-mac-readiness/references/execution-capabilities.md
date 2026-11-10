@@ -11,7 +11,7 @@
 | Skill更新核对 | `skill-update-check` | 只比较本平台Skill与固定GitHub提交，列出差异，不自动覆盖 |
 | Claude数据隔离 | `cleanup-inventory / cleanup-plan / cleanup-quarantine / cleanup-reconcile / cleanup-restore` | Mac限定根与POSIX隔离核心；Windows目录写入未开放，不把跨平台清单当原生能力 |
 | 原生规则适配 | `native-client-plan / native-client-apply / native-client-check / native-client-rollback` | Mac＋Clash Verge Rev 2.5.8的专属rules扩展；其他版本／平台明确不支持 |
-| 系统防护开关 | `guard-plan / guard-export / guard-inspect / guard-on / guard-confirm / guard-off / guard-status / guard-uninstall` | Mac PF、Windows原生防火墙、Linux nft；精确拥有范围和独立恢复，不默认启用 |
+| 系统防护开关 | `guard-plan / guard-export / guard-inspect / guard-on / guard-confirm / guard-off / guard-status / guard-uninstall / guard-launch` | Mac PF、Windows原生防火墙、Linux nft；精确拥有范围和独立恢复，不默认启用 |
 | VM／VPS部署维护 | `remote-plan / remote-export / remote-apply / remote-confirm / remote-rollback / remote-status` | Debian／Ubuntu systemd目标：TUN、SSH／反向隧道、自愈与防火墙；在实际Linux目标执行，不从本机隐式SSH |
 
 新模块的真实设备／浏览器／管理员和重启验收仍待目标机完成；源码中的平台限制是硬边界，不能使用测试注入、修改平台标记或保存的授权字段绕过。当前桌面五步界面保留原流程，新增工具也可通过其内置后端的 `--cli` 入口交给Codex调用。
@@ -90,6 +90,16 @@ Clash原生适配先核已安装版本、活动profile、独占rules扩展、基
 SSH模块只支持已核标准 `ssh.service`、默认配置来源和空SSHD_OPTS；active或enabled的 `ssh.socket`、自定义启动／unit覆盖明确拒绝。必须显式设置 `ssh.activation="restart"`，计划写明采用当前已核unit/default配置；客户在独立终端执行，先具备第二会话／带外控制台，不能把HUP静默换成restart。会做语法及有效配置／端口核对，但恢复只承诺本次保存的文件和服务状态，不承诺旧daemon未落盘的-f/-o参数或旧SSH可达性。该模式的 `runtime_restored=false` 不可改成已完整恢复。
 
 SSH drop-in及原本已启用的服务本身具有持久性，计划会标 `requires_persist`；确认前先布置限时及开机恢复，最终确认须显式 `--persist`。反向隧道严格known_hosts、固定密钥、禁用隐含SSH配置与agent，仅请求回环监听；实际中转端GatewayPorts和绑定仍需现场验证。入站加固不冒充出站防直连，自愈只处理本包拥有的服务／残留，不宽范围杀进程或重置整机网络。
+
+### 双击入口与手动交接
+
+系统防护方案已具体审阅后，在实际目标设备使用 `guard-export --plan <计划> --plan-sha256 <返回摘要> --out <新私有目录>`；可选 `--check-plan <已批准bootstrap检查计划>`，导出不联网、不启动终端、不提权。Mac生成 `启用断线保护.command`，Windows生成 `启用断线保护.cmd`和明确UAC包装，Linux生成 `.sh`，并附离线恢复说明。其他平台离线导出的包不生成假可用入口，须在实际目标重新导出。
+
+把准确入口、要做什么、会影响什么、保险丝时限和恢复说明交给客户；客户自己双击、处理sudo／UAC并在可见终端输入APPLY。助手不控制终端、代输确认词或索取密码；入口／runtime／计划改动后重新导出，不手改manifest跳过校验。
+
+只提供检查计划时才自动运行其准确端点，且仅允许bootstrap非AI目标；没有计划就明确要求客户自行检查，不宣称“三项都绿”。检查预算和剩余窗口不够、任何项失败或CONFIRM超时都不确认；只精确撤销本次新pending代际，不撤已有confirmed保护或另一轮改动，未知状态先对账。控制器显示本次实际剩余确认时间，不用经过时长代替恢复读回。
+
+正常使用及独立管理通道都经客户现场核实后，才输入CONFIRM并提交持久化。失败只展示简短阶段／原因／下一步，详细日志留私有目录；超时或已撤销始终保持未完成，不把“好了”当通过，不为修复自动换节点／改DNS。系统状态、限定探针和整机网络效果仍分别记录。
 
 ### 系统／远端计划的格式入口
 

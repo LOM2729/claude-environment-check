@@ -24,8 +24,8 @@ import sys
 import time
 import uuid
 
-COMMANDS = ('guard-plan', 'guard-inspect', 'guard-export', 'guard-on', 'guard-confirm', 'guard-off', 'guard-status', 'guard-uninstall')
-MUTATING_COMMANDS = ('guard-on', 'guard-confirm', 'guard-off', 'guard-uninstall')
+COMMANDS = ('guard-plan', 'guard-inspect', 'guard-export', 'guard-on', 'guard-confirm', 'guard-off', 'guard-status', 'guard-uninstall', 'guard-launch')
+MUTATING_COMMANDS = ('guard-on', 'guard-confirm', 'guard-off', 'guard-uninstall', 'guard-launch')
 SCHEMA = 'clearpath-system-guard/1'
 STATE_SCHEMA = 'clearpath-system-guard-state/1'
 MAX_INPUT = 512 * 1024
@@ -884,19 +884,21 @@ def _activate_locked(plan, folder, host):
         private_write(folder / 'state.json', state)
         raise
     return {'status': 'applied_pending_confirmation', 'exit_code': 2, 'plan_sha256': digest(plan),
+            'transaction_id': state['recovery_nonce'],
             'recovery_armed': True, 'persistent': False, 'network_verified': False,
             'pending_native_persistence': plan['spec']['platform'] == 'windows',
             'existing_connections_terminated': False}
 
 
-def finish(folder, expected, host, verification, persist):
+def finish(folder, expected, host, verification, persist, transaction_id=None):
     with operation_lock(folder):
-        return _finish_locked(folder, expected, host, verification, persist)
+        return _finish_locked(folder, expected, host, verification, persist, transaction_id)
 
 
-def _finish_locked(folder, expected, host, verification, persist):
+def _finish_locked(folder, expected, host, verification, persist, transaction_id=None):
     state = _load_state(folder)
     need(state['plan_sha256'] == expected, 'GUARD_EXPECTED_PLAN_DIGEST')
+    need(transaction_id is None or state.get('recovery_nonce') == transaction_id, 'GUARD_TRANSACTION_MISMATCH')
     need(state['phase'] == 'pending_confirmation' and time.time() < state['expires_at'], 'GUARD_CONFIRMATION_EXPIRED_OR_UNAVAILABLE')
     need(type(verification) is dict and verification.get('schema') == 'clearpath-guard-verification/1' and
          verification.get('plan_sha256') == expected and verification.get('normal_path') == 'observed' and
@@ -959,6 +961,8 @@ def _deactivate_locked(folder, expected, host, uninstall=False):
 
 def register_commands(subparsers):
     for command in COMMANDS:
+        if command == 'guard-launch':
+            continue
         p = subparsers.add_parser(command, help='Scoped native firewall plan, switch and independently armed recovery')
         if command in ('guard-plan', 'guard-inspect'):
             p.add_argument('--input', required=True)
@@ -967,6 +971,7 @@ def register_commands(subparsers):
             p.add_argument('--plan', required=True)
             p.add_argument('--plan-sha256', required=True)
             p.add_argument('--out', required=True)
+            p.add_argument('--check-plan', help='Optional exact approved bootstrap network plan for customer-terminal checks')
         else:
             p.add_argument('--state-dir', required=True)
             if command == 'guard-on':
@@ -979,11 +984,17 @@ def register_commands(subparsers):
             if command == 'guard-confirm':
                 p.add_argument('--verification-file', required=True)
                 p.add_argument('--persist', action='store_true')
+                p.add_argument('--transaction-id', help='Optional pending-generation binding; never authorization')
+    import guard_handoff
+    guard_handoff.register_commands(subparsers)
 
 
 def run(c, args):
     try:
         command = args.command
+        if command == 'guard-launch':
+            import guard_handoff
+            return guard_handoff.run(c, args)
         if command == 'guard-plan':
             plan = make_plan(c.load_json(c.read_bytes(args.input, MAX_INPUT)))
             c.write_new(args.output, c.encode(plan))
@@ -1007,13 +1018,16 @@ def run(c, args):
         if command == 'guard-export':
             plan = validate_plan(c.load_json(c.read_bytes(args.plan, MAX_INPUT)))
             need(digest(plan) == args.plan_sha256, 'GUARD_EXPECTED_PLAN_DIGEST')
-            out = Path(args.out)
-            out.mkdir(mode=0o700, parents=False, exist_ok=False)
+            import config_recovery
+            out = config_recovery._private_dir(c, args.out, create=True)
             private_write(out / 'plan.json', plan, True)
             private_write(out / 'system_guard.py', Path(__file__).read_bytes(), True)
             private_write(out / 'system_guard_windows.ps1', Path(__file__).with_name('system_guard_windows.ps1').read_bytes(), True)
-            return {'status': 'guard_bundle_exported', 'system_changes': False, 'plan_sha256': digest(plan),
-                    'network_requests': 0, 'private_bundle': True}
+            import guard_handoff
+            checks = c.load_json(c.read_bytes(args.check_plan, MAX_INPUT)) if getattr(args, 'check_plan', None) else None
+            launchers = guard_handoff.export_launchers(c, plan, out, checks)
+            return dict(launchers, status='guard_bundle_exported', system_changes=False,
+                        plan_sha256=digest(plan), network_requests=0, private_bundle=True)
         if command in MUTATING_COMMANDS:
             need(args.allow_system_change and args.control_channel_independent and args.recovery_ready,
                  'GUARD_EXPLICIT_CHANGE_AND_INDEPENDENT_RECOVERY_REQUIRED')
@@ -1027,7 +1041,8 @@ def run(c, args):
             return activate(plan, args.state_dir, host)
         if command == 'guard-confirm':
             return finish(args.state_dir, args.plan_sha256, host,
-                          c.load_json(c.read_bytes(args.verification_file, 65536)), args.persist)
+                          c.load_json(c.read_bytes(args.verification_file, 65536)), args.persist,
+                          getattr(args, 'transaction_id', None))
         if command in ('guard-off', 'guard-uninstall'):
             return deactivate(args.state_dir, args.plan_sha256, host, command == 'guard-uninstall')
         current = host.snapshot(args.state_dir)

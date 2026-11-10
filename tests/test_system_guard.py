@@ -106,6 +106,7 @@ class GuardTransactions(unittest.TestCase):
         self.assertLess(self.host.events.index('arm'), self.host.events.index('apply'))
         self.assertNotIn('persist', self.host.events)
         self.assertEqual(g._load_state(self.folder)['phase'], 'pending_confirmation')
+        self.assertEqual(result['transaction_id'], g._load_state(self.folder)['recovery_nonce'])
 
     def test_existing_unbound_directory_is_never_adopted_or_executed(self):
         self.folder.mkdir(mode=0o700)
@@ -125,6 +126,17 @@ class GuardTransactions(unittest.TestCase):
         self.assertFalse(result['network_verified'])
         self.assertLess(self.host.events.index('persist'), self.host.events.index('startup-readback'))
         self.assertLess(self.host.events.index('startup-readback'), self.host.events.index('disarm'))
+        self.assertEqual(g._load_state(self.folder)['phase'], 'confirmed')
+
+    def test_old_entry_cannot_confirm_a_new_pending_generation_of_same_plan(self):
+        first = g.activate(self.plan, self.folder, self.host)
+        g.deactivate(self.folder, self.expected, self.host)
+        second = g.activate(self.plan, self.folder, self.host)
+        with self.assertRaisesRegex(g.GuardError, 'GUARD_TRANSACTION_MISMATCH'):
+            g.finish(self.folder, self.expected, self.host, self.verification(), True, first['transaction_id'])
+        self.assertEqual(g._load_state(self.folder)['phase'], 'pending_confirmation')
+        self.assertNotIn('persist', self.host.events)
+        g.finish(self.folder, self.expected, self.host, self.verification(), True, second['transaction_id'])
         self.assertEqual(g._load_state(self.folder)['phase'], 'confirmed')
 
     def test_partial_persist_keeps_recovery_eligible_and_undoes_startup(self):
@@ -188,9 +200,10 @@ class GuardTransactions(unittest.TestCase):
         self.assertEqual(self.host.current, {'rules': None})
 
     def test_daily_off_on_retains_old_receipt_and_rearms(self):
-        g.activate(self.plan, self.folder, self.host)
+        first = g.activate(self.plan, self.folder, self.host)
         g.deactivate(self.folder, self.expected, self.host)
-        g.activate(self.plan, self.folder, self.host)
+        second = g.activate(self.plan, self.folder, self.host)
+        self.assertNotEqual(first['transaction_id'], second['transaction_id'])
         self.assertEqual(self.host.events.count('arm'), 2)
         self.assertEqual(self.host.events.count('apply'), 2)
         histories = list(self.folder.glob('history-*'))

@@ -12,7 +12,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 EXTRA_RUNTIME = ('intake_flow.py', 'browser_webrtc.py', 'browser_webrtc.html', 'skill_updates.py',
                  'scoped_cleanup.py', 'native_client.py', 'system_guard.py',
-                 'system_guard_windows.ps1', 'remote_setup.py')
+                 'system_guard_windows.ps1', 'remote_setup.py', 'guard_handoff.py')
 COMMON_REFS = ('guardian-integration.md', 'timezone-policy.md', 'deployment-routes.md', 'account-preparation.md', 'incident-and-cleanup.md', 'billing-checks.md', 'change-confirmation.md', 'customer-setup.md',
                'evidence-sources.md', 'execution-paths.md', 'guided-workflow.md',
                'locale-and-language.md', 'proxy-import.md', 'score-check.md', 'automation.md', 'automatic-configuration.md', 'ai-dedicated-routing.md', 'lifecycle-checks.md', 'recovery-and-acceptance.md', 'workflow-progress.md', 'report-dashboard.md', 'five-step-setup.md', 'unified-ipv4.md', 'domestic-video-udp.md', 'shadowrocket-domestic.md', 'service-routing-checks.md', 'tutorial-coverage.md', 'connection-reuse.md')

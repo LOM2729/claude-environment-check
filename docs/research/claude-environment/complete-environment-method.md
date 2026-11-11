@@ -2,6 +2,8 @@
 
 这是两份 Skill 的统一方案分类入口。用于完整方案、全部方法、CCBaga 比较及历史未验证项展示；普通局部任务只读取对应模块。分类入口于 2026-11-10 补充来源流程；既有默认与历史实测仍各按原日期记录，不把本页整理当新实测。
 
+2026-11-11 已按我方 v0.18.0 与 Guardian 最新整机模式更新能力口径，完整剩余差距和验证范围见 [本轮来源对照](source-gap-review-20261111.md)。历史方法已收录、CLI／桌面已实现与目标实机验收各自记录。
+
 **仅修改 Skill、研究或展示清单时，只处理文件与资料，不运行真实环境采集、网络探测、浏览器／Claude 清理、登录、安装、重启或故障试验。** 以下保留以前研究但未采用的说法；“以前记录过”不能改写成“已在用户机器执行过”。
 
 ## “完整”的范围与来源方法
@@ -69,7 +71,7 @@
 | TCP keepalive | 保活与失效连接发现 | 与 HTTP 连接池／HTTP2／MUX／SMUX 分开，不默认全部开启 |
 | UDP NTP 校时例外 | 当前限制与实际校时需求冲突时准备精确方案 | 当前 UDP NTP 代理明确未完成，不能全局放开 UDP 或宣称隐藏时区 |
 | 分层对照排障 | 显式代理、保留 TLS 的地址对照、系统 DNS、正常 HTTPS；Windows WFP／5157 | 不采用关闭 TLS 校验的捷径，见 [Guardian 分层方法](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/guardian-integration.md) |
-| 持续出站防护 | LuLu、Windows 出站策略、macOS PF、Linux nftables／guard | 独立设计与恢复；不是当前工具已经提供的全机 Kill Switch |
+| 持续出站防护 | LuLu、Windows 出站策略、macOS PF、Linux nftables／guard | 当前已有独立 guard 与恢复模块。默认国内／视频动态分流尚未自动衔接，真实防护效果待目标机验收 |
 | 自动回滚任务 | 高影响网络变更的恢复辅助 | 存在不等于有效，上游旧规则恢复／持久化有缺口 |
 | 系统地区／语言／定位 | 用户明确需要时更改体验或权限设置 | 默认仍保留语言；时区、地区格式、校时、定位分开 |
 | 线路优化 | 中转、SSH 动态转发、透明转发、BBR／TCP 参数 | 先有同条件基线；不保证通用收益，见 [路线规划](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/deployment-routes.md) |
@@ -136,11 +138,11 @@
 | CCBaga 指纹引擎 | 固定版本、哈希及上游交付记录 | Chromium fork 的安全回补覆盖、目标版本兼容性与识别效果 |
 | CCBaga 身份与跨机恢复 | 有真实归档／恢复实现和上游测试记录 | 本机恢复、自定义 CONFIG_DIR／Console profiles、Keychain／DPAPI 与服务端有效性 |
 | 文件事务与恢复 | 临时文件、合成事件的工具测试 | 应用重新载入、系统设置／网络恢复、登录有效；不覆盖浏览器数据库或云端恢复 |
-| Windows 全流程 | 有说明、脚本和静态审查 | **无完整端到端真机证据**；ACL／锁／企业策略／语言包不能由 Mac 或 CI 代证 |
-| VM／VPS 与线路优化 | 原有规划、第三方实现和限定上游记录 | 真实部署、管理恢复、住宅出口、客户端 TUN、BBR／中转收益 |
-| 出站防火墙／回滚任务 | 有可比较实现与已知缺口 | 旧规则恢复、持久化、已有 Allow、管理例外及真实失联恢复 |
+| Windows 全流程 | 有原生 NTFS 隔离引擎、8 项临时目录测试及构建 CI | **无完整端到端真机证据**；桌面隔离适配器、真实用户目录、企业策略和网络仍待分别验收 |
+| VM／VPS 与线路优化 | 有我方受限远端模块、既有方法与上游记录 | 真实部署、管理恢复、住宅出口、完整 VM／VPS 安装、客户端 TUN、BBR／中转收益 |
+| 出站防火墙／回滚任务 | 有我方 guard、超时恢复和持久化管理实现及相关夹具 | 有效规则完整读回、既有 Allow、管理例外及真实失联／重启恢复，详见本轮对照 |
 | 后续七类事件 | 有事件模型和合成验证 | client_update、proxy_update、client_restart、system_restart、sleep_wake、network_change、proxy_fault_recovery 未发生／未观察就保留未完成 |
-| 持续保护 | 有一次启动前检查设计 | **不是常驻 Kill Switch／持续监控**，不保证检查与启动之间无竞态 |
+| 持续保护 | 有启动前检查与可选原生防火墙 guard，远端另有受限核心自愈 | 跨客户端持续出口监测、默认策略的整机衔接和故障期真实保护仍待补齐，不保证检查与启动之间无竞态 |
 
 历史依据：[教程覆盖](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/tutorial-coverage.md)、[小火箭验证边界](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/shadowrocket-domestic.md#测试与报告边界)、[检测工具记录](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/score-check.md)、[恢复与生命周期](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)、[Guardian](https://github.com/LOM2729/claude-environment-check/blob/main/.agents/skills/claude-mac-readiness/references/guardian-integration.md)。没有新实测时，不更改这些状态。
 

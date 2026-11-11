@@ -51,6 +51,18 @@
 - 访问外部 IP 检测站前，告知站点名称与会传出的出口信息并确认。把 Windows PowerShell、Claude Code、Claude Desktop、Chrome 可能采用的路径区分开，不把一个检测结果外推给全部程序。无认证请求返回 HTTP 401/405 只能证明到达服务，不能证明登录或套餐资格。
 - 浏览器 WebRTC 要在用户实际使用的浏览器中测；查 IPv4 和 IPv6，不把第三方“纯净度”评分当作封号概率。关闭 WebRTC/STUN 可能影响音视频，需单项确认。
 
+## 防火墙的有效策略与故障证据
+
+需要系统防护时，使用 [专项计划与恢复](execution-capabilities.md#系统防护和远端部署)。先比较 PersistentStore 与 ActiveStore 的 Domain／Private／Public 默认策略、精确规则 Name 的数量和完整条件。程序／包／服务、接口及类型、方向、动作、协议、端口、地址、安全条件、ICMP 类型、动态目标及 PolicyAppId 按实际可读字段核对，字段无法取得时保留未完成。新规则不替代未列明的 Allow；新增放行、核心／节点／网卡变化后重新核对。
+
+`Windows System Error 5 / AccessDenied` 记录准确阶段（创建、读回、停用或删除）、规则条件类别、当前令牌是否提升、有效策略和组织管理限制。管理员或 SYSTEM 仍拒绝时保留旧保护与本机回执，不能仅凭错误归因于权限未提升、安全软件或某字段不支持。缺少对照时记原因未明，不为分诊新建宽泛放行或自行升级执行身份。Windows 原生错误、Skill 输入拒绝与工具 `blocked by policy` 分别报告。
+
+UDP Send 成功只证明本机提交，超时也不单独证明阻断。TCP 和 UDP 各自保留本轮已批准的可达基线、测试时间及有效响应／系统阻断证据。使用 Security 5157 时匹配真实程序身份、方向、端点、协议（TCP 6／UDP 17）、时间窗及 FilterRTID 对应的有效过滤器。事件号本身不说明是哪次连接被拦，查询失败或未启用审计不等于无事件。临时审计改动保存原值并恢复，原始安全日志仅留本机。
+
+更新前、更新后首次联网前和更新后验收按 [更新复查](lifecycle-checks.md#更新前更新后首次联网与更新后验收) 保存各自证据。整机模式的规则核对与实际出口、DNS、UDP、IPv6、WebRTC 和正常功能分开判断。LAN／打印、虚拟机／Cowork、其他 VPN 与远程访问作为准确例外审阅，当前方法不提供自动 Windows Update 白名单生成器。
+
+以上细节参考 [Guardian 固定版 Windows 指引](https://github.com/DUNHKpcc/Claude-Guardian/blob/62814950d30401ba5861beca67e6382b9fa112b6/skills/claude-guardian/references/local-firewall-prompts.md#L197-L221) 与 [Microsoft 5157 字段说明](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-5157)。来源夹具、源码存在与用户设备原生防火墙验收分别记录。
+
 ## 断线矩阵
 
 | 场景 | 检查重点 | 结果边界 |

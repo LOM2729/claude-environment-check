@@ -11,6 +11,8 @@ description: Configure and troubleshoot Claude environments on macOS; use for pr
 
 只处理本轮目标设备与实际入口，优先复用正常配置和仍有效的证据。局部任务不扩成全套配置；纯资料／Skill 维护只改文档，不触发本机采集或试验。
 
+日常直接由本 Skill 带 Codex 准备方案、调用随包脚本和目标软件的受支持入口，保存本轮私有材料，再核对实际结果。技术路径、参数和结构化输入由 Codex 准备，客户只处理必要认证及可能中断通道的手动操作。
+
 ## 从任务进入
 
 - **首次／完整配置**：读 [五步流程](references/five-step-setup.md)，默认快速完成一份方案、执行与集中核验；不并读全部参考。

@@ -2,7 +2,9 @@
 
 完整来源方法、最新PF/Switch与清理恢复已补读，见 [来源覆盖](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-coverage.md)、[网络路线](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-network.md)与 [事务/离线恢复](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-methods-guardian-runtime-recovery.md)。实际操作按 [五步任务分支](workflow-methods.md)，来源状态不等于本机通过。
 
-核对日期：2026-10-31。用于用户提到 Claude-Guardian、第三方检测报告或需要进一步定位 DNS／防火墙故障时。普通配置不必整篇加载。这里是来源核对与操作指引，不新增执行器、网络探针或运行授权。路线／出口／线路看 [部署规划](deployment-routes.md)，注册订阅看 [准备模块](account-preparation.md)，故障与明确清理看 [事故模块](incident-and-cleanup.md)，时区看 [默认目标](timezone-policy.md)。
+2026-11-11 的最新差距见 [来源对照](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-gap-review-20261111.md)。Guardian 已核到 `62814950d30401ba5861beca67e6382b9fa112b6`，当前 238 文件中 215 个同 SHA 复用、23 个变化文件复核。Windows 整机模式与双存储规则审阅、更新三时点、正常停用顺序已纳入本 Skill 对应专题，实际支持及验收以 [执行能力](execution-capabilities.md) 为准。
+
+下文保留 2026-10-31 固定版本的研究。用于用户提到 Claude-Guardian、第三方检测报告或需要进一步定位 DNS／防火墙故障时。普通配置不必整篇加载。这里是来源核对与操作指引，不新增执行器、网络探针或运行授权。路线／出口／线路看 [部署规划](deployment-routes.md)，注册订阅看 [准备模块](account-preparation.md)，故障与明确清理看 [事故模块](incident-and-cleanup.md)，时区看 [默认目标](timezone-policy.md)。
 
 ## 来源、版本和实际能力
 
@@ -67,7 +69,7 @@ Claude 在本机运行、仅通过 VPS 出网，仍属于本机任务；只有 C
 
 ## 全仓核对新增的能力边界
 
-固定提交全仓 **209 个文件**已完成静态审阅，含测试、打包、CI、历史记录与全部随附资料；19 份 PDF 共 **139 页**已逐页阅读提取／OCR并做视觉复核。原始模糊小字和缺少原始测量数据的图表保留资料质量限制，未逐个数值认证。未执行上游代码、测试或 PDF 中的命令。
+此前“209 文件全部静态审阅”的担保已由有逐文件记录的完整阅读清单取代。各版本文件数量、同 SHA 复用、PDF／图像处理及真实未读边界见 [来源覆盖](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-coverage.md)。以下保留当时发现的机制与边界，按各自固定提交理解。
 
 
 

@@ -71,13 +71,19 @@ function Address-Values($values){
   }|Sort-Object)
 }
 function Rule-Record($rule){
-  $a=$rule|Get-NetFirewallAddressFilter
-  $p=$rule|Get-NetFirewallPortFilter
-  $i=$rule|Get-NetFirewallInterfaceFilter
-  $it=$rule|Get-NetFirewallInterfaceTypeFilter
-  $app=$rule|Get-NetFirewallApplicationFilter
-  $service=$rule|Get-NetFirewallServiceFilter
-  $security=$rule|Get-NetFirewallSecurityFilter
+  $a=@($rule|Get-NetFirewallAddressFilter)
+  $p=@($rule|Get-NetFirewallPortFilter)
+  $i=@($rule|Get-NetFirewallInterfaceFilter)
+  $it=@($rule|Get-NetFirewallInterfaceTypeFilter)
+  $app=@($rule|Get-NetFirewallApplicationFilter)
+  $service=@($rule|Get-NetFirewallServiceFilter)
+  $security=@($rule|Get-NetFirewallSecurityFilter)
+  foreach($count in @($a.Count,$p.Count,$i.Count,$it.Count,$app.Count,$service.Count,$security.Count)){
+    if($count -ne 1){throw 'GUARD_WINDOWS_RULE_FILTER_UNAVAILABLE'}
+  }
+  $a=$a[0];$p=$p[0];$i=$i[0];$it=$it[0];$app=$app[0];$service=$service[0];$security=$security[0]
+  $policyFieldsAvailable=($p.PSObject.Properties.Name -contains 'IcmpType') -and
+    ($p.PSObject.Properties.Name -contains 'DynamicTarget') -and ($rule.PSObject.Properties.Name -contains 'PolicyAppId')
   $protocol=[string]$p.Protocol
   $protocolNames=@{'TCP'='6';'UDP'='17';'Any'='256'}
   if($protocolNames.ContainsKey($protocol)){$protocol=$protocolNames[$protocol]}
@@ -88,20 +94,44 @@ function Rule-Record($rule){
     Authentication=[string]$security.Authentication;Encryption=[string]$security.Encryption;OverrideBlockRules=[string]$security.OverrideBlockRules;
     LocalUser=[string]$security.LocalUser;RemoteUser=[string]$security.RemoteUser;RemoteMachine=[string]$security.RemoteMachine;
     EdgeTraversalPolicy=[string]$rule.EdgeTraversalPolicy;LooseSourceMapping=[string]$rule.LooseSourceMapping;
-    LocalOnlyMapping=[string]$rule.LocalOnlyMapping;Owner=[string]$rule.Owner}
+    LocalOnlyMapping=[string]$rule.LocalOnlyMapping;Owner=[string]$rule.Owner;
+    IcmpType=@($p.IcmpType|Sort-Object);DynamicTarget=[string]$p.DynamicTarget;PolicyAppId=[string]$rule.PolicyAppId;
+    PolicyReadbackComplete=[bool]$policyFieldsAvailable}
 }
 function Record-Dict($object){$d=[ordered]@{};foreach($p in $object.PSObject.Properties){$d[$p.Name]=$p.Value};return $d}
 function Profiles($store){return @(Get-NetFirewallProfile -PolicyStore $store | Sort-Object Name | ForEach-Object {
   [ordered]@{Name=[string]$_.Name;Enabled=[string]$_.Enabled;DefaultOutboundAction=[string]$_.DefaultOutboundAction}})}
 function Snapshot{
-  $owned=@(Get-NetFirewallRule -PolicyStore PersistentStore|Where-Object {$_.Name.StartsWith($prefix,[StringComparison]::Ordinal)}|Sort-Object Name|ForEach-Object {Rule-Record $_})
-  $allows=@(Get-NetFirewallRule -PolicyStore ActiveStore -Enabled True -Direction Outbound -Action Allow|Where-Object {-not $_.Name.StartsWith($prefix,[StringComparison]::Ordinal)}|Select-Object -ExpandProperty Name|Sort-Object -Unique)
-  return [ordered]@{profiles=@(Profiles 'PersistentStore');active_profiles=@(Profiles 'ActiveStore');allow_names=$allows;owned=$owned}
+  $stored=@(Get-NetFirewallRule -PolicyStore PersistentStore)
+  $active=@(Get-NetFirewallRule -PolicyStore ActiveStore)
+  $owned=@($stored|Where-Object {$_.Name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)}|Sort-Object Name|ForEach-Object {Rule-Record $_})
+  $effectiveOwned=@($active|Where-Object {$_.Name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)}|Sort-Object Name|ForEach-Object {Rule-Record $_})
+  $storedAllows=@($stored|Where-Object {[string]$_.Enabled -eq 'True' -and [string]$_.Direction -eq 'Outbound' -and [string]$_.Action -eq 'Allow'})
+  $activeAllows=@($active|Where-Object {[string]$_.Enabled -eq 'True' -and [string]$_.Direction -eq 'Outbound' -and [string]$_.Action -eq 'Allow'})
+  $issues=@()
+  if(@(@($owned)+@($effectiveOwned)|Where-Object {-not $_.PolicyReadbackComplete}).Count){
+    $issues+=@('rule_policy_fields_unavailable')
+  }
+  foreach($set in @(@{rules=$owned},@{rules=$effectiveOwned},@{rules=$storedAllows},@{rules=$activeAllows})){
+    if(@($set.rules|Group-Object Name|Where-Object {$_.Count -gt 1}).Count){$issues+=@('ambiguous_rule_names')}
+  }
+  if(($owned|ConvertTo-Json -Depth 20 -Compress) -cne ($effectiveOwned|ConvertTo-Json -Depth 20 -Compress)){
+    $issues+=@('owned_policy_store_difference')
+  }
+  $allows=@($activeAllows|Where-Object {-not $_.Name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)}|Select-Object -ExpandProperty Name|Sort-Object)
+  $storedAllowNames=@($storedAllows|Where-Object {-not $_.Name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)}|Select-Object -ExpandProperty Name|Sort-Object)
+  if((Values $allows) -cne (Values $storedAllowNames)){$issues+=@('allow_policy_store_difference')}
+  # Keep discrepancies readable so normal status and independent recovery can
+  # diagnose a changed effective policy. Only activation asserts convergence.
+  return [ordered]@{profiles=@(Profiles 'PersistentStore');active_profiles=@(Profiles 'ActiveStore');allow_names=$allows;owned=$owned;
+    policy_schema='clearpath-windows-guard-policy/2';active_owned=$effectiveOwned;persistent_allow_names=$storedAllowNames;
+    policy_issues=@($issues|Sort-Object -Unique)}
 }
-function Exact-Rule($name){
+function Exact-Rule($name,$store='PersistentStore'){
   if($name -match '[*?\[\]]'){throw 'GUARD_WINDOWS_RULE_NAME_INVALID'}
-  $r=@(Get-NetFirewallRule -PolicyStore PersistentStore -Name $name -ErrorAction SilentlyContinue|Where-Object {$_.Name -ceq $name})
+  $r=@(Get-NetFirewallRule -PolicyStore $store -Name $name -ErrorAction SilentlyContinue|Where-Object {$_.Name -ieq $name})
   if($r.Count -gt 1){throw 'GUARD_WINDOWS_RULE_AMBIGUOUS'}
+  if($r.Count -eq 1 -and $r[0].Name -cne $name){throw 'GUARD_WINDOWS_RULE_NAME_CHANGED'}
   if($r.Count -eq 1){return $r[0]};return $null
 }
 function Assert-DesiredRule($r,$expected){
@@ -132,6 +162,7 @@ function Add-OwnRule($suffix,$direction,$protocol,$address,$ports,$program,$alia
   # A disabled creation cannot open traffic. Pin the complete native record
   # before the enabling setter so interrupted activation has an exact witness.
   $entry.expected=Rule-Record (Exact-Rule $name)
+  if(-not $entry.expected.PolicyReadbackComplete){throw 'GUARD_WINDOWS_POLICY_FIELDS_UNAVAILABLE'}
   $entry.expected.Enabled='True'
   Persist-Journal
   Enable-NetFirewallRule -PolicyStore PersistentStore -Name $name|Out-Null
@@ -139,12 +170,22 @@ function Add-OwnRule($suffix,$direction,$protocol,$address,$ports,$program,$alia
 }
 function Validate{
   $s=Snapshot
-  if(@($s.owned).Count -ne 0){throw 'GUARD_WINDOWS_OWNED_RULES_EXIST'}
-  if((Values $s.allow_names) -cne (Values $spec.windows_disable_rules)){throw 'GUARD_WINDOWS_ALLOW_RULE_REVIEW_REQUIRED'}
-  if(@($s.profiles).Count -ne 3 -or @($s.active_profiles).Count -ne 3){throw 'GUARD_WINDOWS_PROFILE_SCOPE'}
+  if(@($s.owned).Count -ne 0 -or @($s.active_owned).Count -ne 0){throw 'GUARD_WINDOWS_OWNED_RULES_EXIST'}
+  if(@($s.policy_issues).Count){throw 'GUARD_WINDOWS_POLICY_STORE_CONFLICT'}
+  if((Values $s.allow_names) -cne (Values $spec.windows_disable_rules) -or
+     (Values $s.persistent_allow_names) -cne (Values $spec.windows_disable_rules)){throw 'GUARD_WINDOWS_ALLOW_RULE_REVIEW_REQUIRED'}
+  foreach($profiles in @(@{rows=$s.profiles},@{rows=$s.active_profiles})){
+    if((Values @($profiles.rows|ForEach-Object {$_.Name})) -cne (Values @('Domain','Private','Public'))){throw 'GUARD_WINDOWS_PROFILE_SCOPE'}
+  }
   foreach($name in @($spec.windows_disable_rules)){
     $r=Exact-Rule $name
     if($null -eq $r -or [string]$r.Enabled -ne 'True' -or [string]$r.Direction -ne 'Outbound' -or [string]$r.Action -ne 'Allow'){throw 'GUARD_WINDOWS_RULE_NOT_LOCAL'}
+    $effective=Exact-Rule $name 'ActiveStore'
+    if($null -eq $effective){throw 'GUARD_WINDOWS_POLICY_STORE_CONFLICT'}
+    $storedRecord=Rule-Record $r
+    $activeRecord=Rule-Record $effective
+    if(-not $storedRecord.PolicyReadbackComplete -or -not $activeRecord.PolicyReadbackComplete){throw 'GUARD_WINDOWS_POLICY_FIELDS_UNAVAILABLE'}
+    Assert-DesiredRule $effective $storedRecord
   }
   $names=@(Get-NetAdapter -IncludeHidden|Select-Object -ExpandProperty Name)
   foreach($name in @($spec.interfaces)+@($spec.tunnels)){if($names -cnotcontains $name){throw 'GUARD_WINDOWS_INTERFACE_MISSING'}}
@@ -177,6 +218,19 @@ function Arm{
   Register-ScheduledTask -TaskName ($taskBase+'-Deadline') -Action $a -Trigger (New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds([int]$spec.fuse_seconds)) -Principal $principal -Settings $settings | Out-Null
   Register-ScheduledTask -TaskName ($taskBase+'-BootRecovery') -Action $a -Trigger (New-ScheduledTaskTrigger -AtStartup) -Principal $principal -Settings $settings | Out-Null
   foreach($n in @('Deadline','BootRecovery')){if(-not(Get-ScheduledTask -TaskName ($taskBase+'-'+$n))){throw 'GUARD_WINDOWS_TIMER_NOT_ARMED'}}
+}
+function Assert-AppliedPolicy($snapshot,$expected){
+  if(@($snapshot.policy_issues).Count -or @($snapshot.allow_names).Count -or
+     @($snapshot.persistent_allow_names).Count){throw 'GUARD_WINDOWS_EFFECTIVE_RULES_NOT_APPLIED'}
+  foreach($profiles in @(@{rows=$snapshot.profiles},@{rows=$snapshot.active_profiles})){
+    if((Values @($profiles.rows|ForEach-Object {$_.Name})) -cne (Values @('Domain','Private','Public')) -or
+       @($profiles.rows|Where-Object {$_.Enabled -ne 'True' -or $_.DefaultOutboundAction -ne 'Block'}).Count){
+      throw 'GUARD_WINDOWS_ACTIVE_POLICY_NOT_APPLIED'
+    }
+  }
+  foreach($records in @(@{rows=$snapshot.owned},@{rows=$snapshot.active_owned})){
+    if(($records.rows|ConvertTo-Json -Depth 20 -Compress) -cne ($expected|ConvertTo-Json -Depth 20 -Compress)){throw 'GUARD_WINDOWS_EFFECTIVE_RULES_NOT_APPLIED'}
+  }
 }
 function Apply{
   Validate
@@ -212,8 +266,21 @@ function Apply{
     Add-Entry ([ordered]@{kind='profile';name=$profile.Name;enabled=$profile.Enabled;outbound=$profile.DefaultOutboundAction})
     Set-NetFirewallProfile -PolicyStore PersistentStore -Name $profile.Name -Enabled True -DefaultOutboundAction Block
   }
-  $active=@(Profiles 'ActiveStore')
-  if(@($active|Where-Object {$_.Enabled -ne 'True' -or $_.DefaultOutboundAction -ne 'Block'}).Count){throw 'GUARD_WINDOWS_ACTIVE_POLICY_NOT_APPLIED'}
+  $after=Snapshot
+  $expected=@($script:journal.entries|Where-Object {$_.kind -eq 'rule'}|ForEach-Object {$_.expected}|Sort-Object Name)
+  Assert-AppliedPolicy $after $expected
+}
+function Snapshot-ForBaseline($current,$baseline){
+  if($baseline.policy_schema -eq 'clearpath-windows-guard-policy/2'){return $current}
+  if($null -ne $baseline.policy_schema){throw 'GUARD_WINDOWS_BASELINE_SCHEMA_UNSUPPORTED'}
+  # Legacy deployments retain their hash-pinned worker. This compatibility path
+  # reads only the fields that a legacy journal actually witnessed.
+  $owned=@($current.owned|ForEach-Object {
+    $row=Record-Dict ([pscustomobject]$_)
+    foreach($key in @('IcmpType','DynamicTarget','PolicyAppId','PolicyReadbackComplete')){$row.Remove($key)}
+    $row
+  })
+  return [ordered]@{profiles=$current.profiles;active_profiles=$current.active_profiles;allow_names=$current.allow_names;owned=$owned}
 }
 function Restore{
   if(-not(Test-Path -LiteralPath $journalPath)){return}
@@ -243,11 +310,18 @@ function Restore{
       $expectedRecord=Record-Dict $e.expected
       if([string]$r.Enabled -eq 'True'){Assert-DesiredRule $r $beforeRecord}
       else{Assert-DesiredRule $r $expectedRecord;Enable-NetFirewallRule -PolicyStore PersistentStore -Name $e.name|Out-Null;Assert-DesiredRule (Exact-Rule $e.name) $beforeRecord}
+      if($j.before.policy_schema -eq 'clearpath-windows-guard-policy/2'){
+        $effective=Exact-Rule $e.name 'ActiveStore'
+        if($null -eq $effective){throw 'GUARD_WINDOWS_RESTORE_EFFECTIVE_RULE_CONFLICT'}
+        Assert-DesiredRule $effective $beforeRecord
+      }
     }else{throw 'GUARD_WINDOWS_JOURNAL_INVALID'}
   }
   $now=Snapshot
-  if(($now|ConvertTo-Json -Depth 30 -Compress) -cne ($j.before|ConvertTo-Json -Depth 30 -Compress)){throw 'GUARD_WINDOWS_RESTORE_READBACK_CONFLICT'}
-  Save-PrivateJson (Join-Path $StateDir 'native-restored.json') ([ordered]@{restored=$true;at=[DateTime]::UtcNow.ToString('o')})
+  $compared=Snapshot-ForBaseline $now $j.before
+  if(($compared|ConvertTo-Json -Depth 30 -Compress) -cne ($j.before|ConvertTo-Json -Depth 30 -Compress)){throw 'GUARD_WINDOWS_RESTORE_READBACK_CONFLICT'}
+  Save-PrivateJson (Join-Path $StateDir 'native-restored.json') ([ordered]@{restored=$true;at=[DateTime]::UtcNow.ToString('o');
+    policy_readback_schema=if($j.before.policy_schema){$j.before.policy_schema}else{'legacy-recorded-fields'}})
 }
 function Disarm{
   foreach($n in @('Deadline','BootRecovery')){

@@ -35,14 +35,15 @@ $global:profiles=@('Domain','Private','Public')|ForEach-Object {[pscustomobject]
 $global:rules=@([pscustomobject]@{Name='fixture-existing';Enabled='True';Direction='Outbound';Action='Allow';Profile='Any';
  Program='C:\fixture.exe';Protocol='TCP';LocalPort='Any';RemotePort='443';RemoteAddress='192.0.2.0/24';LocalAddress='Any';InterfaceAlias='Any';
  Package='';InterfaceType='Any';Service='Any';Authentication='NotRequired';Encryption='NotRequired';OverrideBlockRules='False';
- LocalUser='Any';RemoteUser='Any';RemoteMachine='Any';EdgeTraversalPolicy='Block';LooseSourceMapping='False';LocalOnlyMapping='False';Owner=''})
+ LocalUser='Any';RemoteUser='Any';RemoteMachine='Any';EdgeTraversalPolicy='Block';LooseSourceMapping='False';LocalOnlyMapping='False';Owner='';
+ IcmpType='Any';DynamicTarget='Any';PolicyAppId=''})
 function Global:Get-NetFirewallProfile {param($PolicyStore,$Name) return @($global:profiles|Where-Object {(-not $Name)-or $_.Name -eq $Name})}
 function Global:Get-NetFirewallRule {
  param($PolicyStore,$Name,$Enabled,$Direction,$Action,$ErrorAction)
  return @($global:rules|Where-Object {((-not $Name)-or $_.Name -eq $Name)-and((-not $Enabled)-or $_.Enabled -eq $Enabled)-and((-not $Direction)-or $_.Direction -eq $Direction)-and((-not $Action)-or $_.Action -eq $Action)})
 }
 function Global:Get-NetFirewallAddressFilter {process {return [pscustomobject]@{RemoteAddress=$_.RemoteAddress;LocalAddress=$_.LocalAddress}}}
-function Global:Get-NetFirewallPortFilter {process {return [pscustomobject]@{Protocol=$_.Protocol;LocalPort=$_.LocalPort;RemotePort=$_.RemotePort}}}
+function Global:Get-NetFirewallPortFilter {process {return [pscustomobject]@{Protocol=$_.Protocol;LocalPort=$_.LocalPort;RemotePort=$_.RemotePort;IcmpType=$_.IcmpType;DynamicTarget=$_.DynamicTarget}}}
 function Global:Get-NetFirewallInterfaceFilter {process {return [pscustomobject]@{InterfaceAlias=$_.InterfaceAlias}}}
 function Global:Get-NetFirewallInterfaceTypeFilter {process {return [pscustomobject]@{InterfaceType=$_.InterfaceType}}}
 function Global:Get-NetFirewallApplicationFilter {process {return [pscustomobject]@{Program=$_.Program;Package=$_.Package}}}

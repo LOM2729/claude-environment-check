@@ -14,9 +14,11 @@
 | 系统防护开关 | `guard-plan / guard-export / guard-inspect / guard-on / guard-confirm / guard-off / guard-status / guard-uninstall / guard-launch` | Mac PF、Windows原生防火墙、Linux nft；精确拥有范围和独立恢复，不默认启用 |
 | VM／VPS部署维护 | `remote-plan / remote-export / remote-apply / remote-confirm / remote-rollback / remote-status` | Debian／Ubuntu systemd目标：TUN、SSH／反向隧道、自愈与防火墙；在实际Linux目标执行，不从本机隐式SSH |
 
-桌面端从「专项工具」打开对应入口。数据隔离入口仅预览受支持的缓存，断线保护和 Linux 部署入口从已审阅计划生成交接包，由用户在实际目标运行。可通过内置后端的 `--cli` 继续使用具体命令。真实设备、浏览器、管理员操作和重启恢复仍待验收。
+当前维护入口为本 Skill 的 `scripts/claude_setup.py`。Codex 复用已有目标、范围和材料，准备计划、差异、备份、准确参数及恢复说明，按获准范围调用对应工具。普通浏览器清理和系统设置使用各自受支持的原生入口。真实设备、浏览器、管理员操作和重启恢复按实际结果记录。
 
-Mac／Linux系统防护的独立恢复worker另需已核实可运行、root-owned的Python3.9+；Windows恢复使用系统PowerShell，不能把桌面内置引擎冒充外部恢复解释器。缺依赖先准备具体安装／恢复方案，不自动安装开发工具、不改系统Python或绕过执行策略。
+工具的支持类型与完整方法范围不同。下列清理、规则和防护命令按其当前平台边界调用；浏览器自动数据库清理、Keychain 字段恢复、完整身份保险库／加密迁移等仍属于方法或未实现能力，不能通过写文档将其标为工具已实现。
+
+Mac／Linux系统防护的独立恢复worker另需已核实可运行、root-owned的Python3.9+；Windows恢复使用系统PowerShell。Skill脚本运行时与提权后独立恢复运行时分别核实。缺依赖先准备具体安装／恢复方案，不自动安装开发工具、不改系统Python或绕过执行策略。
 
 ## 访谈只追当前缺口
 
@@ -33,7 +35,7 @@ Mac／Linux系统防护的独立恢复worker另需已核实可运行、root-owne
 ]
 ```
 
-未知、拒答或暂缓保留状态，不反复自动追问，也不视为接受。新旧已知事实不一致先形成冲突；当前变化已明确时才用 `--accept-changes`接纳事实变化，它不批准动作。路线／设备改变会使相关绑定、计划和网络证据需要重核，未涉及的事实继续保留。`ready_for_plan`仅表示可准备方案。
+未知、拒答或暂缓保留状态，不反复自动追问，也不视为接受。新旧已知事实不一致先形成冲突；当前变化已明确时才用 `--accept-changes`接纳事实变化，它不批准动作。路线／设备改变会使相关绑定、计划和网络证据需要重核，未涉及的事实继续保留。`ready_for_plan`仅表示可准备方案。中断后由 Codex 读取上次事实文件，使用同一 `intake-assess --state` 选择当前缺口，再以 `intake-answer --state --answers --output` 保存新版本；较完整的执行上下文同时按 [私有进度](workflow-progress.md) 绑定，复用已知事实。
 
 ## WebRTC只说明当前浏览器样本
 
@@ -53,7 +55,7 @@ Mac／Linux系统防护的独立恢复worker另需已核实可运行、root-owne
 
 ## 数据清理与原生规则
 
-数据隔离默认只选明确可再生缓存；日志、登录、历史、配置和完整持久根分别选择，非缓存类别需显式纳入。只列指定配置根／Desktop根，不扫全盘。计划在备份之前核容量、数量、深度、同卷与保护范围；独立备份和隔离材料都保留，不提供永久删除或云端恢复。
+数据隔离默认只选明确可再生缓存。按 [客户端分项清理](client-cleanup.md#分项方案与当前执行范围) 记录缓存、登录、历史、配置各自的本轮选择，再将受支持对象写入 `cleanup-plan` 请求，非缓存类别通过对应 `--allow-category` 显式纳入。只列指定配置根／Desktop根。计划在备份之前核容量、数量、深度、同卷与保护范围，独立备份、隔离材料和恢复说明留在私有任务目录。
 
 提交时绑定已审阅计划摘要、当前目标与停写前提；进程观察只是防意外措施，不能强制阻止Node／未知写入者。部分失败先用 `cleanup-reconcile`对账，恢复只处理原位空缺且隔离材料未变的项目，不覆盖新数据；具体参数读对应命令 `--help`，不猜造字段。
 
@@ -77,13 +79,15 @@ Clash 原生适配先核已安装版本、活动 profile、独占 rules 扩展�
 {"schema":"clearpath-native-rules/1","target_alias":"device-1","rules":["DOMAIN,example.com,ExistingGroup"]}
 ```
 
-`native-client-plan --request <私有请求> --out <新计划目录>`准备精确字节候选；apply绑定计划目录／摘要和已成立的 `--allow-write --writer-stopped`，check／rollback另绑定同一计划产生的操作回执与摘要。具体当前参数以命令 `--help`为准。
+`native-client-plan --request <私有请求> --out <新计划目录>`准备精确字节候选；apply绑定计划目录／摘要和已成立的 `--allow-write --writer-stopped`，check／rollback另绑定同一计划产生的操作回执与摘要。写入结果不明时先保留原计划和操作目录，按 [回执核对](recovery-and-acceptance.md#原生规则写入结果不明时) 选择检查入口，再决定是否恢复。具体当前参数以命令 `--help`为准。
 
 ## 系统防护和远端部署
 
 先准备精确节点IPv4／端口、物理／TUN接口、DNS引导及必保业务例外和独立救援。当前系统防护支持 `unified-v4 / explicit-exceptions`，Linux入站加固用 `inbound-management`；不支持把完整域名／GeoIP国内分流自动编译成系统层 `domestic-v4`，遇到该组合明确拒绝，不能自动换策略。普通 `domestic-v4` 配置保持原流程；需要系统防护时另列一份可实施且获准的精确方案。已有连接、第三方规则及未覆盖接口的边界分别说明。
 
 计划／导出默认离线；真正变更要求精确计划摘要、`--allow-system-change`、`--control-channel-independent`及`--recovery-ready`，这些标志由Codex按本轮具体授权和现场事实填写，不能让保存文件替用户授权。影响当前Codex／远控的操作交客户在独立终端执行。
+
+正常 `guard-off`／`guard-uninstall` 前，先读取当前状态和本轮例外，保存受保护任务，确认浏览器、Claude 与相关后台已按实际归属安全退出。核对 OFF 会恢复的出站行为，再用当前计划／状态目录执行并读回规则与开机状态。紧急恢复沿用独立救援入口，不等待普通停用清单。
 
 先建立并核实独立限时恢复，再应用并读回；确认文件只记录现场观察，不认证其真实性。Mac／Linux确认后才新增开机加载；Windows原生防火墙修改本身持久，须先建立SYSTEM限时及开机恢复任务，待确认时明确标记，确认后才撤恢复任务。恢复分别核运行规则和开机／定时状态，保护后来新增的规则。
 
@@ -111,7 +115,7 @@ SSH drop-in及原本已启用的服务本身具有持久性，计划会标 `requ
 {"schema":"clearpath-guard-input/1","scope":"example","platform":"macos","policy":"unified-v4","interfaces":["en0"],"tunnels":["utun8"],"nodes":[{"address":"192.0.2.10","ports":[443],"protocol":"tcp"}],"exceptions":[],"bootstrap_dns":[],"fuse_seconds":180,"trusted_python":"/usr/bin/python3"}
 ```
 
-`guard-plan --input <私有请求> --output <新计划>` 返回规范化计划摘要，后续直接使用返回值，不以随意重排JSON后的文件哈希替代。Windows计划还需已核真实核心路径；先用 `guard-inspect`形成私有原生快照审阅已有Allow规则，未知有效策略不直接写入。
+`guard-plan --input <私有请求> --output <新计划>` 返回规范化计划摘要，后续直接使用返回值，不以随意重排JSON后的文件哈希替代。Windows计划还需已核真实核心路径；先用 `guard-inspect`形成私有原生快照，完整核对 PersistentStore、ActiveStore 的三档默认策略、同名规则数量、启用状态及全部条件。程序／包／服务、接口、地址、协议、端口和安全条件逐项审阅，当前工具未取得的字段保留未完成，未知有效策略不直接写入。更新前后的覆盖与错误分诊见 [Windows检查](windows-checks.md) 。
 
 ```json
 {"schema":"clearpath-remote-input/1","scope":"example","platform":"linux","distribution":"ubuntu","modules":["inbound_guard"],"fuse_seconds":180,"trusted_python":"/usr/bin/python3","inbound_guard":{"management_networks":["198.51.100.0/24"],"tcp_ports":[22]}}

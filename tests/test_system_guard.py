@@ -434,6 +434,61 @@ class GuardInputs(unittest.TestCase):
             self.assertIn(base64.b64encode(source).decode('ascii'), body)
             self.assertNotIn('UNTRUSTED_BACKEND', body)
 
+    def test_windows_upgrade_audits_current_source_and_recovers_with_pinned_old_helper(self):
+        with tempfile.TemporaryDirectory(prefix='synthetic-win-guard-upgrade-') as temporary:
+            folder = Path(temporary).resolve()
+            old_helper = b'# Synthetic older deployment helper, never executed.\n'
+            retained = folder / 'backend.ps1'
+            retained.write_bytes(old_helper)
+            commands = []
+
+            def runner(argv, **kwargs):
+                commands.append(argv)
+                return subprocess.CompletedProcess(argv, 0, '{}', '')
+
+            source = Path(g.__file__).with_name('system_guard_windows.ps1').read_bytes()
+            host = g.NativeHost(g.validate_input(spec('windows')), runner=runner,
+                                expected_backend_sha256=g.digest(old_helper))
+            with patch.object(g, 'windows_directory', return_value=Path('/synthetic/windows')):
+                host._windows(folder, 'Audit', source=True)
+                self.assertEqual(host.snapshot(folder), {})
+                host._windows(folder, 'Restore')
+                retained.write_bytes(old_helper + b'# Modified after deployment.\n')
+                with self.assertRaisesRegex(g.GuardError, 'GUARD_WINDOWS_BACKEND_HASH_CHANGED'):
+                    host.snapshot(folder)
+                with self.assertRaisesRegex(g.GuardError, 'GUARD_WINDOWS_BACKEND_HASH_CHANGED'):
+                    host._windows(folder, 'Restore')
+                with self.assertRaisesRegex(g.GuardError, 'GUARD_WINDOWS_SOURCE_ACTION'):
+                    host._windows(folder, 'Restore', source=True)
+            self.assertEqual(len(commands), 3)
+            self.assertIn('-EncodedCommand', commands[0])
+            audit = base64.b64decode(commands[0][-1]).decode('utf-16le')
+            self.assertIn(base64.b64encode(source).decode('ascii'), audit)
+            self.assertNotIn(base64.b64encode(old_helper).decode('ascii'), audit)
+            for command, action in zip(commands[1:], ('Snapshot', 'Restore')):
+                self.assertEqual(command[-4:], ['-Action', action, '-StateDir', str(folder)])
+                self.assertEqual(command[command.index('-File') + 1], str(retained))
+
+    def test_windows_source_security_check_retains_its_own_process_pin(self):
+        with tempfile.TemporaryDirectory(prefix='synthetic-win-guard-source-pin-') as temporary:
+            folder = Path(temporary).resolve()
+            shipped = folder / 'system_guard_windows.ps1'
+            shipped.write_bytes(b'# Synthetic distribution source.\n')
+            commands = []
+
+            def runner(argv, **kwargs):
+                commands.append(argv)
+                return subprocess.CompletedProcess(argv, 0, '', '')
+
+            with patch.object(g, '__file__', str(folder / 'system_guard.py')):
+                host = g.NativeHost(g.validate_input(spec('windows')), runner=runner,
+                                    expected_backend_sha256=g.digest(b'older retained worker'))
+                shipped.write_bytes(b'# Changed after the process captured its source.\n')
+                with patch.object(g, 'windows_directory', return_value=Path('/synthetic/windows')):
+                    with self.assertRaisesRegex(g.GuardError, 'GUARD_WINDOWS_BACKEND_HASH_CHANGED'):
+                        host._windows(folder, 'Audit', source=True)
+            self.assertEqual(commands, [])
+
 
 if __name__ == '__main__':
     unittest.main()

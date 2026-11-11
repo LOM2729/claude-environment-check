@@ -458,6 +458,10 @@ class NativeHost:
         self.anchor = 'com.apple/clearpath-' + self.scope
         self.label = 'com.clearpath.guard.' + self.scope
         self.expected_backend_sha256 = expected_backend_sha256
+        # Source-only Audit/Secure checks follow this installed distribution.
+        # A retained deployment's setters/recovery remain pinned to its plan.
+        self.source_backend_sha256 = (digest(Path(__file__).with_name('system_guard_windows.ps1').read_bytes())
+                                      if self.platform == 'windows' else None)
 
     def command(self, argv, data=None, allow_absent=False, combined=False):
         try:
@@ -585,9 +589,9 @@ class NativeHost:
         need(not helper.is_symlink() and helper.is_file() and helper.stat().st_nlink == 1, 'GUARD_WINDOWS_BACKEND_IDENTITY')
         raw = helper.read_bytes()
         need(len(raw) <= MAX_INPUT, 'GUARD_WINDOWS_BACKEND_BUDGET')
-        expected = self.expected_backend_sha256
+        expected = self.source_backend_sha256 if source else self.expected_backend_sha256
         if expected is None:
-            expected = digest(Path(__file__).with_name('system_guard_windows.ps1').read_bytes())
+            expected = self.source_backend_sha256
         need(digest(raw) == expected, 'GUARD_WINDOWS_BACKEND_HASH_CHANGED')
         if source:
             need(action in ('Secure', 'Audit') and not extra, 'GUARD_WINDOWS_SOURCE_ACTION')

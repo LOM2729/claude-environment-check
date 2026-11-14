@@ -1,5 +1,7 @@
 # X/GitHub 经验在 Windows 的适用边界
 
+2026-11-14 补齐的 [11 月 12 日 X 九章新版方法与未验证参数](guided-workflow.md)可按需核对。来源的 Mac PF 仅限制非 root、固定 anchor／Label 和命令，Windows 使用自己的原生策略、有效规则与恢复入口。文章对 Windows 自动时区、清理和 Token 的表述需要按目标版本验证，Mac 图示与作者通过计数分别保留原范围。旧稿对照基于已保存八章归纳。
+
 2026-10-20 新增的 EianLu 全文／四张配图与 Claude-Guardian 固定版本核对见 [新增来源与依据](evidence-sources.md)；客户现场执行见 [操作流程](customer-setup.md)。Mac 配图及第三方源码不代表 Windows 真机通过。
 
 参考：[夙愿学长的 X 长文](https://x.com/suyuan1711/status/2102744129235193975)、[claude-env-cleanup](https://github.com/pnedfff/claude-env-cleanup)、[claude-sonar](https://github.com/AschoofAlpha/claude-sonar)。这是独立归纳，不复制原文截图或第三方脚本，也不把 Mac 截图当成 Windows 验证。

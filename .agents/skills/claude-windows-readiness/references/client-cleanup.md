@@ -35,6 +35,14 @@
 
 上述类型通过 [隔离计划](execution-capabilities.md#数据清理与原生规则) 准备，非缓存类别使用实际对应的 `--allow-category`。确认写入者已停、计划仍匹配后才隔离，部分失败先对账。恢复不覆盖后来新建的数据。Keychain 密钥、浏览器 OS 加密绑定、已失效登录和云端数据均保留各自的恢复限制。
 
+## 清理前的配置与工作材料快照
+
+明确涉及配置或旧登录状态时，先识别有效配置根与根外的实际配置文件，常见对象为 `~/.claude` 与 `~/.claude.json`。保存所选对象的停写前提、容量、权限、内容摘要和恢复位置，核对多个目录的快照是否来自同一稳定状态。完整根备份与随包工具的选定对象备份分别写明范围；所选对象超过工具数量、体积或深度限制时，本项保留未完成，再准备可实施的备份方案。
+
+本轮保留项具体列出历史 `.jsonl`、`CLAUDE.md`、Skills、Hooks、MCP／插件秘密和项目资料；其他对象按用户实际选择处理。开局上下文冗余另查当前加载的指令、Skills、插件／MCP 与 hooks，基于重复加载和实际用途准备精简建议，保留会话及配置原件。
+
+新版教程将 ID 轮换、台北／新加坡时区及清认证放在组合方案中。此处收录其范围拆分和备份方法，标识／时区的账号效果仍为作者经验未证，Mac 来源的能力也需另核 Windows 原生实现。 [11 月来源](https://x.com/suyuan1711/status/2120856418131820670)
+
 ## 平台与安装边界
 
 - **macOS CLI**：默认配置根 `~/.claude`；先检查启动入口是否设置 `CLAUDE_CONFIG_DIR`。凭据通常在登录钥匙串；钥匙串不可写时当前版本可回落到配置根内的 `.credentials.json`。不同配置根可对应不同钥匙串项目；固定默认服务名不足以覆盖全部，也不能按前缀批量删除。
@@ -55,6 +63,16 @@
 - 登录、验证码和钥匙串认证由用户在官方界面完成；备份不保证能恢复已过期或已撤销的登录。
 
 官方依据：[认证与存储](https://code.claude.com/docs/en/authentication)、[安装及登录排障](https://code.claude.com/docs/en/troubleshoot-install#not-logged-in-or-token-expired)。
+
+## Token 登录与实际账号核对
+
+官方 `claude setup-token` 可生成面向 CI／脚本的长效 OAuth token，要求 Claude 订阅。用户选用此认证方式时，先核当前 CLI 版本、配置根、启动环境和实际提供方，再核 `CLAUDE_CODE_OAUTH_TOKEN` 与其他 API key／auth token／BASE_URL／helper 的覆盖关系。只记录来源和存在状态，授权及秘密保存在用户本机的受支持位置。 [官方命令](https://code.claude.com/docs/en/cli-reference)
+
+11 月教程提出手工配置或用 CC Switch 切换 token，并在 `settings.json` 顶层放 `_ACCOUNT_1`／`_ACCOUNT_2` 作为备忘。这些备忘按明文秘密处理，采用前核对当前版本是否接受字段，以及权限、备份和子进程继承的实际行为。凭据由用户在本机的受支持位置保存，聊天、公开示例和报告仅使用占位符或存在状态。 [来源方案](https://x.com/suyuan1711/status/2120856418131820670)
+
+**版本相关、未经独立验证**的源说法包括 token 固定一年有效、只有推理权限、`/usage` 必然 403、`/status` 旧邮箱可忽略，以及用 `CLAUDE_CODE_SUBSCRIPTION_TYPE=max/pro` 和 `CLAUDE_CODE_RATE_LIMIT_TIER=default_claude_max_20x` 处理 1M 上下文报错。这些值只作来源核对线索，不自动写入默认配置，也不从本地标签推定服务端权益。
+
+实际切换按已选配置方式完成，核对目标进程何时重新读取设置或环境，并按范围重新启动相关会话。身份、请求采用、可用模型／上下文和额度分别验证；官方网页的当前账号／使用量可由用户核对。出现旧邮箱、403 或权益矛盾时先保留差异，结合当前官方认证说明和真实会话判断，不为消除显示差异顺带清空其他登录。 [认证说明](https://code.claude.com/docs/en/authentication)
 
 ## Desktop：先确认重置是否涉及云端
 

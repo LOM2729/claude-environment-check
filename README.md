@@ -1,17 +1,21 @@
-# Claude 环境配置 Skill
+# Claude 私人向导 Skill
 
-让目标电脑上的 Codex 根据实际用途，完成 Claude 环境的检查、配置、排障、分项清理和恢复。提供 macOS 与 Windows 两套 Skill，技术参数、具体方案和随包工具调用由 Codex 准备，使用者说明目标、确认必要改动，并处理登录或系统认证。
+把本仓库地址和一段提示词发给 Codex，让它成为你的 Claude 私人向导，从了解现状开始，按需要带你完成环境配置、订阅准备、开通／升级、排障、清理，或申诉退款。
 
-**当前使用入口为 Skill。**完整配置按五步流程进行，局部排障或清理直接进入对应专题。结果报告写清已完成、未完成原因和下一步，详细配置、备份及证据保存在本机私有目录。
+提供 macOS 与 Windows 两套 Skill。Codex 先复用已有信息，了解你的账号／订阅阶段、实际系统、目标和现有网络，再衔接当前需要的步骤。已有账号可以直接配置，需要开通或升级就按当前官方条件选择渠道，遇到账号或付款问题则进入对应处理流程。
+
+技术方案、参数、备份、随包工具调用和核验由 Codex 准备，你可以随时选择、跳过、暂停或更改目标。登录、身份核验、接受条款及付款由你本人在官方流程完成，已知事实与同项有效批准继续复用。
+
+完整配置按五步流程进行，局部任务直接进入相应专题。结果报告写清已完成、未完成原因和下一步，详细配置、备份及证据保存在本机私有目录。具体分支见 [单入口向导](.agents/skills/claude-mac-readiness/references/workflow-methods.md#单入口向导)。
 
 [下载当前 main 源码](https://github.com/LOM2729/claude-environment-check/archive/refs/heads/main.zip) · [macOS Skill](.agents/skills/claude-mac-readiness/SKILL.md) · [Windows Skill](.agents/skills/claude-windows-readiness/SKILL.md) · [当前执行能力](.agents/skills/claude-mac-readiness/references/execution-capabilities.md)
 
 ## 快速开始
 
-在实际要配置的电脑上打开 Codex，发送下面这段提示词。已有配置、节点、保留业务或故障信息可以接在后面。
+在目标电脑上打开 Codex，发送下面这段提示词，后面可以补一句自己的情况，例如“已有账号和节点，只需要配置”或“我想申请退款”。
 
 ```text
-请使用 https://github.com/LOM2729/claude-environment-check 当前 main 的对应平台 Skill，复用已有信息，准备方案后按授权执行并核验，保留系统语言，标清未验证项，最后简报结果。
+请用 https://github.com/LOM2729/claude-environment-check 的 Skill 当我的 Claude 私人向导，按需配置、开通升级或申诉退款，按授权执行核验。
 ```
 
 也可以先下载并解压当前 main 源码，在 Codex 中打开该目录，保留隐藏的 `.agents` 文件夹，再发送同一段提示词。Codex 按实际系统读取对应的 `SKILL.md` 和本轮需要的专题。
@@ -30,6 +34,9 @@
 | 任务 | 可以直接这样说 |
 | --- | --- |
 | 首次或完整配置 | 我用 Mac／Windows，已经有代理和指定节点。帮我准备完整方案，保留系统语言、局域网和会议功能。 |
+| 已有账号，准备订阅 | 我已有账号和节点，先核对需要的环境准备，再带我比较当前可用渠道、开通并核对权益。 |
+| 升级或续费 | 我已有订阅，请按原购买渠道核对升级、续费、当前费用和生效规则。 |
+| 申诉或退款 | 根据我实际收到的通知和原购买渠道，带我准备真实申诉材料，或申请退款与人工复议。 |
 | 现有连接故障 | Claude Code／Desktop／网页在某一步报错。先定位实际入口和原因，再准备最小修复方案。 |
 | 只清缓存 | 只处理 Claude 的可再生缓存，保留登录、MCP、历史、配置和项目资料。 |
 | 清网页登录数据 | 只清我平时使用的 Chrome／Edge 资料中，指定站点的登录数据，先说明会退出哪些登录。 |

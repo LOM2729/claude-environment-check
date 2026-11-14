@@ -62,7 +62,7 @@ python <Skill>/scripts/claude_setup.py tutorial-check --config <最终候选或�
 | `AS399358` | 将核验时公开路由展开为离线CIDR，避免要求客户现场下载ASN数据库 | ASN所有权或路由快照不能证明每个IP只服务Claude；不是实时BGP监控 |
 | `geosite:anthropic` | 从固定版本分类数据递归展开后随包分发 | 分类维护者不是Anthropic官方，不保证永不漏项 |
 | `geosite:category-ntp` | 离线展开其主机范围；TCP命中同一指定节点，UDP按现有约束拒绝 | 不宣称完成了UDP NTP代理，不把NTP等同系统时区 |
-| `geosite:geolocation-!cn` | 不依赖它保护Claude；AI保护始终先匹配 | 通用海外分类自身不保证指定节点或无直连回退 |
+| `geosite:geolocation-!cn` | 在兼容目标上由 Codex 按 [通用海外分类与日更方法](proxy-import.md) 置于国内名单前，已知 AI／遥测先匹配 | 当前生成器为固定快照基础，新增布局与载荷需独立核验，同组名称不单独证明指定出口 |
 | `no-resolve` | 用于已有目标IP的CIDR匹配，避免该规则额外触发正向解析 | 不是逆向DNS保护、DNS泄露开关或未知域名自动发现 |
 
 离线分类基准为 v2fly/domain-list-community 提交 `e8f6d1e5c4a01cda943c0784ffa834340eeab5ae`；ASN快照来自 RIPEstat 的 AS399358 公共路由数据，观测日期 2026-10-20。数据文件内的来源、摘要和实际展开条目才是本次产物依据；维护者更新源站不自动修改客户配置。当前公开IPv4 `/23` 在上述 `/21` 内；IPv6 `/48` 仍被拒绝。生成器不得为“补齐ASN”偷偷联网或开启IPv6。

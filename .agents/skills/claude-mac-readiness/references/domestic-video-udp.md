@@ -2,6 +2,8 @@
 
 自动配置默认 `domestic-v4`，适用于 Mac/Windows 的 Mihomo 内核客户端；旧 `unified-v4` 和 `ai-only` 保留兼容。小火箭使用同一策略的原生 .conf 适配，由 Codex 自动展开规则、导入与读回，详见 [小火箭适配](shadowrocket-domestic.md)。Windows 可以生成文件，实际应用验收须在目标 Apple 设备进行。
 
+在支持的 Mihomo 客户端上，完整方案加入 [通用海外分类前置与24小时名单更新](proxy-import.md)。当前随包生成器提供固定快照基础，Codex 按实际客户端准备持久覆写中的增强配置，按下文顺序与 [增强审计范围](automation.md) 核对。小火箭的分类和更新能力按其目标版本单独映射。
+
 ## 先检查 UDP 禁用位置
 
 先对真正活动配置运行 `udp-check --config <实际配置> --out <新私有目录>`。工具只离线盘点 UDP 字段/规则，不修改系统，不读取凭据到公开报告。文件检查已完成不代表系统已完成；Codex 补充以下目标机证据：
@@ -20,9 +22,10 @@
 
 1. Claude/OpenAI 已知域名保护：UDP 拒绝、TCP 指定代理、失败不直连。
 2. IPv6 拒绝与保留的非 AI 明确拒绝规则。操作系统关闭 IPv6 仍需单独读回。
-3. 国内视频服务/CDN 域名直连，允许这些命中的 UDP 与 TCP。
+3. 保留经批准的精确 LAN／企业网／远控例外及国内视频服务／CDN 规则，明确目的与协议。视频例外允许其命中的 UDP 与 TCP，其他 UDP 例外须有本轮明确范围。
 4. 其余 UDP 拒绝。普通国内域名和 LAN 规则不能绕过这条；需要的 DNS/企业通话/远控另核对并明确解决，不能假装兼容。
-5. 国内域名直连，再沿用已审阅的国内 IP/本地例外与其他规则；普通国外和 AI 共用指定节点。
+5. 通用海外域名分类走同一指定节点，置于国内域名／国内 IP 名单和宽泛直连前，已知 AI／遥测仍由前置保护块优先处理。
+6. 国内域名与已审阅国内 IP／本地例外按方案直连，其余已审阅规则和最终国外兜底沿用同一指定节点。
 
 国内普通域名列表不放在 UDP 拒绝前。名单表示服务域名归类，不保证服务器物理位于国内，也不是零泄漏证明。国内直连会向对应服务暴露真实出口，这是客户选择的策略。AI 域名未被识别、UDP 绕过核心、旧连接和外部过滤器仍须实际检查。
 
@@ -32,11 +35,15 @@
 
 数据来源/上游和本包 SHA256 记录在 Skill 的 `scripts/domestic_sources.json`，再分发数据许可证为 `scripts/DOMESTIC-DATA-LICENSE.txt`（GPL-3.0）；原工具许可证不因此改写。快照本地随包分发，Mihomo 配置采用 inline domain provider，小火箭展开为原生 DOMAIN/DOMAIN-SUFFIX；两者均无新增运行时规则下载。来源维护不等于本包实时更新：更新名单需重新取证、差异审核、跑顺序/代理失败测试并发布新包，不原地刷新未知名单。
 
+上段描述随包固定数据的维护。每日更新方案另有运行时 HTTP provider／GEO 来源和缓存，按 [更新方法](proxy-import.md) 记录当前载荷摘要、最后成功更新时间及恢复副本。两种来源的基线、报告和证据各自绑定，界面显示日更周期只表示配置，实际更新仍需读回记录。
+
 规则机制依据：[Mihomo 路由规则](https://wiki.metacubex.one/config/rules/)、[inline rule provider](https://wiki.metacubex.one/config/rule-providers/)。平台域名分类来自第三方数据；实际播放和路径结论只能来自客户机实测。
 
 ## 生成和验收
 
 Codex 填写路径、节点、参数；客户不用手写 JSON。先准备具体方案、UDP 位置清单与备份，再运行 `ai-route --policy domestic-v4`，有未知 DIRECT 时先处理 `direct-review`。完整差异包含原全局 UDP 拒绝的移动和新增国内名单；只生成候选不能算应用完成。用同一 `--policy domestic-v4` 运行 `ai-audit` 和 `baseline`，更新后 `recheck` 保留该策略。
+
+上述命令适用于当前固定快照路径。增强副本额外加入 HTTP provider 或通用海外分类时，按 [工具边界](automation.md) 核基础范围，再对最终合并配置和实际名单完成独立审阅。最终布局与数据已变化时，固定快照审计通过状态只保留其原范围。
 
 Mac/Windows 均先配置 DNS/代理/IPv6、读回和非 AI bootstrap 验证，之后才测试 AI。实际客户验收至少记录：
 

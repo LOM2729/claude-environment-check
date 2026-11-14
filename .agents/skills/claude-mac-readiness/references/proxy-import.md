@@ -37,6 +37,69 @@
 
 这些是已收录的可选来源方法，实际路径与兼容效果待验。当前 `domestic-v4` 使用随包固定快照和已选视频范围；新规则必须保留 AI 保护、明确拒绝、视频例外和其余 UDP 拒绝的相对关系。每日远程更新会新增下载与启动依赖，须纳入具体方案和回退，随包生成器的实际支持以 [执行能力](execution-capabilities.md) 为准。
 
+### 通用海外分类与每日更新
+
+本轮选定此增强方案时，Codex 在客户端持久扩展／覆写中准备三份 HTTP rule-provider，并将通用海外分类放在国内域名／IP 名单之前。当前随包生成器仍生成固定 inline 快照，基础候选与增强后的最终合并配置按 [工具审计边界](automation.md) 分别核对，最终配置、缓存和真实更新效果保持待目标验证。
+
+1. 核对实际 Mihomo 版本、provider 格式支持、当前活动 profile 和核心 HomeDir，记录现有规则库、名称、缓存路径及摘要。已有同名资源先核归属，按实际配置选择唯一名称和路径。
+2. 将下载源、更新时间、下载出站、引导 DNS、首次缓存及恢复纳入具体方案。下载使用同一已选稳定节点组，核实它在新名单尚未加载时已经可用，避免规则下载依赖自己的新规则。TLS 和既有控制通道按原方案处理。
+3. 下列为已核公开资产地址与格式的局部模板，`AI-ONLY` 由 Codex 替换为实际存在且绑定指定节点的组。MRS 支持与目标机行为需现场核验，模板合并到现有配置，保留其余节点、规则、注释和业务例外。
+
+```yaml
+rule-providers:
+  SKILL-OVERSEAS:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-!cn.mrs"
+    path: ./ruleset/skill-overseas.mrs
+    interval: 86400
+    proxy: AI-ONLY
+  SKILL-CN-DOMAIN:
+    type: http
+    behavior: domain
+    format: yaml
+    url: "https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/direct.txt"
+    path: ./ruleset/skill-cn-domain.yaml
+    interval: 86400
+    proxy: AI-ONLY
+  SKILL-CN-IP:
+    type: http
+    behavior: ipcidr
+    format: yaml
+    url: "https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/cncidr.txt"
+    path: ./ruleset/skill-cn-ip.yaml
+    interval: 86400
+    proxy: AI-ONLY
+```
+
+provider 的 `interval` 单位是秒，`86400` 表示运行中的更新间隔。三处 `path` 各自唯一并位于实际核心 HomeDir 的允许范围内，按目标权限创建，采用当前已有受控位置。示例中两个 `.txt` 源的正文是 YAML `payload`，因此使用 `format: yaml`；海外分类资产使用 MRS。 [Mihomo 字段](https://wiki.metacubex.one/config/rule-providers/) · [MetaCubeX 数据](https://github.com/MetaCubeX/meta-rules-dat) · [Loyalsoldier 地址与格式](https://github.com/Loyalsoldier/clash-rules#规则文件地址及使用方式)
+
+4. 准备最终规则时保留当前 AI／遥测置顶保护、明确拒绝及 IPv6 拒绝、已批准 LAN／国内视频例外和其余 UDP 拒绝。其后按以下相对顺序插入或替换本轮名单段，核对旧 inline 国内规则及其他 DIRECT 规则是否提前抢占，按具体差异处理。
+
+```yaml
+rules:
+  # 前方保留完整 AI／遥测、拒绝及批准例外／UDP 保护块。
+  - RULE-SET,SKILL-OVERSEAS,AI-ONLY
+  - RULE-SET,SKILL-CN-DOMAIN,DIRECT
+  - RULE-SET,SKILL-CN-IP,DIRECT,no-resolve
+  - MATCH,AI-ONLY
+```
+
+上段只显示新增部分的相对顺序。所有现有企业拒绝和明确例外按原范围审阅，AI 保护仍在通用分类前。IP 名单使用 `no-resolve`，已在更早阶段解析出的目标仍可能匹配该 IP 规则。 [Mihomo 规则与优先级](https://wiki.metacubex.one/config/rules/)
+
+示例末条 `MATCH` 表示最终唯一兜底，合并时处理原有兜底，保留已审阅业务规则的有效位置。已批准的精确 LAN／企业域名／远控例外须在通用分类前核对，非视频 UDP 按本轮已批准范围处理。
+
+5. 首次采用前按获准的下载范围取得可用缓存，核对实际格式、条目数量、非空加载、来源与摘要，并保存最后可用版本。HTML 错误页、截断、空 payload 或异常宽泛条目均保留失败。随后按原生配置检查、活动配置读回、provider 状态及代表域名的连接链验证，完成标准见 [每日更新验收](lifecycle-checks.md#名单每日更新验收)。
+6. 更新记录至少保存来源及版本线索、尝试时间、最后成功时间、加载条目／摘要、失败原因与保留版本。客户端关闭、休眠、离线和下载源延迟可能使数据变旧，更新间隔不等于每天固定时刻必定完成。首次没有有效缓存时保留原可用方案并报告增强未完成。
+7. 下载或解析失败时先核当前内存和磁盘各自加载的版本。已核实最后可用缓存仍生效时，报告更新失败／数据陈旧并按获准范围重试；缓存损坏或目标结果异常时按备份与当前差异恢复最后可用名单／覆写。恢复操作若需重载或可能失联，沿用手动交接。保护规则、TLS、指定节点和下载出站保持本轮已批准范围。
+
+三份 provider 独立更新，跨来源刷新不构成原子事务。分别保存其载荷与成功时间，遇部分更新或归类冲突，按实际风险核对整组数据并准备成套恢复。客户端缺少自动成套回退时明确其能力与未验证范围，不能仅凭一个更新成功标记整组已完成。
+
+已有 `GEOSITE,geolocation-!cn` 数据链时，也可审阅该路径的每日维护。该路径用 `geo-auto-update: true` 开启自动维护，`geo-update-interval: 24` 的单位为小时。需核对实际 `geox-url.geosite`、缓存和其他地理数据库的更新副作用，避免同时重复维护两份海外分类。所需源和权限未核实时保持待配置，不以开关存在报告已更新。 [Mihomo GEO 设置](https://wiki.metacubex.one/config/general/)
+
+小火箭、Surge、sing-box 等使用各自当前支持的原生规则集与更新入口，分别映射规则格式、优先级、更新周期、缓存和失败恢复，不能把本节 Mihomo 字段直接当作跨客户端配置。目标版本缺少相应能力时交付准确缺口与可实施方案。
+
 ## 3. Shadowrocket 分支
 
 自动模式先读 [小火箭原生适配](shadowrocket-domestic.md)：Codex 运行 ai-route --policy domestic-v4 --format shadowrocket 生成完整 candidate.conf，再导入、编译、导出读回，不让客户逐条建立规则。以下手工示例只用于局部问题核对，不代替原生生成流程。

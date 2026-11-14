@@ -110,6 +110,14 @@ Codex 根据本轮真实请求重复填写 `review-template --required-item <TAS
 
 自动配置模式按 [当前完整策略](domestic-video-udp.md) 与 [专属组验收](service-routing-checks.md)，使用 --policy domestic-v4 先生成同节点候选（`ai-route`）与差异，再由客户机 Codex 应用已批准方案。AI 失败不改走 DIRECT，目标 UDP 显式拒绝，其他国内直连／国外代理及原配置保持。`ai-audit` 比较读回后的静态策略；DNS、客户端接管和故障效果另验。
 
+## 增强候选的工具与审计范围
+
+支持的目标核心采用 [通用海外分类与每日更新](proxy-import.md) 时，Codex 在副本中准备 HTTP provider／GEO 与规则顺序、下载和缓存方案，通过该客户端支持的持久覆写或导入入口应用。当前 `ai-route --policy domestic-v4` 仍生成固定 inline 快照基础，可先在该基础上运行 `ai-audit`／`tutorial-check`，再保存增强副本的独立差异。
+
+最终增强配置可使用已有通用 `plan`／`verify` 和精确文本恢复流程记录字节与目标，另核最终合并规则、外部载荷、引用、兼容性与实际路由。通用文本工具的格式／读回结果仅覆盖文件层，核心校验自身可能下载资源，须按已批准端点和当前网络条件处理。
+
+当前 `ai-audit`、`baseline`、`recheck` 的固定策略审计会重建预期并严格比较。加入动态 provider 或额外分类后的最终布局尚无对应专用策略入口，记录“增强布局的程序化策略审计未支持”，保留原始结果、基础审计及独立最终审阅证据。Codex 按当前工具能证明的范围交付，采用原生检查与实际路径证据处理其余项，禁止改摘要、删增强字段或编造新的 CLI 参数来代填通过。保存当前载荷哈希、更新时间、规则位置与每项实际结果，旧固定快照基线继续绑定原布局。
+
 ## 生命周期工具
 
 新增 baseline / recheck / network-plan / network-check / preflight，详见 [参数、网络许可与验收边界](lifecycle-checks.md)。只有 network-check 和 preflight 在显式 --allow-network 后执行主动请求；只有 preflight --launch 在新鲜必需检查通过后请求启动。原 collect/plan/verify 仍不联网或应用设置。

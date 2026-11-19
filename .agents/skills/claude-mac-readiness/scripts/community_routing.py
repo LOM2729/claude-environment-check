@@ -14,6 +14,11 @@ EXACT = ('anthropic.com.cdn.cloudflare.net', 'servd-anthropic-website.b-cdn.net'
          'anthropic.auth0.com', 'anthropic-com.ghost.io', 'cdn.usefathom.com')
 SHARED = ('sentry.io', 'statsigapi.net', 'intercom.io', 'intercomcdn.com')
 KEYWORDS = ('datadog', 'sentry', 'sift')
+SUPPLEMENT_REVIEWED_ON = '2026-11-19'
+SUPPLEMENTAL_EXACT = ('maps.googleapis.com', 'withpersona.com', 'frompersona.com',
+                      'r.stripe.com', 'fcmtoken.googleapis.com')
+# API and Console inbound IPv4, confirmed in the official IP documentation.
+SUPPLEMENTAL_IPV4 = '153.61.224.0/22'
 
 
 @lru_cache(maxsize=1)
@@ -46,7 +51,7 @@ def expand(data, category, stack=()):
     return list(dict.fromkeys(result))
 
 
-def matches():
+def matches(*, include_supplements=True):
     data = snapshot()
     domains = expand(data, 'anthropic')
     domains += [('DOMAIN', host) for host in EXACT]
@@ -61,14 +66,17 @@ def matches():
         if network.version == 4:
             prefixes.append(str(network))
     domains += [('IP-CIDR', value) for value in prefixes]
+    if include_supplements:
+        domains += [('DOMAIN', host) for host in SUPPLEMENTAL_EXACT]
+        domains.append(('IP-CIDR', SUPPLEMENTAL_IPV4))
     return list(dict.fromkeys(domains))
 
 
-def guarded_rules(fmt, group):
+def guarded_rules(fmt, group, *, include_supplements=True):
     protocol = 'PROTOCOL,UDP' if fmt == 'shadowrocket' else 'NETWORK,udp'
     reject = 'REJECT-NO-DROP' if fmt == 'shadowrocket' else 'REJECT'
     rules = []
-    for kind, value in matches():
+    for kind, value in matches(include_supplements=include_supplements):
         match = kind + ',' + value
         # no-resolve must be an option on the atomic IP rule, including inside
         # the logical UDP rule. Never let an IP fallback initiate DNS resolution.
@@ -97,6 +105,8 @@ def audit_scope():
     data = snapshot()
     asn = json.loads(data['asn']['text'])['data']
     return {'revision': data['revision'], 'geosite_commit': data['geosite_commit'],
+            'supplement_reviewed_on': SUPPLEMENT_REVIEWED_ON,
+            'official_inbound_ip_source': 'https://platform.claude.com/docs/en/api/ip-addresses',
             'expanded_matches': len(matches()), 'asn': '399358',
             'asn_snapshot_end': asn['query_endtime'],
             'asn_live_coverage_verified': False, 'ntp_udp': 'rejected',

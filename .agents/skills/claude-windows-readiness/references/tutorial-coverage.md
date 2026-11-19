@@ -1,6 +1,6 @@
 # Net.Coffee 教程逐项覆盖表
 
-核对日期：2026-10-21。来源为[域名分流页](https://ip.net.coffee/claude/site.html)及[11项配置页](https://ip.net.coffee/claude/claudecode.html)。本文记录它们与本包的对应关系，供 Codex 在仓库内执行与维护；给客户只输出简短的已完成／未完成清单。
+初次核对于 2026-10-21，补充规则复核于 2026-11-19。来源为 [域名分流页](https://ip.net.coffee/claude/site.html)、[11 项配置页](https://ip.net.coffee/claude/claudecode.html)、[Shadowrocket 社区帖子](https://x.com/qwerty__cs/status/2123266200885235842) 与 [Anthropic 官方 IP 文档](https://platform.claude.com/docs/en/api/ip-addresses)。对使用者简报已完成、未完成和必要的验证边界。
 
 这两页是**社区配置建议**，不是 Anthropic 官方要求。本轮按用户选择把其扩展域名、共享服务、关键词、IP 与分类兜底纳入默认 `domestic-v4` 的补充范围，同时保留原有目录用于旧策略兼容。规则覆盖表示生成器有对应处理，不等于客户机已导入、已生效或账号安全保证。
 
@@ -10,7 +10,7 @@
 
 Clash/Mihomo 与小火箭均由 Codex 生成、审计相应格式，客户不编辑规则。Windows 原生、WSL、macOS 分别核对实际进程和网络入口；Windows 没有客户实际使用的小火箭客户端时，不把另一台设备的配置生成当作 Windows 运行验收。
 
-Codex 在生成最终候选和读回活动配置后分别运行以下离线检查；参数由 Codex 填写，客户不手动执行。当前随包补充快照展开为148个匹配、444条保护规则，详细结果保存在报告目录。
+Codex 在生成最终候选和读回活动配置后分别运行以下离线检查；参数由 Codex 填写，客户不手动执行。实际匹配数量和逐项结果从报告读取。
 
 ```text
 python <Skill>/scripts/claude_setup.py tutorial-check --config <最终候选或活动配置读回> --node <已指定具体节点> --out <新报告目录>
@@ -23,6 +23,8 @@ python <Skill>/scripts/claude_setup.py tutorial-check --config <最终候选或�
 ## 域名与关键词
 
 表中“后缀”覆盖根域和其子域，“精确”只匹配该完整主机。旧官方精确主机目录继续保留；社区新增范围单独记录来源，不能改标为官方清单。扩展保护均须优先于普通直连与通用海外分类；UDP拒绝及失败拒绝保护随相应格式生成。
+
+2026-11-19 复核时，页面纯域名、类型前缀、YAML、JSON 分别列出 17、22、22、21 项。只有类型前缀与 YAML 当时逐条相同；JSON 缺 ASN，纯域名表缺关键词和 IP，三个 KYC 主机只在正文表格。需要复核完整覆盖时，以当次页面正文和各格式的实际内容为准。
 
 | 教程项目 | 本包处理 | 核验重点 |
 | --- | --- | --- |
@@ -50,6 +52,8 @@ python <Skill>/scripts/claude_setup.py tutorial-check --config <最终候选或�
 | `intercom.io` | 社区补充后缀 | 客服共享服务，同节点；不默认改为REJECT |
 | `intercomcdn.com` | 社区补充后缀 | 保留已有精确主机并接受扩展影响 |
 | `cdn.usefathom.com` | 社区补充精确主机 | 访问统计；不扩大整个根域 |
+| `maps.googleapis.com`、`withpersona.com`、`frompersona.com` | Net.Coffee 正文补充精确主机，纳入 Claude 专属组 | 共享服务；这些条目不授权启动身份验证或发送身份材料 |
+| `r.stripe.com`、`fcmtoken.googleapis.com` | Shadowrocket 社区帖补充精确主机，纳入 Claude 专属组 | 常规代理兜底也可能已走同节点；核对补齐后优先命中专属组，不扩大 Stripe 或 Google API 整个后缀 |
 
 以上共享扩展进入同一指定出口。Claude第一方专属组用于识别，新增共享范围的具体组归属由生成器管理块决定；验收比较实际目标节点，不因组名相同或不同自行判定出口一致。
 
@@ -58,6 +62,8 @@ python <Skill>/scripts/claude_setup.py tutorial-check --config <最终候选或�
 | 教程项目 | 本包处理 | 不能据此推断 |
 | --- | --- | --- |
 | `160.79.104.0/21` | 社区选择的IPv4兜底，域名规则后进入同一指定节点，并有失败保护 | 不是全部 Claude/CDN 现用地址的永久清单 |
+| `153.61.224.0/22` | 官方公布的 API／Console IPv4 入站段，加入专属组 | 入站段与服务发起请求的出站段要分开。既有 `/21` 已覆盖另一个官方入站段 `160.79.104.0/23`。 [官方 IP 文档](https://platform.claude.com/docs/en/api/ip-addresses) |
+| `34.8.0.0/16` | Google Cloud 共享全球网段，作为明确选中的配置例外审阅 | 整段影响其他租户流量，不进入默认生成器。 [Google Cloud 公布的地址范围](https://www.gstatic.com/ipranges/cloud.json) |
 | `2607:6bc0::/32` | 保留该范围的明确拒绝；系统、核心、DNS IPv6继续关闭 | 本包没有为它启用IPv6代理 |
 | `AS399358` | 将核验时公开路由展开为离线CIDR，避免要求客户现场下载ASN数据库 | ASN所有权或路由快照不能证明每个IP只服务Claude；不是实时BGP监控 |
 | `geosite:anthropic` | 从固定版本分类数据递归展开后随包分发 | 分类维护者不是Anthropic官方，不保证永不漏项 |

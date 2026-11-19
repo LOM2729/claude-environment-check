@@ -23,6 +23,8 @@ python <Skill>/scripts/claude_setup.py connection-plan --config <当前完整配
 
 DNS、代理和规则库就绪之后，检查当前客户端是否载入设置，再用已批准的正常 Claude 会话观察流式响应、连接中断/重建与核心日志。不要为制造“复用率”循环调用收费 API，不故意断开唯一控制通道。HTTP keep-alive、HTTP/2、TCP keepalive、代理协议多路复用是不同层，不能只改一个开关就把所有层标完成。
 
+小火箭从首页正在使用的节点详情直接读「多路复用」开关。该开关记录的是节点 Mux，Claude Code 的 HTTPS 连接复用仍需独立观察。节点 Mux 关闭且业务正常时，审阅教程无需为复用而开启 Mux 或 TCP 快速打开。HTTPS 复用按 [HTTP 持久连接规范](https://www.rfc-editor.org/rfc/rfc9112.html#section-9.3)解释，空闲探测按 [TCP keep-alive 规范](https://www.rfc-editor.org/rfc/rfc9293.html#section-3.8.4)解释。
+
 TLS 指纹只核对实际协议、内核和版本支持的外层字段；不将外层 Chrome 指纹宣称成 Claude Code 内层 TLS 变成 Chrome，不关闭证书校验，不修改服务端要求。并发数量按客户任务、服务额度和实际限流调整；文章的“单 IP 不超过 5 个”作为社区起步建议，不能作为官方阈值或自动切换多个出口的理由。
 
 依据：[Mihomo 通用配置](https://wiki.metacubex.one/config/general/)、[Claude Code 网络配置](https://code.claude.com/docs/en/network-config)。文章的稳定性经验见 [逐项覆盖表](tutorial-coverage.md)，与官方机制分开标注。报告状态仍只有已完成/未完成。

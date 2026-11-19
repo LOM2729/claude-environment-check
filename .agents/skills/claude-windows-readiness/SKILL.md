@@ -9,7 +9,7 @@ description: Guide Claude setup and use on Windows, including native and WSL con
 
 先按本轮任务复用已知的阶段、系统和目标，一轮集中处理相关答案，只追问影响下一步的缺口；未知、拒答或暂缓不自动当作接受，也不反复追问。仅路线未定且影响方案时读 [路线规划](references/deployment-routes.md)，选定范围后再检查；只比较方案就停在说明阶段，不操作设备。
 
-只处理本轮目标设备与实际入口，优先复用正常配置和仍有效的证据。局部任务不扩成全套配置；纯资料／Skill 维护只改文档，不触发本机采集或试验。
+只处理本轮目标设备与实际入口，优先复用正常配置和仍有效的证据。局部任务不扩成全套配置；纯资料任务停在资料层，Skill 维护在技能包内完成并用离线样本验证。
 
 日常直接由本 Skill 带 Codex 准备方案、调用随包脚本和目标软件的受支持入口，保存本轮私有材料，再核对实际结果。技术路径、参数和结构化输入由 Codex 准备，客户只处理必要认证及可能中断通道的手动操作。
 
@@ -23,6 +23,7 @@ description: Guide Claude setup and use on Windows, including native and WSL con
 
 - **首次／完整配置**：读 [五步流程](references/five-step-setup.md)，默认快速完成一份方案、执行与集中核验；不并读全部参考。
 - **连接／认证排障**：读 [Windows（含原生与 WSL）检查](references/windows-checks.md)；需要分流错误时再读 [事故处理](references/incident-and-cleanup.md)。疑似环境覆盖可用 [脱敏检查](scripts/check-env.ps1)，仅看键名／存在状态，不据此推定实际认证。
+- **已有 Windows 配置的专属规则增补**：读 [分流优先级与验收](references/service-routing-checks.md)；只核对复用或 IPv6 时分别读 [连接设置](references/connection-reuse.md) 与 [接口 IPv6](references/unified-ipv4.md#windows)。
 - **定向清理或其他局部任务**：从 [专题入口](references/workflow-methods.md) 选择对应模块，执行前读完该方法的前提与恢复。
 - **专项执行能力**：读 [可选工具](references/execution-capabilities.md)，按当前平台支持与具体方案调用；普通任务不强制创建访谈状态或开启防护。
 - **全部方法、来源比较或未经验证项**：仅此类请求读 [研究索引](references/source-index.md)。来源审计不属于日常必读。

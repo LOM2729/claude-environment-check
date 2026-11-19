@@ -60,7 +60,12 @@ def normalize(c, original, fmt, node, group, catalog):
     if not existing:
         c.require(not references, 'CLAUDE_GROUP_MANAGED_BLOCK_CHANGED')
         return base
-    variants = (guarded_rules(catalog, fmt, group), legacy_guarded_rules(catalog, fmt, group))
+    legacy = legacy_guarded_rules(catalog, fmt, group)
+    variants = (
+        guarded_rules(catalog, fmt, group),
+        community.guarded_rules(fmt, derived, include_supplements=False) + legacy,
+        legacy,
+    )
     guarded = next((block for block in variants if rules[:len(block)] == block), variants[0])
     c.require(len(existing) == 1 and rules[:len(guarded)] == guarded
               and references == [r for r in guarded if ai.target(r) == derived]

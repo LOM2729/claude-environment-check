@@ -30,8 +30,12 @@ class CommunityRouting(unittest.TestCase):
                          ('DOMAIN', 'anthropic.auth0.com'), ('DOMAIN', 'cdn.usefathom.com'),
                          ('DOMAIN', 'time.apple.com'), ('DOMAIN', 'time.windows.com'),
                          ('DOMAIN', 'ntp.aliyun.com'), ('DOMAIN-SUFFIX', 'ntp.nict.jp'),
+                         ('DOMAIN', 'maps.googleapis.com'), ('DOMAIN', 'withpersona.com'),
+                         ('DOMAIN', 'frompersona.com'), ('DOMAIN', 'r.stripe.com'),
+                         ('DOMAIN', 'fcmtoken.googleapis.com'), ('IP-CIDR', '153.61.224.0/22'),
                          ('IP-CIDR', '160.79.104.0/21'), ('IP-CIDR', '160.79.104.0/23')]:
                 self.assertIn(pair, pairs)
+            self.assertNotIn(('IP-CIDR', '34.8.0.0/16'), pairs)
             self.assertGreater(len(pairs), 100)
             for fmt in ('json', 'shadowrocket'):
                 result = d.build_semantics(c, self.original(fmt), fmt, 'Customer Node', ai.GROUP)
@@ -52,6 +56,23 @@ class CommunityRouting(unittest.TestCase):
             new = d.build_semantics(c, old, fmt, 'Customer Node', 'Chosen AI')
             self.assertEqual(new, d.build_semantics(c, original, fmt, 'Customer Node', 'Chosen AI'))
             self.assertEqual(new, d.build_semantics(c, new, fmt, 'Customer Node', 'Chosen AI'))
+
+    def test_upgrade_previous_community_block_and_keep_supplement_priority(self):
+        for fmt in ('json', 'shadowrocket'):
+            with self.subTest(format=fmt):
+                original = self.original(fmt)
+                key = 'rule' if fmt == 'shadowrocket' else 'rules'
+                original[key].insert(-1, 'DOMAIN-SUFFIX,googleapis.com,Customer Node')
+                current = d.build_semantics(c, original, fmt, 'Customer Node', ai.GROUP)
+                current_block = community.guarded_rules(fmt, 'AI-ONLY-Claude')
+                old_block = community.guarded_rules(fmt, 'AI-ONLY-Claude', include_supplements=False)
+                old = copy.deepcopy(current)
+                old[key][:len(current_block)] = old_block
+                upgraded = d.build_semantics(c, old, fmt, 'Customer Node', ai.GROUP)
+                self.assertEqual(upgraded, current)
+                self.assertLess(upgraded[key].index('DOMAIN,fcmtoken.googleapis.com,AI-ONLY-Claude'),
+                                upgraded[key].index('DOMAIN-SUFFIX,googleapis.com,AI-ONLY'))
+                self.assertEqual(d.build_semantics(c, upgraded, fmt, 'Customer Node', ai.GROUP), upgraded)
 
     def test_each_partial_extension_or_binding_mutation_is_rejected(self):
         for fmt in ('json', 'shadowrocket'):

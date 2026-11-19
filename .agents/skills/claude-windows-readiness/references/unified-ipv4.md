@@ -69,6 +69,17 @@ $binding | Disable-NetAdapterBinding
 
 微软说明解绑 IPv6 可能带来不受支持的配置；命令也可能重启适配器并导致断连。把此影响、准确接口和离线恢复路径列入客户的具体方案。0x20 是偏好 IPv4，不等于关闭；loopback 仍保留。无法安全执行的接口保留未完成，独立项继续。
 
+只读排查时，用已核对的 `InterfaceIndex` 查询 Wi-Fi 或以太网的 IPv6 地址类别和活动路由。对同一公网 IPv6 样本分别查询系统最佳路由及限定实际接口的路由。查询只读路由表，结果说明候选路径；报告保留接口、绑定与路由状态，省略地址和网关原文。
+
+```powershell
+Get-NetIPAddress -AddressFamily IPv6 -InterfaceIndex $targetInterfaceIndex
+Get-NetRoute -AddressFamily IPv6 -PolicyStore ActiveStore -InterfaceIndex $targetInterfaceIndex
+Find-NetRoute -RemoteIPAddress $publicIpv6Sample
+Find-NetRoute -RemoteIPAddress $publicIpv6Sample -InterfaceIndex $targetInterfaceIndex
+```
+
+代理出口只观察到 IPv4 时，Wi-Fi、以太网或其他接口仍可能有公网 IPv6 路径。Windows 原生和 WSL 按实际入口核对。WSL 先读取实际 NAT／镜像模式，在正在运行的目标发行版中用 `ip -6 route get <同一公网 IPv6 样本>` 查路由；没有运行时按本轮范围决定是否启动，不能用宿主机的路由代证。需要隧道断开时也限制公网 IPv6 的，按获准的系统层范围及恢复方案分别验证。[Windows 路由](https://learn.microsoft.com/en-us/powershell/module/nettcpip/find-netroute) · [WSL 网络模式](https://learn.microsoft.com/en-us/windows/wsl/networking)
+
 ### Shadowrocket
 
 生成器可准备统一规则与 `ipv6 = false` 声明；具体字段属于需目标版本核对的社区配置语义。通过实际版本 UI 关闭 IPv6并导出读回，系统接口也要读回。不要把 Mihomo 的 ip-version 字段搬进小火箭；没有外层/远端地址族的可验证证据时，该层保持未完成。配置文本通过不等于真机支持。

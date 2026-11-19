@@ -55,6 +55,10 @@ python <Skill>/scripts/claude_setup.py ai-audit --policy unified-v4 --baseline <
 
 读回用 networksetup -getinfo 和本包 ipv6-check。恢复按原值选择 -setv6automatic、-setv6linklocal 或 -setv6manual（原地址/前缀/路由）；不能一律改回 automatic。Link-local only 仍有本地 IPv6，不能当作关闭。不要批量处理 loopback、未知虚拟接口或企业/远控依赖服务。
 
+排查是否存在独立的 Wi-Fi 公网 IPv6 路径时，用 `networksetup -listallhardwareports` 映射实际接口，再核对服务模式、接口地址类别和 `netstat -rn -f inet6`。用 `route -n get -inet6 <公网 IPv6 样本>` 与 `route -n get -inet6 -ifscope <实际接口> <同一公网 IPv6 样本>` 对照查询；两条命令只查路由，不发送探测。无接口限定的默认路由缺失时，仍可能存在 Wi-Fi 接口作用域内的默认路由。报告中只留模式、路由有无和接口名。
+
+范围只到当前代理出口时，分别报告代理 IPv6 配置和系统路径，按用户目标决定是否还要做系统层检查。要确保指定 Wi-Fi 在隧道失效时也没有公网 IPv6，先明确该系统层范围和恢复办法，再按获准方案设置并验证。仅本地链接可用于保留本地 IPv6 的方案；严格的 `dns-ready` 仍要求选定接口读回关闭。路由存在表示有候选路径，实际绕行、断线行为和远端出口须各自验证。
+
 ### Windows
 
 核对实际适配器名称、稳定身份、当前绑定和远控依赖；参数禁止通配符。按精确对象操作 ms_tcpip6，修改前保存 Enabled 原值。

@@ -158,7 +158,7 @@ Codex 先定位实际配置根、浏览器资料或安装来源，列清每类�
 
 源码中的平台限制与实际执行能力持续保留。独立浏览器、身份保险库、加密跨机迁移、细粒度认证字段清理及特定 Reality／VLESS → 住宅 SOCKS5 部署链，已有来源方法记录，完整产品执行能力仍有缺口。
 
-当前复核可参考 [2026-11-11 来源差距表](docs/research/claude-environment/source-gap-review-20261111.md)、[对应源码 CI](https://github.com/LOM2729/claude-environment-check/actions/runs/42955611088) 和 [完整方法分类](docs/research/claude-environment/complete-environment-method.md)。每份证据按其提交、平台和观察范围使用，目标设备的验收状态按实际结果更新。
+当前复核可参考 [2026-11-11 来源差距表](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-gap-review-20261111.md)、[对应源码 CI](https://github.com/LOM2729/claude-environment-check/actions/runs/42955611088) 和 [完整方法分类](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/complete-environment-method.md)。每份证据按其提交、平台和观察范围使用，目标设备的验收状态按实际结果更新。
 
 ## 按任务查详细资料
 
@@ -173,8 +173,8 @@ Codex 先定位实际配置根、浏览器资料或安装来源，列清每类�
 | VM／VPS 与出口路线 | [部署路线](.agents/skills/claude-mac-readiness/references/deployment-routes.md)、[专项执行能力](.agents/skills/claude-mac-readiness/references/execution-capabilities.md) |
 | 更新、恢复与交付报告 | [生命周期](.agents/skills/claude-mac-readiness/references/lifecycle-checks.md)、[恢复与验收](.agents/skills/claude-mac-readiness/references/recovery-and-acceptance.md)、[报告面板](.agents/skills/claude-mac-readiness/references/report-dashboard.md) |
 | Windows 专项问题 | [Windows Skill](.agents/skills/claude-windows-readiness/SKILL.md)、[原生系统与防火墙检查](.agents/skills/claude-windows-readiness/references/windows-checks.md) |
-| 默认、可选、未验证和已纠正的方法 | [完整方法分类](docs/research/claude-environment/complete-environment-method.md) |
-| Guardian／CCBaga 的阅读与对照 | [来源覆盖](docs/research/claude-environment/source-coverage.md)、[差距复核](docs/research/claude-environment/source-gap-review-20261111.md)、[Guardian 参考](.agents/skills/claude-mac-readiness/references/guardian-integration.md)、[CCBaga 方法](docs/research/claude-environment/ccbaga-methods.md) |
+| 默认、可选、未验证和已纠正的方法 | [完整方法分类](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/complete-environment-method.md) |
+| Guardian／CCBaga 的阅读与对照 | [来源覆盖](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-coverage.md)、[差距复核](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/source-gap-review-20261111.md)、[Guardian 参考](.agents/skills/claude-mac-readiness/references/guardian-integration.md)、[CCBaga 方法](https://github.com/LOM2729/claude-environment-check/blob/main/docs/research/claude-environment/ccbaga-methods.md) |
 
 专题资料按实际任务读取。Guardian、CCBaga 等来源的作者经验、源码实现、测试记录与本项目选用方式在对应资料中保留日期和范围。
 

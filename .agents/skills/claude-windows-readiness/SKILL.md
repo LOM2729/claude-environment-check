@@ -1,6 +1,6 @@
 ---
 name: claude-windows-readiness
-description: Guide Claude setup and use on Windows, including native and WSL contexts. Route from the user's current account/subscription stage for proxy/DNS/IPv6 configuration, failures, scoped cleanup, purchase support and appeals/refunds. Also supports requested source comparisons. Preserve system language and verify actual results.
+description: Guide Claude setup and use on Windows, including native and WSL contexts. Route from the user's current account/subscription stage for proxy/DNS/IPv6 configuration, failures, scoped cleanup, purchase support and account appeals. Also supports requested source comparisons. Preserve system language and verify actual results.
 ---
 
 # Claude Windows（含原生与 WSL） 环境
@@ -17,7 +17,7 @@ description: Guide Claude setup and use on Windows, including native and WSL con
 
 用户给出本仓库地址，或说“按这套 Skill 带我一步步准备和使用 Claude”时，按 [单入口向导](references/workflow-methods.md) 进入。复用已经知道的账号／订阅阶段、实际系统、目标和现有网络，只补决定当前路线的缺口。Codex 给出本轮路线及下一步，负责读取相关方法、准备技术方案和持续核验。
 
-已有账号直接衔接配置或当前故障，需要开通／升级就带到当前官方渠道，需要申诉／退款就切到原账号与原购买渠道。用户可选择、跳过、暂停或更改目标，已知事实和同项有效批准继续复用。账号认证、身份核验、接受条款和付款等由用户本人在官方流程完成，当前仅整理资料的请求停在文档层。
+已有账号直接衔接配置或当前故障，需要开通／升级就带到当前官方渠道，账号受限时按实际通知准备申诉。用户可选择、跳过、暂停或更改目标，已知事实和同项有效批准继续复用。账号认证、身份核验、接受条款和付款等由用户本人在官方流程完成，当前仅整理资料的请求停在文档层。
 
 ## 从任务进入
 
